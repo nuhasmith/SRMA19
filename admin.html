@@ -87,6 +87,10 @@
         .bottom-nav .bottom-nav-item span { font-size: 0.6rem; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: #fff; border-radius: 16px; padding: 24px; max-width: 500px; width: 92%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
+        /* Fullscreen modal for absensi */
+        .modal-fullscreen .modal-box {
+            width: 100%; height: 100vh; max-width: 100vw; border-radius: 0; padding: 0; display: flex; flex-direction: column;
+        }
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { margin-left: 0 !important; padding: 16px 16px 80px 16px; }
@@ -109,7 +113,7 @@
         <a class="nav-item" data-page="jadwal" onclick="navigate('jadwal')"><i class="fas fa-calendar-alt"></i> <span>Jadwal Kegiatan</span></a>
         <a class="nav-item" data-page="petugas" onclick="navigate('petugas')"><i class="fas fa-user-shield"></i> <span>Data Petugas</span></a>
         <hr class="my-2">
-        <a class="nav-item" href="absensi.html"><i class="fas fa-qrcode"></i> <span>Scan QR</span></a>
+        <a class="nav-item" href="#" onclick="openAbsensiModal(); return false;"><i class="fas fa-qrcode"></i> <span>Scan QR</span></a>
         <a class="nav-item" href="index.html" target="_blank"><i class="fas fa-globe"></i> <span>Website</span></a>
     </div>
     <div class="sidebar-footer">
@@ -118,12 +122,24 @@
     </div>
 </div>
 
+<!-- Bottom Navigation Mobile -->
 <div class="bottom-nav" id="bottomNav">
     <button class="bottom-nav-item" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i><span>Beranda</span></button>
     <button class="bottom-nav-item" data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-check"></i><span>Absensi</span></button>
     <button class="bottom-nav-item" data-page="peserta" onclick="navigate('peserta')"><i class="fas fa-user-friends"></i><span>Peserta</span></button>
     <button class="bottom-nav-item" data-page="jadwal" onclick="navigate('jadwal')"><i class="fas fa-calendar-alt"></i><span>Jadwal</span></button>
-    <button class="bottom-nav-item" data-page="petugas" onclick="navigate('petugas')"><i class="fas fa-user-cog"></i><span>Petugas</span></button>
+    <button class="bottom-nav-item" onclick="openAbsensiModal()"><i class="fas fa-qrcode"></i><span>Scan</span></button>
+</div>
+
+<!-- Modal Absensi QR -->
+<div class="modal-overlay modal-fullscreen" id="absensiModal" style="display:none;">
+    <div class="modal-box">
+        <div class="d-flex justify-content-between align-items-center p-3 border-bottom" style="background:var(--tg-header); color:#fff;">
+            <h6 class="mb-0"><i class="fas fa-qrcode me-2"></i>Absensi QR</h6>
+            <button class="btn btn-sm btn-outline-light rounded-pill" onclick="closeAbsensiModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <iframe id="absensiIframe" src="absensi.html" style="flex:1; border:none; width:100%;" allow="camera"></iframe>
+    </div>
 </div>
 
 <div class="main-content" id="mainContent"></div>
@@ -575,6 +591,23 @@
     async function refreshPetugasData() {
         try { const r = await API.listPetugas(); if (r.status === 'success') { petugasData = r.data; setCache('petugas', r); } } catch(e) {}
     }
+
+    // ========== MODAL ABSENSI QR ==========
+    function openAbsensiModal() {
+        document.getElementById('absensiModal').style.display = 'flex';
+        // Refresh iframe agar selalu menampilkan halaman terbaru (opsional)
+        var iframe = document.getElementById('absensiIframe');
+        iframe.src = iframe.src;
+    }
+
+    function closeAbsensiModal() {
+        document.getElementById('absensiModal').style.display = 'none';
+    }
+
+    // Tutup modal jika klik backdrop
+    document.getElementById('absensiModal').addEventListener('click', function(e) {
+        if (e.target === this) closeAbsensiModal();
+    });
 
     // ===== INIT =====
     // Mulai dengan preload semua data, lalu render menu terakhir
