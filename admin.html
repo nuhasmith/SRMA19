@@ -85,18 +85,29 @@
         .bottom-nav .bottom-nav-item.active { color: var(--tg-blue); }
         .bottom-nav .bottom-nav-item i { font-size: 1.3rem; margin-bottom: 2px; }
         .bottom-nav .bottom-nav-item span { font-size: 0.6rem; }
+        .bottom-sheet {
+            position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+            background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+            z-index: 950; width: 90%; max-width: 400px; display: none; flex-direction: column; padding: 12px 0;
+            animation: slideUp 0.3s ease;
+        }
+        .bottom-sheet.show { display: flex; }
+        .bottom-sheet button, .bottom-sheet a {
+            display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+            border: none; background: none; width: 100%; font-size: 0.9rem; color: #333;
+            text-decoration: none; font-weight: 500; transition: background 0.2s;
+        }
+        .bottom-sheet button:hover, .bottom-sheet a:hover { background: #f5f5f5; }
+        .bottom-sheet i { width: 22px; text-align: center; font-size: 1.2rem; }
+        @keyframes slideUp { from { transform: translateX(-50%) translateY(100%); } to { transform: translateX(-50%) translateY(0); } }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: #fff; border-radius: 16px; padding: 24px; max-width: 500px; width: 92%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
-        /* Fullscreen modal for absensi */
-        .modal-fullscreen .modal-box {
-            width: 100%; height: 100vh; max-width: 100vw; border-radius: 0; padding: 0; display: flex; flex-direction: column;
-        }
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { margin-left: 0 !important; padding: 16px 16px 80px 16px; }
             .bottom-nav { display: flex; }
         }
-        @media (min-width: 769px) { .bottom-nav { display: none; } }
+        @media (min-width: 769px) { .bottom-nav { display: none; } .bottom-sheet { display: none !important; } }
     </style>
 </head>
 <body>
@@ -122,18 +133,26 @@
     </div>
 </div>
 
-<!-- Bottom Navigation Mobile -->
+<!-- Bottom Navigation Mobile (4 menu utama + Lainnya) -->
 <div class="bottom-nav" id="bottomNav">
     <button class="bottom-nav-item" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i><span>Beranda</span></button>
     <button class="bottom-nav-item" data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-check"></i><span>Absensi</span></button>
     <button class="bottom-nav-item" data-page="peserta" onclick="navigate('peserta')"><i class="fas fa-user-friends"></i><span>Peserta</span></button>
     <button class="bottom-nav-item" data-page="jadwal" onclick="navigate('jadwal')"><i class="fas fa-calendar-alt"></i><span>Jadwal</span></button>
-    <button class="bottom-nav-item" onclick="openAbsensiModal()"><i class="fas fa-qrcode"></i><span>Scan</span></button>
+    <button class="bottom-nav-item" onclick="toggleBottomSheet()"><i class="fas fa-ellipsis-h"></i><span>Lainnya</span></button>
+</div>
+
+<!-- Bottom Sheet untuk opsi tambahan -->
+<div class="bottom-sheet" id="bottomSheet">
+    <button onclick="navigate('petugas'); toggleBottomSheet();"><i class="fas fa-user-shield"></i> Data Petugas</button>
+    <button onclick="openAbsensiModal(); toggleBottomSheet();"><i class="fas fa-qrcode"></i> Scan QR</button>
+    <a href="index.html" target="_blank"><i class="fas fa-globe"></i> Website Utama</a>
+    <button onclick="handleLogout(); toggleBottomSheet();" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
 </div>
 
 <!-- Modal Absensi QR -->
-<div class="modal-overlay modal-fullscreen" id="absensiModal" style="display:none;">
-    <div class="modal-box">
+<div class="modal-overlay" id="absensiModal" style="display:none;">
+    <div class="modal-box" style="width:100%; height:100vh; max-width:100vw; border-radius:0; padding:0; display:flex; flex-direction:column;">
         <div class="d-flex justify-content-between align-items-center p-3 border-bottom" style="background:var(--tg-header); color:#fff;">
             <h6 class="mb-0"><i class="fas fa-qrcode me-2"></i>Absensi QR</h6>
             <button class="btn btn-sm btn-outline-light rounded-pill" onclick="closeAbsensiModal()"><i class="fas fa-times"></i></button>
@@ -367,11 +386,8 @@
         if (!d.kode || !d.nama) { showToast('Kode & Nama wajib!','error'); return; }
         try {
             const r = idx !== null ? await API.updatePeserta(d) : await API.addPeserta(d);
-            if (r.status === 'ok') {
-                document.getElementById('modalPeserta').remove();
-                await refreshPesertaData(); filterPeserta();
-                showToast('Berhasil!','success');
-            } else showToast(r.message,'error');
+            if (r.status === 'ok') { document.getElementById('modalPeserta').remove(); await refreshPesertaData(); filterPeserta(); showToast('Berhasil!','success'); }
+            else showToast(r.message,'error');
         } catch(e) { showToast('Gagal server','error'); }
     }
 
@@ -447,8 +463,7 @@
     }
 
     function renderJadwalCards() {
-        const c = document.getElementById('jadwalContainer');
-        if (!c) return;
+        const c = document.getElementById('jadwalContainer'); if (!c) return;
         c.innerHTML = jadwalData.map(j => `
             <div class="jadwal-card" id="jadwal-${j.id}">
                 <div class="jadwal-icon-wrap" style="background:${j.bg};color:${j.color};"><i class="fas ${j.icon}"></i></div>
@@ -464,8 +479,7 @@
                     <button class="btn btn-sm btn-primary rounded-pill" onclick="saveSingleJadwal(${j.id})"><i class="fas fa-check"></i></button>
                     <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="deleteJadwal(${j.id})"><i class="fas fa-trash-alt"></i></button>
                 </div>
-            </div>
-        `).join('');
+            </div>`).join('');
     }
 
     function showJadwalModal(idx) {
@@ -485,10 +499,8 @@
         const icon = document.getElementById('mjIcon').value.trim() || 'fa-circle', color = document.getElementById('mjColor').value, bg = document.getElementById('mjBg').value.trim() || 'rgba(13,110,253,0.1)';
         if (!nama || !mulai || !selesai) { showToast('Nama, Mulai, Selesai wajib!','error'); return; }
         if (mulai >= selesai) { showToast('Mulai < Selesai!','error'); return; }
-        if (idx !== null) {
-            const j = jadwalData.find(x => x.id === idx);
-            if (j) Object.assign(j, { nama, mulai, selesai, icon, color, bg });
-        } else jadwalData.push({ id: Date.now(), nama, mulai, selesai, icon, color, bg });
+        if (idx !== null) { const j = jadwalData.find(x => x.id === idx); if (j) Object.assign(j, { nama, mulai, selesai, icon, color, bg }); }
+        else jadwalData.push({ id: Date.now(), nama, mulai, selesai, icon, color, bg });
         setCache('jadwal', { status: 'success', data: jadwalData });
         document.getElementById('modalJadwal').remove();
         renderJadwalCards();
@@ -524,10 +536,7 @@
 
     async function resetAllJadwal() {
         if (!confirm('Reset ke default dari server?')) return;
-        try {
-            const r = await API.getJadwal();
-            if (r.status === 'success') { jadwalData = r.data; setCache('jadwal', r); renderJadwalCards(); showToast('Direset','info'); }
-        } catch(e) { showToast('Gagal','error'); }
+        try { const r = await API.getJadwal(); if (r.status === 'success') { jadwalData = r.data; setCache('jadwal', r); renderJadwalCards(); showToast('Direset','info'); } } catch(e) { showToast('Gagal','error'); }
     }
 
     // ===== RENDER PETUGAS =====
@@ -595,22 +604,25 @@
     // ========== MODAL ABSENSI QR ==========
     function openAbsensiModal() {
         document.getElementById('absensiModal').style.display = 'flex';
-        // Refresh iframe agar selalu menampilkan halaman terbaru (opsional)
         var iframe = document.getElementById('absensiIframe');
         iframe.src = iframe.src;
     }
+    function closeAbsensiModal() { document.getElementById('absensiModal').style.display = 'none'; }
+    document.getElementById('absensiModal').addEventListener('click', function(e) { if (e.target === this) closeAbsensiModal(); });
 
-    function closeAbsensiModal() {
-        document.getElementById('absensiModal').style.display = 'none';
+    // ===== BOTTOM SHEET =====
+    function toggleBottomSheet() {
+        document.getElementById('bottomSheet').classList.toggle('show');
     }
-
-    // Tutup modal jika klik backdrop
-    document.getElementById('absensiModal').addEventListener('click', function(e) {
-        if (e.target === this) closeAbsensiModal();
+    // Tutup bottom sheet jika klik di luar
+    document.addEventListener('click', function(e) {
+        const sheet = document.getElementById('bottomSheet');
+        if (sheet.classList.contains('show') && !sheet.contains(e.target) && !e.target.closest('.bottom-nav-item')) {
+            sheet.classList.remove('show');
+        }
     });
 
     // ===== INIT =====
-    // Mulai dengan preload semua data, lalu render menu terakhir
     preloadAllData();
 </script>
 </body>
