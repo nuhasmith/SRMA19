@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Petugas Dashboard - SRMA 19 Bantul</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary: #0d6efd; --accent: #ff6b35; --sidebar-width: 260px; --sidebar-collapsed-width: 70px;
+            --tg-bg: #f0f2f5; --tg-header: #5682a3; --tg-blue: #2e8bc0; --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--tg-bg); display: flex; min-height: 100vh; overflow-x: hidden; }
+        .sidebar {
+            width: var(--sidebar-width); background: #fff; border-right: 1px solid #e2e8f0;
+            display: flex; flex-direction: column; position: fixed; top: 0; left: 0;
+            height: 100vh; z-index: 1000; transition: var(--transition); box-shadow: 0 0 30px rgba(0,0,0,0.05);
+        }
+        .sidebar.collapsed { width: var(--sidebar-collapsed-width); }
+        .sidebar-header {
+            padding: 20px 16px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center;
+            justify-content: space-between; min-height: 70px; gap: 8px; background: var(--tg-header); color: #fff;
+        }
+        .sidebar-header .logo-text { font-weight: 800; font-size: 1.2rem; color: #fff; white-space: nowrap; overflow: hidden; transition: var(--transition); }
+        .sidebar.collapsed .sidebar-header .logo-text { opacity: 0; width: 0; display: none; }
+        .sidebar-header .logo-icon { font-size: 1.5rem; color: #fff; flex-shrink: 0; }
+        .collapse-btn { background: none; border: none; color: #fff; cursor: pointer; padding: 6px 8px; border-radius: 8px; transition: var(--transition); font-size: 1.1rem; flex-shrink: 0; opacity: 0.8; }
+        .collapse-btn:hover { opacity: 1; }
+        .sidebar-nav { flex: 1; padding: 8px; overflow-y: auto; overflow-x: hidden; }
+        .sidebar-nav .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px;
+            color: #333; text-decoration: none; font-weight: 500; margin-bottom: 2px;
+            transition: all 0.2s; cursor: pointer; white-space: nowrap;
+        }
+        .sidebar-nav .nav-item:hover, .sidebar-nav .nav-item.active { background: var(--tg-blue); color: #fff; }
+        .sidebar-nav .nav-item i { width: 22px; text-align: center; font-size: 1.1rem; flex-shrink: 0; }
+        .sidebar-nav .nav-item span { transition: var(--transition); }
+        .sidebar.collapsed .sidebar-nav .nav-item span { opacity: 0; width: 0; display: none; }
+        .sidebar.collapsed .sidebar-nav .nav-item { justify-content: center; padding: 10px; }
+        .sidebar-footer { padding: 12px; border-top: 1px solid #e2e8f0; transition: var(--transition); }
+        .sidebar.collapsed .sidebar-footer { padding: 8px; }
+        .user-info { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .sidebar.collapsed .user-info { justify-content: center; }
+        .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--tg-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+        .user-details { transition: var(--transition); white-space: nowrap; font-size: 0.85rem; }
+        .sidebar.collapsed .user-details { opacity: 0; width: 0; display: none; }
+        .btn-logout { width: 100%; border-radius: 8px; font-size: 0.8rem; font-weight: 600; transition: var(--transition); }
+        .sidebar.collapsed .btn-logout span { display: none; }
+        .sidebar.collapsed .btn-logout { width: auto; padding: 8px; border-radius: 50%; display: flex; justify-content: center; }
+        .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 20px 24px; min-height: 100vh; transition: var(--transition); width: 100%; }
+        .main-content.expanded { margin-left: var(--sidebar-collapsed-width); }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .stat-card { background: #fff; border-radius: 14px; padding: 18px; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: all 0.2s; }
+        .stat-value { font-size: 1.8rem; font-weight: 800; color: #1e293b; }
+        .stat-label { color: #687684; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-table { background: #fff; border-radius: 14px; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+        .table thead { background: #f8fafc; }
+        .table th { font-weight: 600; color: #687684; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; border-bottom: 1px solid #e2e8f0; }
+        .filter-bar { background: #fff; border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .loading-overlay { display: flex; justify-content: center; padding: 40px; }
+        .absensi-iframe { width: 100%; height: calc(100vh - 80px); border: none; border-radius: 14px; }
+        .bottom-nav {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+            border-top: 1px solid #e2e8f0; z-index: 900; padding: 4px 0 env(safe-area-inset-bottom, 8px) 0;
+            box-shadow: 0 -1px 8px rgba(0,0,0,0.05);
+        }
+        .bottom-nav .bottom-nav-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 6px 0; color: #687684; font-size: 0.65rem; font-weight: 500; flex: 1;
+            transition: all 0.2s; cursor: pointer; border: none; background: none; text-decoration: none;
+        }
+        .bottom-nav .bottom-nav-item.active { color: var(--tg-blue); }
+        .bottom-nav .bottom-nav-item i { font-size: 1.3rem; margin-bottom: 2px; }
+        .bottom-nav .bottom-nav-item span { font-size: 0.6rem; }
+        .bottom-sheet {
+            position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+            background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+            z-index: 950; width: 90%; max-width: 400px; display: none; flex-direction: column; padding: 12px 0;
+            animation: slideUp 0.3s ease;
+        }
+        .bottom-sheet.show { display: flex; }
+        .bottom-sheet button, .bottom-sheet a {
+            display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+            border: none; background: none; width: 100%; font-size: 0.9rem; color: #333;
+            text-decoration: none; font-weight: 500; transition: background 0.2s;
+        }
+        .bottom-sheet button:hover, .bottom-sheet a:hover { background: #f5f5f5; }
+        .bottom-sheet i { width: 22px; text-align: center; font-size: 1.2rem; }
+        @keyframes slideUp { from { transform: translateX(-50%) translateY(100%); } to { transform: translateX(-50%) translateY(0); } }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0 !important; padding: 16px 16px 80px 16px; }
+            .bottom-nav { display: flex; }
+            .absensi-iframe { height: calc(100vh - 130px); }
+        }
+        @media (min-width: 769px) { .bottom-nav { display: none; } .bottom-sheet { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="d-flex align-items-center gap-2"><span class="logo-icon"><i class="fas fa-user-check"></i></span><span class="logo-text">Petugas SRMA 19</span></div>
+        <button class="collapse-btn" onclick="toggleSidebar()" id="collapseBtn"><i class="fas fa-chevron-left" id="collapseIcon"></i></button>
+    </div>
+    <div class="sidebar-nav">
+        <a class="nav-item" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        <a class="nav-item" data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-list"></i> <span>Data Absensi</span></a>
+        <a class="nav-item" data-page="absensi_qr" onclick="navigate('absensi_qr')"><i class="fas fa-qrcode"></i> <span>Scan QR</span></a>
+        <hr class="my-2">
+        <a class="nav-item" href="index.html" target="_blank"><i class="fas fa-globe"></i> <span>Website</span></a>
+    </div>
+    <div class="sidebar-footer">
+        <div class="user-info"><div class="user-avatar" id="userAvatar">P</div><div class="user-details"><strong class="d-block small" id="userName">Petugas</strong><small class="text-muted" id="userRole">petugas</small></div></div>
+        <button class="btn btn-outline-secondary btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt me-2"></i> <span>Logout</span></button>
+    </div>
+</div>
+
+<div class="bottom-nav" id="bottomNav">
+    <button class="bottom-nav-item" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i><span>Beranda</span></button>
+    <button class="bottom-nav-item" data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-check"></i><span>Absensi</span></button>
+    <button class="bottom-nav-item" data-page="absensi_qr" onclick="navigate('absensi_qr')"><i class="fas fa-qrcode"></i><span>Scan</span></button>
+    <button class="bottom-nav-item" onclick="toggleBottomSheet()"><i class="fas fa-ellipsis-h"></i><span>Lainnya</span></button>
+</div>
+
+<div class="bottom-sheet" id="bottomSheet">
+    <a href="index.html" target="_blank"><i class="fas fa-globe"></i> Website Utama</a>
+    <button onclick="handleLogout(); toggleBottomSheet();" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+</div>
+
+<div class="main-content" id="mainContent"></div>
+
+<script src="api.js"></script>
+<script src="auth.js"></script>
+<script>
+    if (!Auth.requireAuth('login.html')) throw new Error('Login dulu.');
+    const currentUser = Auth.getCurrentUser();
+    document.getElementById('userName').textContent = currentUser.nama || 'Petugas';
+    document.getElementById('userRole').textContent = currentUser.role || 'petugas';
+    document.getElementById('userAvatar').textContent = (currentUser.nama || 'P').charAt(0).toUpperCase();
+
+    let sidebarCollapsed = false;
+    const MENU_KEY = 'srma19_petugas_menu';
+    function toggleSidebar() { sidebarCollapsed = !sidebarCollapsed; sidebarCollapsed ? collapseSidebar() : expandSidebar(); }
+    function collapseSidebar() { document.getElementById('sidebar').classList.add('collapsed'); document.getElementById('mainContent').classList.add('expanded'); document.getElementById('collapseIcon').className = 'fas fa-chevron-right'; }
+    function expandSidebar() { document.getElementById('sidebar').classList.remove('collapsed'); document.getElementById('mainContent').classList.remove('expanded'); document.getElementById('collapseIcon').className = 'fas fa-chevron-left'; }
+
+    function getCache(k) { try { return JSON.parse(sessionStorage.getItem(k)); } catch(e) { return null; } }
+    function setCache(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+
+    function updateMenuUI(page) {
+        document.querySelectorAll('.sidebar-nav .nav-item[data-page], .bottom-nav .bottom-nav-item[data-page]').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.sidebar-nav .nav-item[data-page="${page}"]`)?.classList.add('active');
+        document.querySelector(`.bottom-nav .bottom-nav-item[data-page="${page}"]`)?.classList.add('active');
+    }
+
+    function navigate(page) {
+        updateMenuUI(page);
+        localStorage.setItem(MENU_KEY, page);
+        switch (page) {
+            case 'dashboard': renderDashboard(); break;
+            case 'absensi': renderAbsensi(); break;
+            case 'absensi_qr': renderAbsensiQR(); break;
+            default: renderDashboard();
+        }
+    }
+
+    function handleLogout() { if (confirm('Logout?')) { Auth.logout(); sessionStorage.clear(); localStorage.removeItem(MENU_KEY); window.location.href = 'login.html'; } }
+
+    function showToast(msg, type = 'info') {
+        const c = { success: ['#d1fae5','#10b981','#065f46','fa-check-circle'], error: ['#fee2e2','#ef4444','#991b1b','fa-times-circle'], warning: ['#fef3c7','#f59e0b','#92400e','fa-exclamation-triangle'], info: ['#dbeafe','#3b82f6','#1e40af','fa-info-circle'] }[type] || ['#dbeafe','#3b82f6','#1e40af','fa-info-circle'];
+        const el = document.createElement('div'); el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;min-width:200px;max-width:90%;';
+        el.innerHTML = `<div style="background:${c[0]};border-left:4px solid ${c[1]};color:${c[2]};padding:10px 14px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.2);display:flex;align-items:center;gap:6px;font-size:0.8rem;"><i class="fas ${c[3]}"></i>${msg}</div>`;
+        document.body.appendChild(el); setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(),300); }, 3000);
+    }
+
+    function exportToPDF(elementId, filename) { const el = document.getElementById(elementId); if (!el) return; html2pdf().set({ margin:[10,10,10,10], filename, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'landscape'} }).from(el).save(); }
+
+    // ======= DATA BERSAMA =======
+    let absensiData = [], pesertaData = [];
+
+    async function preloadAllData() {
+        try {
+            const [a, p] = await Promise.all([API.listAbsensi(), API.listPeserta()]);
+            if (a.status === 'success') { absensiData = a.data; setCache('absensi', a); }
+            if (p.status === 'success') { pesertaData = p.data; setCache('peserta', p); }
+        } catch (e) { console.warn('Preload gagal:', e); }
+        const page = localStorage.getItem(MENU_KEY) || 'dashboard';
+        updateMenuUI(page);
+        navigate(page);
+    }
+
+    // ===== DASHBOARD =====
+    function renderDashboard() {
+        const main = document.getElementById('mainContent');
+        const hariIni = new Date().toISOString().split('T')[0];
+        const totalAbsensi = absensiData.length;
+        const absensiHariIni = absensiData.filter(a => a.Tanggal === hariIni).length;
+        const totalPeserta = pesertaData.length;
+        main.innerHTML = `
+            <div class="page-header"><h5>📊 Dashboard</h5><span class="text-muted">${new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</span></div>
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-4"><div class="stat-card"><div class="stat-label">Total Peserta</div><div class="stat-value">${totalPeserta}</div></div></div>
+                <div class="col-6 col-md-4"><div class="stat-card"><div class="stat-label">Total Absensi</div><div class="stat-value">${totalAbsensi}</div></div></div>
+                <div class="col-6 col-md-4"><div class="stat-card"><div class="stat-label">Absensi Hari Ini</div><div class="stat-value">${absensiHariIni}</div></div></div>
+            </div>
+            <div class="card-table"><div class="p-3 border-bottom"><h6>Absensi Terbaru</h6></div>
+                <div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th></tr></thead>
+                <tbody>${absensiData.slice(0,6).map(r=>`<tr><td>${r.Tanggal||'-'}</td><td>${r.Jam||'-'}</td><td><code>${(r.Kode||'').slice(-4)}</code></td><td>${r.Nama||'-'}</td><td class="small">${r.Sesi_Nama||'-'}</td></tr>`).join('')||'<tr><td colspan="5" class="text-center py-2">Belum ada data</td></tr>'}</tbody></table></div>
+            </div>`;
+    }
+
+    // ===== DATA ABSENSI =====
+    function renderAbsensi() {
+        document.getElementById('mainContent').innerHTML = `
+            <div class="page-header"><h5>📋 Data Absensi</h5><button class="btn btn-sm btn-danger rounded-pill" onclick="exportToPDF('absensiTable','absensi.pdf')"><i class="fas fa-file-pdf"></i> PDF</button></div>
+            <div class="filter-bar">
+                <input type="date" class="form-control form-control-sm rounded-pill" id="fTgl" style="width:140px;" onchange="applyFilterAbsensi()">
+                <select class="form-select form-select-sm rounded-pill" id="fSesi" style="width:150px;" onchange="applyFilterAbsensi()"><option value="">Semua Sesi</option><option>Apel Pagi</option><option>Makan Pagi</option><option>Ibadah Sholat Dhuhur</option><option>Apel Makan Siang</option><option>Makan Siang</option><option>Ibadah Sholat Ashar</option><option>Ibadah Sholat Maghrib</option><option>Apel Makan Malam</option><option>Makan Malam</option><option>Apel Malam</option></select>
+            </div>
+            <div class="card-table" id="absensiTable"></div>`;
+        applyFilterAbsensi();
+    }
+
+    function applyFilterAbsensi() {
+        const t = document.getElementById('fTgl')?.value || '', s = document.getElementById('fSesi')?.value || '';
+        const filtered = (t||s) ? absensiData.filter(a => (!t||a.Tanggal===t) && (!s||a.Sesi_Nama===s)) : absensiData;
+        document.getElementById('absensiTable').innerHTML = `
+            <div class="p-2 border-bottom small">Total: ${filtered.length} entri</div>
+            <div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Petugas</th></tr></thead>
+            <tbody>${filtered.length?filtered.map(a=>`<tr><td>${a.Tanggal||'-'}</td><td>${a.Jam||'-'}</td><td><code>${(a.Kode||'').slice(-4)}</code></td><td>${a.Nama||'-'}</td><td class="small">${a.Sesi_Nama||'-'}</td><td class="small">${a.Petugas||'-'}</td></tr>`).join(''):'<tr><td colspan="6" class="text-center py-2">Tidak ada</td></tr>'}</tbody></table></div>`;
+    }
+
+    // ===== ABSENSI QR =====
+    function renderAbsensiQR() {
+        document.getElementById('mainContent').innerHTML = `<iframe src="absensi.html" class="absensi-iframe" allow="camera"></iframe>`;
+    }
+
+    // ===== BOTTOM SHEET =====
+    function toggleBottomSheet() { document.getElementById('bottomSheet').classList.toggle('show'); }
+    document.addEventListener('click', function(e) {
+        const sheet = document.getElementById('bottomSheet');
+        if (sheet.classList.contains('show') && !sheet.contains(e.target) && !e.target.closest('.bottom-nav-item')) sheet.classList.remove('show');
+    });
+
+    // ===== INIT =====
+    preloadAllData();
+</script>
+</body>
+</html>

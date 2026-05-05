@@ -163,9 +163,14 @@
 <script src="api.js"></script>
 <script src="auth.js"></script>
 <script>
-    // Jika sudah login, langsung alihkan ke dashboard admin
+    // Jika sudah login, langsung alihkan ke dashboard yang sesuai
     if (Auth.isLoggedIn()) {
-        window.location.href = 'admin.html';
+        const user = Auth.getCurrentUser();
+        if (user && user.role === 'admin') {
+            window.location.href = 'admin.html';
+        } else {
+            window.location.href = 'petugas.html';
+        }
     }
 
     const loginForm = document.getElementById('loginForm');
@@ -175,7 +180,7 @@
     const pinInput = document.getElementById('pin');
     const togglePin = document.getElementById('togglePin');
 
-    // Atur fokus setelah halaman selesai dimuat (hindari autofocus conflict)
+    // Atur fokus setelah halaman selesai dimuat
     window.addEventListener('load', function() {
         usernameInput.focus();
     });
@@ -189,7 +194,6 @@
         pinInput.focus();
     });
 
-    // Fungsi menampilkan pesan
     function showAlert(message, type = 'danger') {
         alertContainer.innerHTML = `
             <div class="alert alert-${type} alert-dismissible fade show" role="alert">
@@ -198,7 +202,6 @@
             </div>`;
     }
 
-    // Handle submit form
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         alertContainer.innerHTML = '';
@@ -206,7 +209,6 @@
         const username = usernameInput.value.trim();
         const pin = pinInput.value.trim();
 
-        // Validasi
         if (!username) {
             showAlert('Username wajib diisi.', 'warning');
             usernameInput.focus();
@@ -223,16 +225,20 @@
             return;
         }
 
-        // Proses login
         btnLogin.disabled = true;
         btnLogin.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memeriksa...';
 
         try {
             const result = await Auth.login(username, pin);
             if (result.success) {
-                showAlert('✅ Login berhasil! Mengalihkan ke dashboard...', 'success');
+                showAlert('✅ Login berhasil! Mengalihkan...', 'success');
                 setTimeout(() => {
-                    window.location.href = 'admin.html';
+                    const user = Auth.getCurrentUser();
+                    if (user && user.role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'petugas.html';
+                    }
                 }, 1000);
             } else {
                 showAlert('❌ ' + (result.message || 'Username atau PIN salah.'), 'danger');
