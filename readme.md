@@ -2,10 +2,11 @@
 
 Sistem informasi terpadu untuk **Sekolah Rakyat Menengah Atas 19 Bantul**, sebuah sekolah berasrama gratis di Sonosewu, Ngestiharjo, Kasihan, Bantul, DIY yang beroperasi mulai **Juli 2025**. Proyek ini mencakup:
 
-- 🌐 **Website publik** yang menampilkan profil sekolah, jadwal kegiatan, dan statistik peserta.
-- 📱 **Sistem absensi QR** yang berjalan di perangkat mobile petugas, dengan deteksi sesi otomatis, dukungan manual untuk admin, dan anti‑duplikasi.
-- 🛠️ **Dashboard admin** berbasis web untuk mengelola data peserta, petugas, absensi, jadwal kegiatan, serta impor/ekspor CSV/PDF.
-- 👤 **Dashboard petugas** dengan akses terbatas untuk melihat data absensi dan melakukan scan.
+- 🌐 **Website publik** (`index.html`) yang menampilkan profil sekolah, jadwal kegiatan, dan statistik peserta (real‑time dari Google Sheets).
+- 📱 **Sistem absensi QR** (`absensi.html`) yang berjalan di perangkat mobile petugas, dengan deteksi sesi otomatis, dukungan manual untuk admin, suara on/off, dan anti‑duplikasi.
+- 🛠️ **Dashboard admin** (`admin.html`) berbasis web untuk mengelola data peserta, petugas, absensi, jadwal kegiatan, serta impor/ekspor CSV/PDF.
+- 👤 **Dashboard petugas** (`petugas.html`) dengan akses terbatas untuk melihat data absensi dan melakukan scan.
+- 🧑‍💼 **Halaman profil** (`profile.html`) untuk admin & petugas mengganti foto profil, nama, dan PIN.
 
 Semua data disimpan di **Google Sheets** melalui **Google Apps Script** sebagai backend API.
 
@@ -26,26 +27,36 @@ Semua data disimpan di **Google Sheets** melalui **Google Apps Script** sebagai 
 - **Mode manual khusus admin**: bisa memilih sesi di luar jadwal.
 - **Konfirmasi absensi**: mencatat kode peserta, nama, sesi, dan nama petugas ke spreadsheet, dilengkapi pengecekan duplikasi.
 - Log absensi lokal (`localStorage`), indikator koneksi, dan notifikasi toast.
+- **Fitur suara on/off**: ikon speaker di header untuk mengaktifkan/menonaktifkan bunyi beep saat QR berhasil dibaca (status disimpan di `localStorage`).
 
 ### Dashboard Admin (`admin.html`)
-- **Single Page Application** dengan preload data dari `sessionStorage` dan background refresh.
+- **Single Page Application** dengan preload data dari `localStorage` (cache 30 menit) dan background refresh.
 - **Dashboard**: statistik jumlah peserta, total absensi, absensi hari ini, dan tabel absensi terbaru.
 - **Data Absensi**: tabel dengan filter tanggal/sesi, ekspor PDF.
-- **Data Peserta**: CRUD lengkap (tambah, edit, hapus, toggle status Aktif/Nonaktif/Lulus), multi‑delete dengan checkbox, pencarian, filter status & rombel, impor CSV, ekspor CSV/PDF.
+- **Data Peserta**: CRUD lengkap (tambah, edit, hapus, toggle status Aktif/Nonaktif/Lulus), multi‑delete dengan checkbox, pencarian, filter status & rombel & angkatan, impor CSV, ekspor CSV/PDF.
 - **Jadwal Kegiatan**: CRUD, edit inline, simpan ke server, reset ke default.
 - **Data Petugas**: list petugas, tambah, edit, hapus, toggle status aktif/nonaktif (hanya admin).
 - **Scan QR**: iframe yang memuat `absensi.html` di dalam dashboard.
-- Sidebar collapsible (desktop) & bottom navigation bar (mobile) dengan sheet tambahan untuk opsi lain (Logout, Website Utama, dll.).
+- Sidebar collapsible (desktop) & bottom navigation bar (mobile) dengan sheet tambahan untuk opsi lain (Logout, Website Utama, Profil, dll.).
+- **Avatar profil** di header sidebar (foto atau inisial).
 
 ### Dashboard Petugas (`petugas.html`)
-- Dashboard dengan menu terbatas: Dashboard (statistik ringkas), Data Absensi (lihat & filter, ekspor PDF), Scan QR (iframe), dan Logout.
+- Dashboard dengan menu terbatas: Dashboard (statistik ringkas), Data Absensi (lihat & filter, ekspor PDF), Scan QR (iframe), Profil, dan Logout.
 - Tidak memiliki akses ke manajemen peserta, petugas, atau jadwal.
+- **Avatar profil** di header sidebar (foto atau inisial).
+
+### Profil Pengguna (`profile.html`)
+- **Untuk admin & petugas**: melihat dan mengubah nama, PIN, serta mengunggah foto profil (maks 500KB, dikirim sebagai base64 via POST JSON).
+- **Toggle show/hide PIN** untuk keamanan.
+- **Placeholder inisial** jika belum ada foto.
+- Tombol kembali menyesuaikan role (admin → `admin.html`, petugas → `petugas.html`).
 
 ### Otentikasi & Role
-- **Login** menggunakan username & PIN (terenkripsi di Google Sheets).
+- **Login** menggunakan username & PIN (tersimpan di Google Sheets).
 - Pengecekan status aktif: akun nonaktif tidak dapat login.
 - Setelah login, redirect sesuai role: admin → `admin.html`, petugas → `petugas.html`.
 - Session disimpan di `localStorage` melalui modul `auth.js`.
+- **Reset PIN**: pengguna bisa mereset PIN sendiri melalui modal “Lupa PIN?” di halaman login.
 
 ---
 
@@ -56,6 +67,7 @@ SRMA19-Bantul/
 ├── admin.html # Dashboard admin (full akses)
 ├── petugas.html # Dashboard petugas (terbatas)
 ├── absensi.html # Halaman scan QR absensi
+├── profile.html # Halaman profil pengguna
 ├── api.js # Modul komunikasi dengan Google Apps Script
 ├── auth.js # Modul otentikasi & session management
 ├── appscript.gs # Kode Google Apps Script (backend API)
@@ -106,26 +118,29 @@ SRMA19-Bantul/
 
 ## 📡 API Reference
 
-Semua permintaan dikirim ke `BASE_URL` (Apps Script) dengan method GET/POST. Parameter dikirim sebagai query string atau body JSON.
+Semua permintaan dikirim ke `BASE_URL` (Apps Script) dengan method GET/POST. Parameter dikirim sebagai query string atau body JSON (untuk `update_profile` digunakan POST JSON karena data foto besar).
 
 | Action            | Parameter                                         | Deskripsi                           |
 |-------------------|---------------------------------------------------|-------------------------------------|
 | `ping`            | -                                                 | Tes koneksi                        |
 | `auth`            | `username`, `pin`                                 | Login petugas/admin                |
+| `reset_pin`       | `username`                                        | Reset PIN ke 123456                |
 | `search`          | `code`                                            | Cari peserta + sesi otomatis       |
 | `record`          | `code, nama, sesi, sesi_nama, petugas`            | Catat kehadiran                    |
 | `list_peserta`    | -                                                 | Ambil semua peserta                |
 | `list_absensi`    | `tanggal`, `sesi` (optional)                      | Ambil data absensi                 |
 | `get_jadwal`      | -                                                 | Ambil jadwal kegiatan              |
 | `save_jadwal`     | `data` (JSON array)                               | Simpan jadwal ke sheet             |
-| `add_peserta`     | `kode, nama, jk, asal, rombel, keterangan`       | Tambah peserta baru                |
-| `update_peserta`  | `kode, nama?, jk?, asal?, rombel?, keterangan?`  | Ubah data peserta                  |
+| `add_peserta`     | `kode, nama, jk, asal, rombel, keterangan, angkatan` | Tambah peserta baru             |
+| `update_peserta`  | `kode, nama?, jk?, asal?, rombel?, keterangan?, angkatan?` | Ubah data peserta           |
 | `delete_peserta`  | `kode`                                            | Hapus peserta                      |
 | `import_peserta`  | `data` (JSON array 2D)                            | Impor banyak peserta               |
 | `list_petugas`    | -                                                 | Ambil semua petugas                |
-| `add_petugas`     | `username, pin, nama, role, status`               | Tambah petugas                     |
-| `update_petugas`  | `username, pin?, nama?, role?, status?`           | Ubah data petugas                  |
+| `add_petugas`     | `username, pin, nama, role, status, foto`         | Tambah petugas                     |
+| `update_petugas`  | `username, pin?, nama?, role?, status?, foto?`    | Ubah data petugas                  |
 | `delete_petugas`  | `username`                                        | Hapus petugas                      |
+| `get_profile`     | `username`                                        | Ambil profil (termasuk foto)       |
+| `update_profile`  | `username, nama?, pin?, foto?`                   | Ubah profil pengguna (POST JSON)   |
 | `setup`           | -                                                 | Inisialisasi sheet & data dummy    |
 
 ---
@@ -133,11 +148,13 @@ Semua permintaan dikirim ke `BASE_URL` (Apps Script) dengan method GET/POST. Par
 ## 🧠 Catatan Teknis
 
 - **CORS**: Apps Script sudah mengizinkan origin `*` melalui header `Access-Control-Allow-Origin`.
-- **Konversi Waktu**: Google Sheets menyimpan jam sebagai DateTime. API secara otomatis mengonversi ke format `HH:mm`.
-- **Caching**: Data di halaman publik di‑cache di `sessionStorage` selama 5 menit. Dashboard admin menyimpan data di `sessionStorage` untuk rendering instan, lalu refresh di background.
+- **Konversi Waktu**: Google Sheets menyimpan jam sebagai DateTime. API secara otomatis mengonversi ke format `HH:mm` agar tampilan jadwal tetap bersih.
+- **Caching**: Data di halaman publik di‑cache di `sessionStorage` selama 5 menit. Dashboard admin & petugas menyimpan data di `localStorage` selama 30 menit untuk rendering instan, lalu refresh di background.
 - **Anti‑duplikasi**: Absensi dicegah untuk kombinasi kode peserta, sesi, dan tanggal yang sama.
 - **Keamanan PIN**: Disarankan untuk tidak menyimpan PIN dalam bentuk plain‑text di spreadsheet. Untuk produksi, tambahkan hashing sederhana atau gunakan autentikasi eksternal.
 - **Mode Mobile**: Navigasi bawah ala Telegram muncul di layar ≤768px. Sidebar desktop otomatis tersembunyi.
+- **Pengiriman Foto Profil**: menggunakan POST JSON (`requestPostJSON`) dengan `Content-Type: text/plain` untuk menghindari preflight CORS. Data base64 dipotong hingga 45.000 karakter agar muat di sel Google Sheets.
+- **Suara Absensi**: bunyi beep dihasilkan melalui Web Audio API. Status on/off disimpan di `localStorage`.
 
 ---
 
