@@ -339,22 +339,161 @@
         } catch(e) { showToast('❌ Gagal backup', 'error'); }
     }
 
-    // ===== RENDER ABSENSI =====
+    // ===== RENDER ABSENSI (dengan pencarian, multi-delete, kop surat) =====
+    let absensiFiltered = [];
+    let selectedAbsensi = new Set(); // menyimpan Timestamp unik
+
     function renderAbsensi() {
         document.getElementById('mainContent').innerHTML = `
-            <div class="page-header"><h5>📋 Data Absensi</h5><button class="btn btn-sm btn-danger rounded-pill" onclick="exportToPDF('absensiTable','absensi.pdf')"><i class="fas fa-file-pdf"></i> PDF</button></div>
-            <div class="filter-bar"><input type="date" class="form-control form-control-sm rounded-pill" id="fTgl" style="width:140px;" onchange="applyFilterAbsensi()"><select class="form-select form-select-sm rounded-pill" id="fSesi" style="width:150px;" onchange="applyFilterAbsensi()"><option value="">Semua Sesi</option><option>Apel Pagi</option><option>Makan Pagi</option><option>Ibadah Sholat Dhuhur</option><option>Apel Makan Siang</option><option>Makan Siang</option><option>Ibadah Sholat Ashar</option><option>Ibadah Sholat Maghrib</option><option>Apel Makan Malam</option><option>Makan Malam</option><option>Apel Malam</option></select></div>
+            <div class="page-header">
+                <h5>📋 Data Absensi</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-danger rounded-pill" onclick="exportAbsensiPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="btn btn-sm btn-success rounded-pill" onclick="exportAbsensiCSV()"><i class="fas fa-download"></i> CSV</button>
+                    <button class="btn btn-sm btn-outline-danger rounded-pill" id="btnDeleteAbsensi" onclick="deleteSelectedAbsensi()" disabled>
+                        <i class="fas fa-trash-alt me-1"></i>Hapus Terpilih (<span id="absensiSelectedCount">0</span>)
+                    </button>
+                </div>
+            </div>
+            <div class="filter-bar">
+                <input type="text" class="form-control form-control-sm rounded-pill" id="searchAbsensi" placeholder="🔍 Cari..." style="width:150px;" oninput="applyFilterAbsensi()">
+                <input type="date" class="form-control form-control-sm rounded-pill" id="fTgl" style="width:140px;" onchange="applyFilterAbsensi()">
+                <select class="form-select form-select-sm rounded-pill" id="fSesi" style="width:150px;" onchange="applyFilterAbsensi()">
+                    <option value="">Semua Sesi</option>
+                    <option>Apel Pagi</option><option>Makan Pagi</option><option>Ibadah Sholat Dhuhur</option>
+                    <option>Apel Makan Siang</option><option>Makan Siang</option><option>Ibadah Sholat Ashar</option>
+                    <option>Ibadah Sholat Maghrib</option><option>Apel Makan Malam</option><option>Makan Malam</option>
+                    <option>Apel Malam</option>
+                </select>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="resetFilterAbsensi()">Reset</button>
+            </div>
             <div class="card-table" id="absensiTable"></div>`;
+        selectedAbsensi.clear();
         applyFilterAbsensi();
+        updateAbsensiDeleteButton();
     }
 
     function applyFilterAbsensi() {
-        const t = document.getElementById('fTgl')?.value || '', s = document.getElementById('fSesi')?.value || '';
-        const filtered = (t||s) ? absensiData.filter(a => (!t||a.Tanggal===t) && (!s||a.Sesi_Nama===s)) : absensiData;
+        const q = document.getElementById('searchAbsensi')?.value.toLowerCase().trim() || '';
+        const t = document.getElementById('fTgl')?.value || '';
+        const s = document.getElementById('fSesi')?.value || '';
+        absensiFiltered = absensiData.filter(a => {
+            return (!q || (a.Nama||'').toLowerCase().includes(q) || (a.Kode||'').toLowerCase().includes(q) || (a.Petugas||'').toLowerCase().includes(q)) &&
+                   (!t || a.Tanggal === t) &&
+                   (!s || a.Sesi_Nama === s);
+        });
+        // Hapus selection yang tidak ada di filtered
+        for (const ts of selectedAbsensi) {
+            if (!absensiFiltered.some(a => a.Timestamp === ts)) selectedAbsensi.delete(ts);
+        }
+        updateAbsensiDeleteButton();
+        renderAbsensiTable();
+    }
+
+    function updateAbsensiDeleteButton() {
+        const btn = document.getElementById('btnDeleteAbsensi');
+        const cnt = document.getElementById('absensiSelectedCount');
+        if (btn) {
+            btn.disabled = selectedAbsensi.size === 0;
+            if (cnt) cnt.textContent = selectedAbsensi.size;
+        }
+    }
+
+    function toggleSelectAbsensiAll(checked) {
+        if (checked) absensiFiltered.forEach(a => selectedAbsensi.add(a.Timestamp));
+        else selectedAbsensi.clear();
+        updateAbsensiDeleteButton();
+        renderAbsensiTable();
+    }
+
+    function toggleSelectAbsensi(ts, checked) {
+        if (checked) selectedAbsensi.add(ts); else selectedAbsensi.delete(ts);
+        updateAbsensiDeleteButton();
+    }
+
+    function renderAbsensiTable() {
+        const allChecked = absensiFiltered.length > 0 && absensiFiltered.every(a => selectedAbsensi.has(a.Timestamp));
         document.getElementById('absensiTable').innerHTML = `
-            <div class="p-2 border-bottom small">Total: ${filtered.length} entri</div>
-            <div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Petugas</th></tr></thead>
-            <tbody>${filtered.length?filtered.map(a=>`<tr><td>${a.Tanggal||'-'}</td><td>${a.Jam||'-'}</td><td><code>${(a.Kode||'').slice(-4)}</code></td><td>${a.Nama||'-'}</td><td class="small">${a.Sesi_Nama||'-'}</td><td class="small">${a.Petugas||'-'}</td></tr>`).join(''):'<tr><td colspan="6" class="text-center py-2">Tidak ada</td></tr>'}</tbody></table></div>`;
+            <div class="p-2 border-bottom small">Total: ${absensiFiltered.length} entri</div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead><tr>
+                        <th style="width:30px;"><input type="checkbox" ${allChecked ? 'checked' : ''} onchange="toggleSelectAbsensiAll(this.checked)"></th>
+                        <th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Petugas</th>
+                    </tr></thead>
+                    <tbody>${absensiFiltered.length ? absensiFiltered.map(a => `
+                        <tr>
+                            <td><input type="checkbox" ${selectedAbsensi.has(a.Timestamp) ? 'checked' : ''} onchange="toggleSelectAbsensi('${a.Timestamp}', this.checked)"></td>
+                            <td>${a.Tanggal||'-'}</td>
+                            <td>${a.Jam||'-'}</td>
+                            <td><code>${(a.Kode||'').slice(-4)}</code></td>
+                            <td>${a.Nama||'-'}</td>
+                            <td class="small">${a.Sesi_Nama||'-'}</td>
+                            <td class="small">${a.Petugas||'-'}</td>
+                        </tr>`).join('') : '<tr><td colspan="7" class="text-center py-2">Tidak ada</td></tr>'}</tbody>
+                </table>
+            </div>`;
+    }
+
+    async function deleteSelectedAbsensi() {
+        if (selectedAbsensi.size === 0) return;
+        if (!confirm(`Hapus ${selectedAbsensi.size} data absensi terpilih?`)) return;
+        const toDelete = Array.from(selectedAbsensi);
+        absensiData = absensiData.filter(a => !selectedAbsensi.has(a.Timestamp));
+        setCachedData({ peserta: pesertaData, absensi: absensiData, jadwal: jadwalData, petugas: petugasData });
+        selectedAbsensi.clear();
+        updateAbsensiDeleteButton();
+        applyFilterAbsensi();
+        showToast(`${toDelete.length} entri dihapus dari cache.`, 'info');
+    }
+
+    function resetFilterAbsensi() {
+        document.getElementById('searchAbsensi')?.setAttribute('value','');
+        document.getElementById('fTgl')?.setAttribute('value','');
+        document.getElementById('fSesi')?.setAttribute('value','');
+        applyFilterAbsensi();
+    }
+
+    function exportAbsensiPDF() {
+        const logoUrl = 'https://i.imgur.com/xxxxx.png'; // Ganti dengan URL logo Anda
+        const printContents = `
+        <div style="text-align:center;margin-bottom:10px;">
+            <img src="${logoUrl}" style="height:60px;"/><br>
+            <strong>SEKOLAH RAKYAT MENENGAH ATAS 19 BANTUL</strong><br>
+            <small>Sentra Terpadu Prof. Dr. Soeharso, Sonosewu, Ngestiharjo, Kasihan, Bantul</small>
+            <hr>
+        </div>
+        ${document.getElementById('absensiTable').outerHTML}`;
+
+        const div = document.createElement('div');
+        div.innerHTML = printContents;
+        div.style.position = 'absolute';
+        div.style.left = '-9999px';
+        document.body.appendChild(div);
+        const opt = {
+            margin: [10,10,10,10],
+            filename: `absensi_${new Date().toISOString().slice(0,10)}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+        html2pdf().set(opt).from(div).save().then(() => document.body.removeChild(div));
+    }
+
+    function exportAbsensiCSV() {
+        const rows = [];
+        rows.push(['"SEKOLAH RAKYAT MENENGAH ATAS 19 BANTUL"']);
+        rows.push(['"Jalan Sonosewu, Ngestiharjo, Kasihan, Bantul"']);
+        rows.push(['""']);
+        rows.push(['"Tanggal","Jam","Kode","Nama","Sesi","Petugas"']);
+        absensiFiltered.forEach(a => {
+            rows.push([`"${a.Tanggal||''}"`, `"${a.Jam||''}"`, `"${a.Kode||''}"`, `"${a.Nama||''}"`, `"${a.Sesi_Nama||''}"`, `"${a.Petugas||''}"`]);
+        });
+        const csvContent = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `absensi_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click(); URL.revokeObjectURL(url);
     }
 
     // ===== RENDER ABSENSI QR =====
