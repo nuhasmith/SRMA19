@@ -79,6 +79,12 @@
             z-index: 9999; min-width: 220px; max-width: 90%; animation: toastIn 0.3s ease;
         }
         @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        .sound-toggle {
+            background: none; border: none; color: #fff; cursor: pointer; padding: 4px 8px;
+            border-radius: 50%; font-size: 1.2rem; transition: opacity 0.2s; opacity: 0.8;
+        }
+        .sound-toggle:hover { opacity: 1; }
+        .sound-toggle.muted { opacity: 0.5; }
         .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 24px; transition: 0.3s; }
@@ -96,7 +102,9 @@
 <header class="tg-header">
     <a href="admin.html" aria-label="Kembali"><i class="fas fa-arrow-left"></i></a>
     <span class="flex-grow-1">Absensi QR</span>
-    <span class="small me-2 d-none d-sm-inline" id="userInfoDisplay"></span>
+    <button class="sound-toggle" id="soundToggleBtn" title="Suara Aktif" onclick="toggleSound()">
+        <i class="fas fa-volume-up" id="soundIcon"></i>
+    </button>
     <button class="btn btn-sm btn-outline-light rounded-pill px-2 py-1" onclick="handleLogout()" title="Logout">
         <i class="fas fa-sign-out-alt"></i>
     </button>
@@ -190,8 +198,34 @@
     let manualSesi = null;
     let sesiList = [];
 
+    // ========== SUARA ==========
+    const SOUND_KEY = 'srma19_sound_enabled';
+    let soundEnabled = localStorage.getItem(SOUND_KEY) !== 'false';
+
+    function updateSoundUI() {
+        const icon = document.getElementById('soundIcon');
+        const btn = document.getElementById('soundToggleBtn');
+        if (soundEnabled) {
+            icon.className = 'fas fa-volume-up';
+            btn.title = 'Suara Aktif';
+            btn.classList.remove('muted');
+        } else {
+            icon.className = 'fas fa-volume-mute';
+            btn.title = 'Suara Nonaktif';
+            btn.classList.add('muted');
+        }
+    }
+
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        localStorage.setItem(SOUND_KEY, soundEnabled);
+        updateSoundUI();
+    }
+
+    updateSoundUI();
+
     const user = Auth.getCurrentUser();
-    document.getElementById('userInfoDisplay').innerText = `Halo, ${user.nama}`;
+    document.getElementById('userInfoDisplay')?.innerText ?? '';
     const isAdmin = user.role === 'admin';
 
     async function fetchJadwal() {
@@ -225,10 +259,7 @@
         setInterval(updateSesiDisplay, 30000);
         testConnection();
         restoreManualState();
-        // Auto-start scanner jika tersedia
-        setTimeout(() => {
-            if (!isScanning) startScan();
-        }, 500);
+        setTimeout(() => { if (!isScanning) startScan(); }, 500);
     });
 
     function initUI() {
@@ -289,13 +320,7 @@
         document.getElementById('reader').classList.add('scanning');
         try {
             html5QrCode = new Html5Qrcode('reader');
-            const config = {
-                fps: 30,
-                qrbox: { width: 280, height: 280 },
-                aspectRatio: 1.0,
-                disableFlip: false,
-                rememberLastUsedCamera: true
-            };
+            const config = { fps: 30, qrbox: { width: 280, height: 280 }, aspectRatio: 1.0, disableFlip: false, rememberLastUsedCamera: true };
             await html5QrCode.start({ facingMode: 'environment' }, config, onScanSuccess, () => {});
             isScanning = true;
             document.getElementById('btnStartScan').classList.add('d-none');
@@ -321,7 +346,7 @@
     function onScanSuccess(decodedText) {
         if (scanCooldown) return;
         scanCooldown = true;
-        playBeep();
+        if (soundEnabled) playBeep();
         const code = decodedText.trim();
         const sesi = getActiveSession();
         API.searchPeserta(code).then(data => {

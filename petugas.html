@@ -45,7 +45,12 @@
         .sidebar.collapsed .sidebar-footer { padding: 8px; }
         .user-info { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
         .sidebar.collapsed .user-info { justify-content: center; }
-        .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--tg-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+        .user-avatar {
+            width: 34px; height: 34px; border-radius: 50%; background: var(--tg-blue); color: #fff;
+            display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem;
+            flex-shrink: 0; overflow: hidden;
+        }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .user-details { transition: var(--transition); white-space: nowrap; font-size: 0.85rem; }
         .sidebar.collapsed .user-details { opacity: 0; width: 0; display: none; }
         .btn-logout { width: 100%; border-radius: 8px; font-size: 0.8rem; font-weight: 600; transition: var(--transition); }
@@ -104,18 +109,29 @@
 
 <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <div class="d-flex align-items-center gap-2"><span class="logo-icon"><i class="fas fa-user-check"></i></span><span class="logo-text">Petugas SRMA 19</span></div>
+        <div class="d-flex align-items-center gap-2">
+            <!-- Avatar profil akan diisi secara dinamis -->
+            <div class="user-avatar" id="sidebarAvatar" style="background:var(--tg-blue); color:#fff;">👤</div>
+            <span class="logo-text" id="sidebarName">Petugas SRMA 19</span>
+        </div>
         <button class="collapse-btn" onclick="toggleSidebar()" id="collapseBtn"><i class="fas fa-chevron-left" id="collapseIcon"></i></button>
     </div>
     <div class="sidebar-nav">
         <a class="nav-item" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
         <a class="nav-item" data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-list"></i> <span>Data Absensi</span></a>
         <a class="nav-item" data-page="absensi_qr" onclick="navigate('absensi_qr')"><i class="fas fa-qrcode"></i> <span>Scan QR</span></a>
+        <a class="nav-item" href="profile.html"><i class="fas fa-user-circle"></i> <span>Profil</span></a>
         <hr class="my-2">
         <a class="nav-item" href="index.html" target="_blank"><i class="fas fa-globe"></i> <span>Website</span></a>
     </div>
     <div class="sidebar-footer">
-        <div class="user-info"><div class="user-avatar" id="userAvatar">P</div><div class="user-details"><strong class="d-block small" id="userName">Petugas</strong><small class="text-muted" id="userRole">petugas</small></div></div>
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">P</div>
+            <div class="user-details">
+                <strong class="d-block small" id="userName">Petugas</strong>
+                <small class="text-muted" id="userRole">petugas</small>
+            </div>
+        </div>
         <button class="btn btn-outline-secondary btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt me-2"></i> <span>Logout</span></button>
     </div>
 </div>
@@ -128,6 +144,7 @@
 </div>
 
 <div class="bottom-sheet" id="bottomSheet">
+    <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
     <a href="index.html" target="_blank"><i class="fas fa-globe"></i> Website Utama</a>
     <button onclick="handleLogout(); toggleBottomSheet();" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
 </div>
@@ -145,12 +162,25 @@
 
     let sidebarCollapsed = false;
     const MENU_KEY = 'srma19_petugas_menu';
+    const CACHE_KEY = 'srma19_petugas_cache';
+    const CACHE_DURATION = 30 * 60 * 1000;
+
     function toggleSidebar() { sidebarCollapsed = !sidebarCollapsed; sidebarCollapsed ? collapseSidebar() : expandSidebar(); }
     function collapseSidebar() { document.getElementById('sidebar').classList.add('collapsed'); document.getElementById('mainContent').classList.add('expanded'); document.getElementById('collapseIcon').className = 'fas fa-chevron-right'; }
     function expandSidebar() { document.getElementById('sidebar').classList.remove('collapsed'); document.getElementById('mainContent').classList.remove('expanded'); document.getElementById('collapseIcon').className = 'fas fa-chevron-left'; }
 
-    function getCache(k) { try { return JSON.parse(sessionStorage.getItem(k)); } catch(e) { return null; } }
-    function setCache(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+    function getCachedData() {
+        try {
+            const raw = localStorage.getItem(CACHE_KEY);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            if (Date.now() - data.timestamp > CACHE_DURATION) { localStorage.removeItem(CACHE_KEY); return null; }
+            return data.payload;
+        } catch(e) { return null; }
+    }
+    function setCachedData(payload) {
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), payload })); } catch(e) {}
+    }
 
     function updateMenuUI(page) {
         document.querySelectorAll('.sidebar-nav .nav-item[data-page], .bottom-nav .bottom-nav-item[data-page]').forEach(el => el.classList.remove('active'));
@@ -169,7 +199,7 @@
         }
     }
 
-    function handleLogout() { if (confirm('Logout?')) { Auth.logout(); sessionStorage.clear(); localStorage.removeItem(MENU_KEY); window.location.href = 'login.html'; } }
+    function handleLogout() { if (confirm('Logout?')) { Auth.logout(); localStorage.clear(); sessionStorage.clear(); window.location.href = 'login.html'; } }
 
     function showToast(msg, type = 'info') {
         const c = { success: ['#d1fae5','#10b981','#065f46','fa-check-circle'], error: ['#fee2e2','#ef4444','#991b1b','fa-times-circle'], warning: ['#fef3c7','#f59e0b','#92400e','fa-exclamation-triangle'], info: ['#dbeafe','#3b82f6','#1e40af','fa-info-circle'] }[type] || ['#dbeafe','#3b82f6','#1e40af','fa-info-circle'];
@@ -177,24 +207,73 @@
         el.innerHTML = `<div style="background:${c[0]};border-left:4px solid ${c[1]};color:${c[2]};padding:10px 14px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.2);display:flex;align-items:center;gap:6px;font-size:0.8rem;"><i class="fas ${c[3]}"></i>${msg}</div>`;
         document.body.appendChild(el); setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(),300); }, 3000);
     }
-
     function exportToPDF(elementId, filename) { const el = document.getElementById(elementId); if (!el) return; html2pdf().set({ margin:[10,10,10,10], filename, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'landscape'} }).from(el).save(); }
 
     // ======= DATA BERSAMA =======
     let absensiData = [], pesertaData = [];
+    let userProfile = null;
 
     async function preloadAllData() {
+        // Muat profil user
         try {
-            const [a, p] = await Promise.all([API.listAbsensi(), API.listPeserta()]);
-            if (a.status === 'success') { absensiData = a.data; setCache('absensi', a); }
-            if (p.status === 'success') { pesertaData = p.data; setCache('peserta', p); }
-        } catch (e) { console.warn('Preload gagal:', e); }
-        const page = localStorage.getItem(MENU_KEY) || 'dashboard';
-        updateMenuUI(page);
-        navigate(page);
+            const profileRes = await API.getProfile(currentUser.username);
+            if (profileRes.status === 'success') {
+                userProfile = profileRes.data;
+                updateSidebarAvatar(userProfile);
+            }
+        } catch(e) {}
+        
+        const cached = getCachedData();
+        if (cached) {
+            absensiData = cached.absensi || [];
+            pesertaData = cached.peserta || [];
+            const page = localStorage.getItem(MENU_KEY) || 'dashboard';
+            updateMenuUI(page);
+            navigate(page);
+            refreshAllData();
+        } else {
+            document.getElementById('mainContent').innerHTML = `<div class="loading-overlay"><div class="spinner-border text-primary"></div></div>`;
+            await refreshAllData(true);
+        }
     }
 
-    // ===== DASHBOARD =====
+    async function refreshAllData(initial = false) {
+        try {
+            const [a, p] = await Promise.all([API.listAbsensi(), API.listPeserta()]);
+            if (a.status === 'success') absensiData = a.data;
+            if (p.status === 'success') pesertaData = p.data;
+            setCachedData({ absensi: absensiData, peserta: pesertaData });
+            if (initial) {
+                const page = localStorage.getItem(MENU_KEY) || 'dashboard';
+                updateMenuUI(page);
+                navigate(page);
+            } else {
+                const currentPage = localStorage.getItem(MENU_KEY) || 'dashboard';
+                navigate(currentPage);
+            }
+        } catch(e) {
+            if (initial) document.getElementById('mainContent').innerHTML = `<div class="alert alert-danger m-4">Gagal memuat data.</div>`;
+        }
+    }
+
+    // ===== PERBARUI AVATAR DI HEADER SIDEBAR =====
+    function updateSidebarAvatar(profile) {
+        const avatarEl = document.getElementById('sidebarAvatar');
+        const nameEl = document.getElementById('sidebarName');
+        if (profile && profile.Foto && profile.Foto.startsWith('data:image')) {
+            avatarEl.innerHTML = `<img src="${profile.Foto}" alt="Avatar">`;
+            avatarEl.style.background = 'transparent';
+        } else {
+            const initial = (profile?.Nama || currentUser.nama || 'P').charAt(0).toUpperCase();
+            avatarEl.innerHTML = initial;
+            avatarEl.style.background = 'var(--tg-blue)';
+        }
+        if (nameEl && profile) {
+            nameEl.textContent = profile.Nama || currentUser.nama || 'Petugas SRMA 19';
+        }
+    }
+
+    // ===== RENDER DASHBOARD =====
     function renderDashboard() {
         const main = document.getElementById('mainContent');
         const hariIni = new Date().toISOString().split('T')[0];
@@ -214,7 +293,7 @@
             </div>`;
     }
 
-    // ===== DATA ABSENSI =====
+    // ===== RENDER ABSENSI =====
     function renderAbsensi() {
         document.getElementById('mainContent').innerHTML = `
             <div class="page-header"><h5>📋 Data Absensi</h5><button class="btn btn-sm btn-danger rounded-pill" onclick="exportToPDF('absensiTable','absensi.pdf')"><i class="fas fa-file-pdf"></i> PDF</button></div>
@@ -235,7 +314,7 @@
             <tbody>${filtered.length?filtered.map(a=>`<tr><td>${a.Tanggal||'-'}</td><td>${a.Jam||'-'}</td><td><code>${(a.Kode||'').slice(-4)}</code></td><td>${a.Nama||'-'}</td><td class="small">${a.Sesi_Nama||'-'}</td><td class="small">${a.Petugas||'-'}</td></tr>`).join(''):'<tr><td colspan="6" class="text-center py-2">Tidak ada</td></tr>'}</tbody></table></div>`;
     }
 
-    // ===== ABSENSI QR =====
+    // ===== RENDER ABSENSI QR =====
     function renderAbsensiQR() {
         document.getElementById('mainContent').innerHTML = `<iframe src="absensi.html" class="absensi-iframe" allow="camera"></iframe>`;
     }
