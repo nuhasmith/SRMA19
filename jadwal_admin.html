@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Izin - Admin SRMA 19</title>
+    <title>Jadwal Kegiatan - Admin SRMA 19</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,6 +14,30 @@
             margin: 0;
             padding: 30px;
         }
+        .jadwal-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 14px 18px;
+            border-left: 5px solid #0d6efd;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            transition: transform 0.2s;
+        }
+        .jadwal-card:hover { transform: translateX(4px); }
+        .agama-group { margin-bottom: 28px; }
+        .agama-group h5 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            color: #1e293b;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
         .filter-bar {
             background: #fff;
             border-radius: 12px;
@@ -21,15 +45,9 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             align-items: center;
-        }
-        .table-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
         .modal-overlay {
             position: fixed;
@@ -57,216 +75,149 @@
 <script>
     if (!Auth.requireAuth('login.html')) throw new Error('Silakan login.');
     const currentUser = Auth.getCurrentUser();
-
     if (currentUser.role !== 'admin') {
         window.location.href = 'dashboard_petugas.html';
         throw new Error('Akses ditolak');
     }
 
     const CACHE_KEY = 'srma19_admin_data';
-
     function getCachedData() { try { return JSON.parse(sessionStorage.getItem(CACHE_KEY)); } catch { return null; } }
     function setCachedData(data) { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
 
-    let izinData = [];
-    let selectedIds = new Set();  // menyimpan ID izin yang dipilih
+    let jadwalData = [];
+    let filterAgama = '';
 
-    async function refreshIzin() {
+    async function refreshJadwal() {
         try {
-            const res = await API.listIzin();
+            const res = await API.getJadwal();
             if (res.status === 'success') {
-                izinData = res.data;
+                jadwalData = res.data.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
                 const cached = getCachedData() || {};
-                cached.izin = izinData;
+                cached.jadwal = jadwalData;
                 setCachedData(cached);
-                filterIzin();
+                renderJadwal();
             }
         } catch (e) { console.error(e); }
     }
 
-    function filterIzin() {
-        const q = (document.getElementById('searchIzin')?.value || '').toLowerCase().trim();
-        const tgl = document.getElementById('fTglIzin')?.value || '';
-        const filtered = izinData.filter(izin =>
-            (!q || (izin.Nama_Peserta || '').toLowerCase().includes(q) || (izin.Kode_Peserta || '').toLowerCase().includes(q)) &&
-            (!tgl || izin.Tanggal === tgl)
-        );
-        renderIzinTable(filtered);
-        updateDeleteButton();
-    }
+    function renderJadwal() {
+        const agamaList = [...new Set(jadwalData.map(j => j.agama).filter(Boolean))].sort();
+        const filtered = filterAgama ? jadwalData.filter(j => j.agama === filterAgama) : jadwalData;
 
-    function toggleSelectAll(checked) {
-        const checkboxes = document.querySelectorAll('.izin-checkbox');
-        selectedIds.clear();
-        if (checked) {
-            checkboxes.forEach(cb => selectedIds.add(parseInt(cb.value)));
+        let html = `<h3 class="mb-3">📅 Jadwal Kegiatan</h3>`;
+        html += `<div class="filter-bar">
+            <label><strong>Filter Agama:</strong></label>
+            <select class="form-select form-select-sm" id="filterAgamaSelect" style="width:180px" onchange="changeFilterAgama(this.value)">
+                <option value="">Semua Agama</option>
+                ${agamaList.map(a => `<option value="${a}" ${filterAgama === a ? 'selected' : ''}>${a}</option>`).join('')}
+            </select>
+            <button class="btn btn-sm btn-success rounded-pill" onclick="showJadwalModal()"><i class="fas fa-plus"></i> Tambah</button>
+            <button class="btn btn-sm btn-outline-primary" onclick="refreshJadwal()" title="Refresh dari server"><i class="fas fa-sync-alt"></i></button>
+        </div>`;
+
+        if (!jadwalData.length) {
+            html += `<div class="text-center py-5 text-muted">Belum ada jadwal. Tambahkan yang baru.</div>`;
+        } else if (!filtered.length) {
+            html += `<div class="text-center py-5 text-muted">Tidak ada jadwal untuk agama yang dipilih.</div>`;
+        } else {
+            const grouped = {};
+            filtered.forEach(j => {
+                if (!grouped[j.agama]) grouped[j.agama] = [];
+                grouped[j.agama].push(j);
+            });
+
+            for (const [agama, items] of Object.entries(grouped)) {
+                html += `<div class="agama-group">
+                    <h5><i class="fas fa-users me-2"></i>${agama} <small class="text-muted">(${items.length} sesi)</small></h5>`;
+                items.forEach(j => {
+                    const realIdx = jadwalData.indexOf(j);
+                    html += `<div class="jadwal-card">
+                        <div style="background:${j.bg||'#f0f0f0'};color:${j.color||'#333'};width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
+                            <i class="fas ${j.icon||'fa-circle'}"></i>
+                        </div>
+                        <div class="flex-grow-1"><strong>${j.nama}</strong><br><small>${j.mulai} - ${j.selesai}</small></div>
+                        <button class="btn btn-sm btn-outline-warning" onclick="editJadwal(${realIdx})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteJadwal(${realIdx})"><i class="fas fa-trash-alt"></i></button>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
         }
-        updateDeleteButton();
+        document.getElementById('mainContent').innerHTML = html;
     }
 
-    function toggleSelect(id, checked) {
-        if (checked) selectedIds.add(id);
-        else selectedIds.delete(id);
-        updateDeleteButton();
-    }
+    function changeFilterAgama(agama) { filterAgama = agama; renderJadwal(); }
 
-    function updateDeleteButton() {
-        const btn = document.getElementById('btnDeleteSelected');
-        const cnt = document.getElementById('selectedCount');
-        if (btn) btn.disabled = selectedIds.size === 0;
-        if (cnt) cnt.textContent = selectedIds.size;
-    }
-
-    function renderIzinTable(data) {
-        const container = document.getElementById('izinTableContainer');
-        if (!container) return;
-        const allChecked = data.length > 0 && data.every(iz => selectedIds.has(iz.ID));
-        let rows = '';
-        data.forEach((iz, idx) => {
-            const realIdx = izinData.indexOf(iz);
-            rows += `<tr>
-                <td><input type="checkbox" class="izin-checkbox" value="${iz.ID}" ${selectedIds.has(iz.ID) ? 'checked' : ''} onchange="toggleSelect(${iz.ID}, this.checked)"></td>
-                <td>${iz.Tanggal || '-'}</td>
-                <td><code>${(iz.Kode_Peserta || '').slice(-4)}</code></td>
-                <td>${iz.Nama_Peserta || '-'}</td>
-                <td>${iz.Keterangan || '-'}</td>
-                <td>${iz.Bukti_Surat ? '<a href="#" onclick="lihatBukti(' + realIdx + ')"><i class="fas fa-paperclip"></i> Lihat</a>' : '-'}</td>
-                <td>${iz.Petugas || '-'}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary p-1" onclick="editIzin(${realIdx})"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-outline-danger p-1" onclick="hapusIzin(${realIdx})"><i class="fas fa-trash-alt"></i></button>
-                </td>
-            </tr>`;
-        });
-        if (!rows) rows = '<tr><td colspan="8" class="text-center py-2">Belum ada data izin</td></tr>';
-        container.innerHTML = `
-            <table class="table table-sm table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th style="width:30px;"><input type="checkbox" ${allChecked ? 'checked' : ''} onchange="toggleSelectAll(this.checked)"></th>
-                        <th>Tanggal</th><th>Kode</th><th>Nama</th><th>Keterangan</th><th>Bukti</th><th>Petugas</th><th class="text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>${rows}</tbody>
-            </table>`;
-    }
-
-    async function deleteSelected() {
-        if (selectedIds.size === 0) return;
-        if (!confirm(`Hapus ${selectedIds.size} data izin terpilih?`)) return;
-        let deleted = 0;
-        for (const id of selectedIds) {
-            const res = await API.deleteIzin(id);
-            if (res.status === 'ok') deleted++;
-        }
-        selectedIds.clear();
-        await refreshIzin();
-        showToast(`${deleted} izin dihapus.`, 'success');
-    }
-
-    function renderMain() {
-        document.getElementById('mainContent').innerHTML = `
-            <h3 class="mb-3">📋 Data Izin</h3>
-            <div class="filter-bar">
-                <input type="text" class="form-control form-control-sm" id="searchIzin" placeholder="Cari kode/nama" style="width:160px" oninput="filterIzin()">
-                <input type="date" class="form-control form-control-sm" id="fTglIzin" style="width:140px" onchange="filterIzin()">
-                <button class="btn btn-sm btn-outline-primary" onclick="refreshIzin()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
-            </div>
-            <div class="d-flex gap-2 mb-3">
-                <button class="btn btn-sm btn-success rounded-pill" onclick="showIzinModal()"><i class="fas fa-plus"></i> Tambah Izin</button>
-                <button class="btn btn-sm btn-outline-danger" id="btnDeleteSelected" disabled onclick="deleteSelected()"><i class="fas fa-trash-alt"></i> Hapus <span id="selectedCount">0</span></button>
-            </div>
-            <div class="table-card" id="izinTableContainer"></div>`;
-        filterIzin();
-    }
-
-    function showIzinModal(index = null) {
-        const existing = index !== null ? izinData[index] : null;
+    function showJadwalModal(index = null) {
+        const existing = index !== null ? jadwalData[index] : null;
+        const icons = ['fa-sun','fa-coffee','fa-mosque','fa-church','fa-om','fa-dharmachakra','fa-torii-gate','fa-users','fa-utensil-spoon','fa-moon'];
+        const agamaOptions = ['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu','Lainnya'];
         const modalHtml = `
-        <div class="modal-overlay" id="izinModal">
+        <div class="modal-overlay" id="jadwalModal">
             <div class="modal-box">
-                <h5 class="fw-bold mb-3">${existing ? 'Edit Izin' : 'Tambah Izin'}</h5>
-                <div class="mb-3"><label>Kode Peserta</label><input type="text" class="form-control" id="imKode" value="${existing?.Kode_Peserta || ''}" placeholder="SRMA19-XXX" required></div>
-                <div class="mb-3"><label>Nama Peserta</label><input type="text" class="form-control" id="imNama" value="${existing?.Nama_Peserta || ''}" required></div>
-                <div class="mb-3"><label>Tanggal</label><input type="date" class="form-control" id="imTanggal" value="${existing?.Tanggal || ''}" required></div>
-                <div class="mb-3"><label>Keterangan</label><input type="text" class="form-control" id="imKeterangan" value="${existing?.Keterangan || ''}" placeholder="Sakit, izin, dll." required></div>
-                <div class="mb-3"><label>Bukti Surat (foto/scan, max 49KB)</label><input type="file" accept="image/*" class="form-control" id="imBukti">${existing?.Bukti_Surat ? '<small class="text-muted">Sudah ada bukti sebelumnya. Upload baru untuk mengganti.</small>' : ''}</div>
-                <div class="d-flex gap-2 justify-content-end">
-                    <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
-                    <button class="btn btn-primary" onclick="saveIzin(${index})">Simpan</button>
-                </div>
+                <h5 class="fw-bold mb-3">${existing ? 'Edit Jadwal' : 'Tambah Jadwal'}</h5>
+                <div class="mb-3"><label>Agama</label><select class="form-select" id="jmAgama">${agamaOptions.map(a => `<option ${(existing?.agama||'Islam')===a?'selected':''}>${a}</option>`).join('')}</select></div>
+                <div class="mb-3"><label>Nama Kegiatan</label><input class="form-control" id="jmNama" value="${existing?.nama||''}"></div>
+                <div class="row mb-3"><div class="col"><label>Mulai</label><input type="time" class="form-control" id="jmMulai" value="${existing?.mulai||''}"></div><div class="col"><label>Selesai</label><input type="time" class="form-control" id="jmSelesai" value="${existing?.selesai||''}"></div></div>
+                <div class="mb-3"><label>Icon (FontAwesome)</label><select class="form-select" id="jmIcon">${icons.map(i => `<option value="${i}" ${existing?.icon===i?'selected':''}>${i}</option>`).join('')}</select></div>
+                <div class="mb-3"><label>Warna</label><input type="color" class="form-control" id="jmColor" value="${existing?.color||'#0d6efd'}"></div>
+                <div class="d-flex gap-2 justify-content-end"><button class="btn btn-secondary" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="saveJadwal(${index})">Simpan</button></div>
             </div>
         </div>`;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
-    function editIzin(index) { showIzinModal(index); }
+    function editJadwal(index) { showJadwalModal(index); }
     function closeModal() { document.querySelectorAll('.modal-overlay').forEach(m => m.remove()); }
 
-    async function saveIzin(index) {
-        const kode = document.getElementById('imKode').value.trim().toUpperCase();
-        const nama = document.getElementById('imNama').value.trim();
-        const tgl = document.getElementById('imTanggal').value;
-        const keterangan = document.getElementById('imKeterangan').value.trim();
-        if (!kode || !nama || !tgl || !keterangan) {
-            showToast('Semua field wajib diisi.', 'error');
-            return;
-        }
-        let bukti = '';
-        const fileInput = document.getElementById('imBukti');
-        if (fileInput.files && fileInput.files[0]) {
-            if (fileInput.files[0].size > 50000) {
-                showToast('Ukuran file maksimal 50KB.', 'error');
-                return;
-            }
-            bukti = await new Promise(resolve => {
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.readAsDataURL(fileInput.files[0]);
-            });
-        } else if (index !== null && izinData[index]?.Bukti_Surat) {
-            bukti = izinData[index].Bukti_Surat;
-        }
-        const payload = {
-            kode_peserta: kode,
-            nama_peserta: nama,
-            tanggal: tgl,
-            keterangan: keterangan,
-            petugas: currentUser.nama || 'Unknown',
-            bukti_surat: bukti
+    async function saveJadwal(index) {
+        const agama = document.getElementById('jmAgama').value;
+        const nama = document.getElementById('jmNama').value.trim();
+        const mulai = document.getElementById('jmMulai').value;
+        const selesai = document.getElementById('jmSelesai').value;
+        const icon = document.getElementById('jmIcon').value;
+        const color = document.getElementById('jmColor').value;
+        if (!nama || !mulai || !selesai) { showToast('Nama, Mulai, Selesai wajib diisi.', 'error'); return; }
+        if (!Array.isArray(jadwalData)) { showToast('Data jadwal belum siap.', 'error'); return; }
+
+        const newEntry = {
+            id: (index !== null && index !== undefined && jadwalData[index]?.id) ? jadwalData[index].id : Date.now(),
+            agama, nama, mulai, selesai, icon, color, bg: color + '1a'
         };
-        let res;
-        if (index !== null) {
-            payload.id = izinData[index].ID;
-            res = await API.updateIzin(payload);
+
+        let updatedJadwal = [...jadwalData];
+        if (index !== null && index >= 0) {
+            if (index < updatedJadwal.length) updatedJadwal[index] = newEntry;
+            else { showToast('Index tidak valid.', 'error'); return; }
         } else {
-            res = await API.addIzin(payload);
+            updatedJadwal.push(newEntry);
         }
+
+        const res = await API.saveJadwal(updatedJadwal);
         if (res.status === 'ok') {
+            jadwalData = updatedJadwal.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0));
+            setCachedData({...getCachedData(), jadwal: jadwalData});
             closeModal();
-            await refreshIzin();
-            showToast(res.message, 'success');
+            renderJadwal();
+            showToast('Jadwal disimpan.', 'success');
         } else {
             showToast(res.message, 'error');
         }
     }
 
-    async function hapusIzin(index) {
-        if (!confirm('Hapus izin ini?')) return;
-        const res = await API.deleteIzin(izinData[index].ID);
+    async function deleteJadwal(index) {
+        if (!confirm('Hapus jadwal ini?')) return;
+        const deleted = jadwalData.splice(index, 1);
+        const res = await API.saveJadwal(jadwalData);
         if (res.status === 'ok') {
-            await refreshIzin();
-            showToast('Izin dihapus.', 'success');
+            setCachedData({...getCachedData(), jadwal: jadwalData});
+            renderJadwal();
+            showToast('Jadwal dihapus.', 'success');
         } else {
+            jadwalData.splice(index, 0, deleted[0]);
             showToast(res.message, 'error');
+            await refreshJadwal();
         }
-    }
-
-    function lihatBukti(index) {
-        const izin = izinData[index];
-        if (!izin?.Bukti_Surat) return;
-        const win = window.open('', '_blank');
-        win.document.write(`<img src="${izin.Bukti_Surat}" style="max-width:100%; height:auto;">`);
     }
 
     function showToast(msg, type = 'info') {
@@ -284,7 +235,6 @@
         setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
     }
 
-    // Deteksi iframe
     if (window.self !== window.top) {
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.querySelector('.sidebar');
@@ -293,18 +243,16 @@
         });
     }
 
-    // Inisialisasi
     (async () => {
         const cached = getCachedData();
-        if (cached && cached.izin) {
-            izinData = cached.izin;
-            renderMain();
+        if (cached?.jadwal) {
+            jadwalData = cached.jadwal.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0));
+            renderJadwal();
         } else {
             document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
-            await refreshIzin();
-            renderMain();
+            await refreshJadwal();
         }
-        setInterval(refreshIzin, 5 * 60 * 1000);
+        setInterval(refreshJadwal, 5 * 60 * 1000);
     })();
 </script>
 </body>
