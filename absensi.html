@@ -53,6 +53,7 @@
     </style>
 </head>
 <body>
+
 <header class="tg-header">
     <a href="#" onclick="history.back()" aria-label="Kembali"><i class="fas fa-arrow-left"></i></a>
     <span class="flex-grow-1">Absensi QR</span>
@@ -65,6 +66,7 @@
 </header>
 
 <div class="main-container">
+
     <!-- Info sesi & mode manual -->
     <div class="card-custom" style="padding:14px;">
         <div class="d-flex justify-content-between align-items-center">
@@ -80,7 +82,8 @@
             </div>
         </div>
 
-        <div id="adminManualPanel" class="mt-2 pt-2 border-top d-none">
+        <!-- ✅ Panel Manual Admin (pasti muncul untuk admin) -->
+        <div id="adminManualPanel" class="mt-2 pt-2 border-top" style="display:none;">
             <div class="d-flex align-items-center gap-2 mb-2">
                 <label class="toggle-switch">
                     <input type="checkbox" id="manualModeSwitch" onchange="toggleManualMode()">
@@ -88,7 +91,7 @@
                 </label>
                 <span class="small fw-semibold"><i class="fas fa-user-shield me-1"></i>Mode Manual (Admin)</span>
             </div>
-            <div id="manualSessionSelector" class="d-none">
+            <div id="manualSessionSelector" style="display:none;">
                 <select class="form-select form-select-sm rounded-pill" id="manualSessionSelect" onchange="onManualSessionChange()">
                     <option value="">-- Pilih Sesi --</option>
                 </select>
@@ -153,11 +156,51 @@
     let localLog = [];
     let isManualMode = false;
     let manualSesi = null;
-    let sesiList = [];   // daftar sesi dari jadwal global
+    let sesiList = [];
 
-    // Suara
+    // === SUARA (DIPERBAIKI) ===
     const SOUND_KEY = 'srma19_sound_enabled';
     let soundEnabled = localStorage.getItem(SOUND_KEY) !== 'false';
+    let beepAudio = null;
+
+    function initBeep() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                const ctx = new AudioContext();
+                // Resume audio context jika diperlukan (autoplay policy)
+                if (ctx.state === 'suspended') {
+                    document.addEventListener('click', function resumeAudio() {
+                        ctx.resume();
+                    }, { once: true });
+                }
+                beepAudio = {
+                    play: () => {
+                        if (!soundEnabled) return;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.value = 800;
+                        gain.gain.value = 0.3;
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.08);
+                    }
+                };
+                return;
+            }
+        } catch(e) {}
+        // Fallback: HTMLAudioElement
+        beepAudio = {
+            play: () => {
+                if (!soundEnabled) return;
+                const audio = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
+                audio.volume = 0.5;
+                audio.play().catch(()=>{});
+            }
+        };
+    }
 
     function updateSoundUI() {
         const icon = document.getElementById('soundIcon');
@@ -178,24 +221,24 @@
         updateSoundUI();
     }
     updateSoundUI();
+    initBeep();
 
     const user = Auth.getCurrentUser();
     const isAdmin = user.role === 'admin';
 
-    // Ambil jadwal untuk daftar sesi (manual mode)
+    // ✅ Tampilkan panel manual untuk admin
+    if (isAdmin) {
+        document.getElementById('adminManualPanel').style.display = 'block';
+    }
+
     async function fetchJadwal() {
         try {
             const res = await API.getJadwal();
             if (res.status === 'success' && res.data.length > 0) {
                 sesiList = res.data.map(j => ({
-                    kode: String(j.id),
-                    nama: j.nama,
-                    agama: j.agama,
-                    mulai: j.mulai,
-                    selesai: j.selesai
+                    kode: String(j.id), nama: j.nama, agama: j.agama, mulai: j.mulai, selesai: j.selesai
                 }));
             } else {
-                // fallback default Islam
                 sesiList = [
                     { kode: '1', nama: 'Apel Pagi', agama: 'Islam', mulai: '06:00', selesai: '06:30' },
                     { kode: '2', nama: 'Makan Pagi', agama: 'Islam', mulai: '06:30', selesai: '07:15' },
@@ -209,9 +252,7 @@
                     { kode: '10', nama: 'Apel Malam', agama: 'Islam', mulai: '21:00', selesai: '21:30' }
                 ];
             }
-        } catch (e) {
-            console.error('Gagal fetch jadwal', e);
-        }
+        } catch (e) { console.error(e); }
         if (isAdmin) initManualSelect();
     }
 
@@ -226,23 +267,25 @@
         });
     }
 
-    // Tampilkan sesi saat ini di info
     function updateSesiDisplay() {
-        document.getElementById('currentTime').textContent =
-            new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', hour12:false });
-        if (isAdmin && isManualMode && manualSesi) return;
-        // Jika tidak manual, tampilkan "Menunggu scan..." karena sesi akan ditentukan saat scan
-        document.getElementById('currentSessionName').textContent = 'Menunggu scan...';
-        document.getElementById('currentSessionBadge').className = 'badge-sesi badge-active';
-        document.getElementById('sessionNote').innerHTML = '';
+        document.getElementById('currentTime').textContent = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', hour12:false });
+        if (isAdmin && isManualMode && manualSesi) {
+            document.getElementById('currentSessionName').textContent = `[${manualSesi.agama}] ${manualSesi.nama} (Manual)`;
+            document.getElementById('currentSessionBadge').className = 'badge-sesi badge-manual';
+        } else {
+            document.getElementById('currentSessionName').textContent = 'Menunggu scan...';
+            document.getElementById('currentSessionBadge').className = 'badge-sesi badge-active';
+        }
     }
 
     function toggleManualMode() {
         isManualMode = document.getElementById('manualModeSwitch').checked;
-        document.getElementById('manualSessionSelector').classList.toggle('d-none', !isManualMode);
-        if (!isManualMode) {
-            manualSesi = null;
-            updateSesiDisplay();
+        const selector = document.getElementById('manualSessionSelector');
+        selector.style.display = isManualMode ? 'block' : 'none';
+        if (!isManualMode) { manualSesi = null; updateSesiDisplay(); }
+        else {
+            const select = document.getElementById('manualSessionSelect');
+            if (select.value === '' && select.options.length > 1) { select.selectedIndex = 1; onManualSessionChange(); }
         }
         saveManualState();
     }
@@ -256,36 +299,31 @@
                 document.getElementById('currentSessionName').textContent = `[${sesiObj.agama}] ${sesiObj.nama} (Manual)`;
                 document.getElementById('currentSessionBadge').className = 'badge-sesi badge-manual';
             }
-        } else {
-            manualSesi = null;
-            updateSesiDisplay();
-        }
+        } else { manualSesi = null; updateSesiDisplay(); }
         saveManualState();
     }
 
-    function saveManualState() {
-        sessionStorage.setItem('srma19_absensi_state', JSON.stringify({ manualMode: isManualMode, manualSesi }));
-    }
+    function saveManualState() { sessionStorage.setItem('srma19_absensi_state', JSON.stringify({ manualMode: isManualMode, manualSesi })); }
     function restoreManualState() {
         if (!isAdmin) return;
         const saved = sessionStorage.getItem('srma19_absensi_state');
-        if (saved) {
-            try {
-                const state = JSON.parse(saved);
-                if (state.manualMode) {
-                    isManualMode = true;
-                    document.getElementById('manualModeSwitch').checked = true;
-                    document.getElementById('manualSessionSelector').classList.remove('d-none');
-                    if (state.manualSesi) {
+        if (!saved) return;
+        try {
+            const state = JSON.parse(saved);
+            if (state.manualMode) {
+                isManualMode = true;
+                document.getElementById('manualModeSwitch').checked = true;
+                document.getElementById('manualSessionSelector').style.display = 'block';
+                if (state.manualSesi) {
+                    setTimeout(() => {
                         document.getElementById('manualSessionSelect').value = state.manualSesi.kode;
                         onManualSessionChange();
-                    }
+                    }, 100);
                 }
-            } catch(e) {}
-        }
+            }
+        } catch(e) {}
     }
 
-    // Kamera
     async function startScan() {
         if (isScanning) return;
         document.getElementById('reader').classList.add('scanning');
@@ -317,33 +355,17 @@
     function onScanSuccess(decodedText) {
         if (scanCooldown) return;
         scanCooldown = true;
-        if (soundEnabled) playBeep();
+        if (soundEnabled && beepAudio) beepAudio.play();
         const code = decodedText.trim();
         API.searchPeserta(code).then(data => {
             if (data.status === 'success') {
                 let finalSesi, finalSesiNama, dalamSesi, manual;
                 if (isAdmin && isManualMode && manualSesi) {
-                    finalSesi = manualSesi.kode;
-                    finalSesiNama = manualSesi.nama;
-                    dalamSesi = true;
-                    manual = true;
+                    finalSesi = manualSesi.kode; finalSesiNama = manualSesi.nama; dalamSesi = true; manual = true;
                 } else {
-                    finalSesi = data.sesi;
-                    finalSesiNama = data.sesi_nama;
-                    dalamSesi = data.dalam_sesi;
-                    manual = false;
+                    finalSesi = data.sesi; finalSesiNama = data.sesi_nama; dalamSesi = data.dalam_sesi; manual = false;
                 }
-                currentScanData = {
-                    code: data.code,
-                    nama: data.nama,
-                    jk: data.jk,
-                    agama: data.agama,
-                    sesi: finalSesi,
-                    sesi_nama: finalSesiNama,
-                    dalam_sesi: dalamSesi,
-                    manual: manual,
-                    timestamp: new Date().toISOString()
-                };
+                currentScanData = { code: data.code, nama: data.nama, jk: data.jk, agama: data.agama, sesi: finalSesi, sesi_nama: finalSesiNama, dalam_sesi: dalamSesi, manual: manual, timestamp: new Date().toISOString() };
                 displayResult();
                 setTimeout(() => { scanCooldown = false; }, 1500);
             } else {
@@ -356,18 +378,6 @@
             resetScan();
             setTimeout(() => { scanCooldown = false; }, 1500);
         });
-    }
-
-    function playBeep() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            osc.type = 'square';
-            osc.frequency.value = 800;
-            osc.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.08);
-        } catch(e) {}
     }
 
     function displayResult() {
@@ -384,39 +394,19 @@
         document.getElementById('resultCard').scrollIntoView({ behavior:'smooth', block:'center' });
     }
 
-    function resetScan() {
-        currentScanData = null;
-        document.getElementById('resultContainer').classList.add('d-none');
-    }
+    function resetScan() { currentScanData = null; document.getElementById('resultContainer').classList.add('d-none'); }
 
     async function confirmAbsensi() {
         if (!currentScanData) return;
         const btn = document.getElementById('btnConfirm');
-        btn.disabled = true;
-        btn.innerHTML = 'Mencatat...';
+        btn.disabled = true; btn.innerHTML = 'Mencatat...';
         try {
-            const hasil = await API.recordAbsensi(
-                currentScanData.code,
-                currentScanData.nama,
-                currentScanData.sesi,
-                currentScanData.sesi_nama,
-                user?.nama || 'Unknown',
-                currentScanData.agama
-            );
-            if (hasil.status === 'recorded') {
-                addLocalLog('recorded');
-                resetScan();
-                showToast('✅ Tercatat', 'success');
-            } else if (hasil.status === 'already_recorded') {
-                addLocalLog('duplicate');
-                resetScan();
-                showToast('⚠️ Sudah tercatat', 'warning');
-            } else {
-                showToast(hasil.message, 'error');
-            }
+            const hasil = await API.recordAbsensi(currentScanData.code, currentScanData.nama, currentScanData.sesi, currentScanData.sesi_nama, user?.nama || 'Unknown', currentScanData.agama);
+            if (hasil.status === 'recorded') { addLocalLog('recorded'); resetScan(); showToast('✅ Tercatat', 'success'); }
+            else if (hasil.status === 'already_recorded') { addLocalLog('duplicate'); resetScan(); showToast('⚠️ Sudah tercatat', 'warning'); }
+            else showToast(hasil.message, 'error');
         } catch(e) { showToast('Gagal server', 'error'); }
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Konfirmasi Absensi';
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Konfirmasi Absensi';
     }
 
     function addLocalLog(status) {
@@ -432,23 +422,11 @@
         renderLog();
     }
 
-    function loadLocalLog() {
-        const saved = localStorage.getItem('srma19_absensi_log');
-        if (saved) try { localLog = JSON.parse(saved); } catch(e) {}
-        renderLog();
-    }
-
-    function clearLocalLog() {
-        if (confirm('Hapus log?')) {
-            localLog = [];
-            localStorage.removeItem('srma19_absensi_log');
-            renderLog();
-        }
-    }
-
+    function loadLocalLog() { const saved = localStorage.getItem('srma19_absensi_log'); if (saved) try { localLog = JSON.parse(saved); } catch(e) {} renderLog(); }
+    function clearLocalLog() { if (confirm('Hapus log?')) { localLog = []; localStorage.removeItem('srma19_absensi_log'); renderLog(); } }
     function renderLog() {
-        document.getElementById('logContainer').innerHTML = localLog.length ? localLog.map(l => `
-            <div class="log-item">
+        document.getElementById('logContainer').innerHTML = localLog.length ?
+            localLog.map(l => `<div class="log-item">
                 <span><i class="fas ${l.status==='duplicate'?'fa-exclamation-triangle text-warning':'fa-check-circle text-success'}"></i> ${l.nama}</span>
                 <span class="small text-muted">${l.sesi} | ${l.jam}</span>
             </div>`).join('') : '<p class="text-center text-muted py-3 small">Belum ada data</p>';
@@ -474,16 +452,11 @@
             document.getElementById('connectionStatus').innerHTML = r.status==='ok' ?
                 '<span class="pulse-dot me-1"></span><span class="text-success">Terhubung</span>' :
                 '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Respons tidak dikenal';
-        } catch(e) {
-            document.getElementById('connectionStatus').innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i>Gagal';
-        }
+        } catch(e) { document.getElementById('connectionStatus').innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i>Gagal'; }
     }
 
-    function handleLogout() {
-        if (confirm('Logout?')) { Auth.logout(); window.location.href = 'login.html'; }
-    }
+    function handleLogout() { if (confirm('Logout?')) { Auth.logout(); window.location.href = 'login.html'; } }
 
-    // Init
     document.addEventListener('DOMContentLoaded', async () => {
         await fetchJadwal();
         updateSesiDisplay();
@@ -491,7 +464,6 @@
         restoreManualState();
         setInterval(updateSesiDisplay, 30000);
         testConnection();
-        // Auto start kamera jika memungkinkan
         setTimeout(() => { if (!isScanning) startScan(); }, 500);
     });
 </script>

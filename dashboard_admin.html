@@ -9,90 +9,32 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { --sidebar-width: 260px; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f0f2f5;
-            margin: 0;
-            display: flex;
-            min-height: 100vh;
-        }
-        /* Sidebar – hanya tampil di desktop */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: #fff;
-            border-right: 1px solid #e2e8f0;
-            position: fixed;
-            top: 0; left: 0;
-            height: 100vh;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            padding: 20px 0;
-            overflow-y: auto;
-            transition: width 0.3s;
-        }
-        .sidebar a, .sidebar button {
-            display: flex; align-items: center; gap: 12px;
-            padding: 12px 24px; color: #333; text-decoration: none;
-            font-weight: 500; white-space: nowrap; transition: background 0.2s;
-            cursor: pointer; border: none; background: none; width: 100%;
-            text-align: left; font-size: 0.9rem;
-        }
-        .sidebar a:hover, .sidebar button:hover,
-        .sidebar a.active, .sidebar button.active { background: #2e8bc0; color: #fff; }
-        .main-content {
-            margin-left: var(--sidebar-width);
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding-bottom: 0;
-        }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; margin: 0; display: flex; min-height: 100vh; }
+        .sidebar { width: var(--sidebar-width); background: #fff; border-right: 1px solid #e2e8f0; position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; display: flex; flex-direction: column; padding: 20px 0; overflow-y: auto; }
+        .sidebar a, .sidebar button { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #333; text-decoration: none; font-weight: 500; white-space: nowrap; transition: background 0.2s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-size: 0.9rem; }
+        .sidebar a:hover, .sidebar button:hover, .sidebar a.active, .sidebar button.active { background: #2e8bc0; color: #fff; }
+        .main-content { margin-left: var(--sidebar-width); flex: 1; display: flex; flex-direction: column; }
         iframe { flex: 1; border: none; width: 100%; height: 100vh; }
-
-        /* Bottom Navigation (Telegram style) – hanya tampil mobile */
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: #fff;
-            border-top: 1px solid #e2e8f0;
-            z-index: 1000;
-            padding: 6px 0 env(safe-area-inset-bottom, 8px);
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-        }
-        .bottom-nav-inner {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-        }
-        .bottom-nav-item {
-            display: flex; flex-direction: column; align-items: center;
-            color: #687684; text-decoration: none; font-size: 0.65rem;
-            font-weight: 500; transition: color 0.2s; cursor: pointer;
-            background: none; border: none; padding: 4px 6px;
-            flex: 1; text-align: center;
-        }
+        /* Bottom Navigation */
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e2e8f0; z-index: 1000; padding: 6px 0 env(safe-area-inset-bottom, 8px); box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .bottom-nav-inner { display: flex; justify-content: space-around; align-items: center; }
+        .bottom-nav-item { display: flex; flex-direction: column; align-items: center; color: #687684; text-decoration: none; font-size: 0.65rem; font-weight: 500; transition: color 0.2s; cursor: pointer; background: none; border: none; padding: 4px 6px; flex: 1; text-align: center; }
         .bottom-nav-item i { font-size: 1.3rem; margin-bottom: 2px; }
         .bottom-nav-item.active { color: #2e8bc0; }
         .bottom-nav-item span { font-size: 0.6rem; }
-
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .main-content { margin-left: 0; padding-bottom: 70px; }
-            .bottom-nav { display: block; }
-        }
-        @media (min-width: 769px) {
-            .bottom-nav { display: none !important; }
-        }
+        .sheet-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 1050; }
+        .sheet-backdrop.show { display: block; }
+        .bottom-sheet { display: none; position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.2); z-index: 1100; width: 90%; max-width: 400px; padding: 12px 0; flex-direction: column; }
+        .bottom-sheet.show { display: flex; }
+        .bottom-sheet button, .bottom-sheet a { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border: none; background: none; width: 100%; font-size: 0.9rem; color: #333; text-decoration: none; font-weight: 500; transition: background 0.2s; }
+        .bottom-sheet button:hover, .bottom-sheet a:hover { background: #f5f5f5; }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; padding-bottom: 70px; } .bottom-nav { display: block; } }
+        @media (min-width: 769px) { .bottom-nav { display: none !important; } }
     </style>
 </head>
 <body>
-<!-- Sidebar Desktop -->
 <nav class="sidebar" id="sidebar">
-    <div class="px-4 mb-4">
-        <h4 class="fw-bold"><i class="fas fa-school me-2"></i>SRMA 19</h4>
-        <small class="text-muted">Admin Panel</small>
-    </div>
+    <div class="px-4 mb-4"><h4 class="fw-bold"><i class="fas fa-school me-2"></i>SRMA 19</h4><small class="text-muted">Admin Panel</small></div>
     <button class="active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
     <button data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-list"></i> Data Absensi</button>
     <button data-page="peserta" onclick="navigate('peserta')"><i class="fas fa-users"></i> Data Peserta</button>
@@ -105,41 +47,35 @@
     <button data-page="scanqr" onclick="navigate('scanqr')"><i class="fas fa-qrcode"></i> Scan QR</button>
     <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
     <a href="index.html" target="_blank"><i class="fas fa-globe"></i> Website</a>
-    <div class="mt-auto p-3">
-        <button class="btn btn-outline-secondary w-100" onclick="handleLogout()"><i class="fas fa-sign-out-alt me-2"></i> Logout</button>
-    </div>
+    <div class="mt-auto p-3"><button class="btn btn-outline-secondary w-100" onclick="handleLogout()"><i class="fas fa-sign-out-alt me-2"></i> Logout</button></div>
 </nav>
 
-<!-- Main Content (iframe) -->
 <div class="main-content" id="mainContentWrapper">
     <iframe id="contentFrame" src="dashboard_content.html" title="Konten"></iframe>
 </div>
 
-<!-- Bottom Navigation Mobile -->
+<div class="sheet-backdrop" id="sheetBackdrop" onclick="closeBottomSheet()"></div>
+
 <div class="bottom-nav" id="bottomNav">
     <div class="bottom-nav-inner">
-        <button class="bottom-nav-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></button>
+        <button class="bottom-nav-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-tachometer-alt"></i><span>Beranda</span></button>
         <button class="bottom-nav-item" data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-list"></i><span>Absensi</span></button>
         <button class="bottom-nav-item" data-page="peserta" onclick="navigate('peserta')"><i class="fas fa-users"></i><span>Peserta</span></button>
-        <button class="bottom-nav-item" data-page="jadwal" onclick="navigate('jadwal')"><i class="fas fa-calendar-alt"></i><span>Jadwal</span></button>
-        <button class="bottom-nav-item" onclick="toggleBottomSheet()"><i class="fas fa-ellipsis-h"></i><span>Lainnya</span></button>
+        <button class="bottom-nav-item" data-page="scanqr" onclick="navigate('scanqr')"><i class="fas fa-qrcode"></i><span>Scan QR</span></button>
+        <button class="bottom-nav-item" onclick="toggleBottomSheet(event)"><i class="fas fa-ellipsis-h"></i><span>Lainnya</span></button>
     </div>
 </div>
 
-<!-- Bottom sheet untuk akses menu sekunder di mobile -->
-<div class="position-fixed bottom-0 start-50 translate-middle-x bg-white border rounded-top-4 shadow-lg p-4 pb-5 w-75"
-     id="bottomSheet" style="display:none; z-index:1100; max-width:400px;">
-    <div class="d-flex flex-column gap-3">
-        <button class="btn btn-outline-secondary btn-sm" onclick="navigate('petugas'); toggleBottomSheet()"><i class="fas fa-user-shield me-2"></i>Data Petugas</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="navigate('izin'); toggleBottomSheet()"><i class="fas fa-file-medical-alt me-2"></i>Data Izin</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="navigate('loginlog'); toggleBottomSheet()"><i class="fas fa-history me-2"></i>Log Login</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="navigate('rekap'); toggleBottomSheet()"><i class="fas fa-chart-bar me-2"></i>Rekap Absensi</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="navigate('scanqr'); toggleBottomSheet()"><i class="fas fa-qrcode me-2"></i>Scan QR</button>
-        <hr>
-        <a class="btn btn-outline-secondary btn-sm" href="profile.html"><i class="fas fa-user-circle me-2"></i>Profil</a>
-        <a class="btn btn-outline-secondary btn-sm" href="index.html" target="_blank"><i class="fas fa-globe me-2"></i>Website</a>
-        <button class="btn btn-outline-danger btn-sm" onclick="handleLogout(); toggleBottomSheet()"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
-    </div>
+<div class="bottom-sheet" id="bottomSheet">
+    <button onclick="navigate('jadwal'); closeBottomSheet();"><i class="fas fa-calendar-alt"></i> Jadwal Kegiatan</button>
+    <button onclick="navigate('petugas'); closeBottomSheet();"><i class="fas fa-user-shield"></i> Data Petugas</button>
+    <button onclick="navigate('izin'); closeBottomSheet();"><i class="fas fa-file-medical-alt"></i> Data Izin</button>
+    <button onclick="navigate('loginlog'); closeBottomSheet();"><i class="fas fa-history"></i> Log Login</button>
+    <button onclick="navigate('rekap'); closeBottomSheet();"><i class="fas fa-chart-bar"></i> Rekap Absensi</button>
+    <hr>
+    <a href="profile.html" onclick="closeBottomSheet();"><i class="fas fa-user-circle"></i> Profil</a>
+    <a href="index.html" target="_blank" onclick="closeBottomSheet();"><i class="fas fa-globe"></i> Website</a>
+    <button onclick="handleLogout(); closeBottomSheet();" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
 </div>
 
 <script src="api.js"></script>
@@ -164,33 +100,27 @@
     };
 
     function navigate(page) {
-        // Update active state di sidebar & bottom nav
         sidebarButtons.forEach(b => b.classList.remove('active'));
-        const sidebarActive = document.querySelector(`.sidebar button[data-page="${page}"]`);
-        if (sidebarActive) sidebarActive.classList.add('active');
+        const sa = document.querySelector(`.sidebar button[data-page="${page}"]`);
+        if (sa) sa.classList.add('active');
 
         bottomNavItems.forEach(item => item.classList.remove('active'));
-        const bottomActive = document.querySelector(`.bottom-nav-item[data-page="${page}"]`);
-        if (bottomActive) bottomActive.classList.add('active');
+        const ba = document.querySelector(`.bottom-nav-item[data-page="${page}"]`);
+        if (ba) ba.classList.add('active');
 
         iframe.src = pageMap[page] || 'dashboard_content.html';
         sessionStorage.setItem('srma19_active_page', page);
+        closeBottomSheet();
     }
 
-    // Muat halaman terakhir
     const savedPage = sessionStorage.getItem('srma19_active_page') || 'dashboard';
     navigate(savedPage);
 
-    // Preload data master
     async function preloadInitialData() {
         if (sessionStorage.getItem('srma19_admin_data')) return;
         try {
             const [pesertaRes, absensiRes, jadwalRes, petugasRes, izinRes] = await Promise.all([
-                API.listPeserta(),
-                API.listAbsensi('', '', 1, 100),
-                API.getJadwal(),
-                API.listPetugas(),
-                API.listIzin()
+                API.listPeserta(), API.listAbsensi('', '', 1, 100), API.getJadwal(), API.listPetugas(), API.listIzin()
             ]);
             const data = {
                 peserta: pesertaRes.status === 'success' ? pesertaRes.data : [],
@@ -200,34 +130,45 @@
                 izin: izinRes.status === 'success' ? izinRes.data : []
             };
             sessionStorage.setItem('srma19_admin_data', JSON.stringify(data));
-        } catch (e) {
-            console.warn('Preload awal gagal');
-        }
+        } catch (e) { console.warn('Preload awal gagal'); }
     }
     preloadInitialData();
 
     function handleLogout() {
-        if (confirm('Logout?')) {
-            Auth.logout();
-            sessionStorage.clear();
-            location.href = 'login.html';
+        if (confirm('Logout?')) { Auth.logout(); sessionStorage.clear(); location.href = 'login.html'; }
+    }
+
+    function toggleBottomSheet(event) {
+        event.stopPropagation();
+        const sheet = document.getElementById('bottomSheet');
+        const backdrop = document.getElementById('sheetBackdrop');
+        if (sheet.classList.contains('show')) {
+            closeBottomSheet();
+        } else {
+            sheet.classList.add('show');
+            backdrop.classList.add('show');
         }
     }
 
-    // Bottom sheet toggle
-    function toggleBottomSheet() {
+    function closeBottomSheet() {
         const sheet = document.getElementById('bottomSheet');
-        sheet.style.display = sheet.style.display === 'none' ? 'block' : 'none';
+        const backdrop = document.getElementById('sheetBackdrop');
+        sheet.classList.remove('show');
+        backdrop.classList.remove('show');
     }
 
-    // Tutup bottom sheet jika klik di luar
     document.addEventListener('click', function(e) {
         const sheet = document.getElementById('bottomSheet');
-        if (sheet.style.display === 'block' &&
-            !sheet.contains(e.target) &&
-            !e.target.closest('.bottom-nav-item[onclick*="toggleBottomSheet"]')) {
-            sheet.style.display = 'none';
-        }
+        if (!sheet.classList.contains('show')) return;
+        if (sheet.contains(e.target) || e.target.closest('.bottom-nav-item[onclick*="toggleBottomSheet"]')) return;
+        closeBottomSheet();
+    });
+
+    document.addEventListener('touchstart', function(e) {
+        const sheet = document.getElementById('bottomSheet');
+        if (!sheet.classList.contains('show')) return;
+        if (sheet.contains(e.target) || e.target.closest('.bottom-nav-item[onclick*="toggleBottomSheet"]')) return;
+        closeBottomSheet();
     });
 </script>
 </body>
