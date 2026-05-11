@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Izin - Petugas SRMA 19</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 30px;
+        }
+        .filter-bar {
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            align-items: center;
+        }
+        .table-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5); z-index: 2000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 92%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+<div id="mainContent"></div>
+
+<script src="api.js"></script>
+<script src="auth.js"></script>
+<script>
+    if (!Auth.requireAuth('login.html')) throw new Error('Silakan login.');
+    const currentUser = Auth.getCurrentUser();
+    const CACHE_KEY = 'srma19_petugas_data';
+
+    function getCachedData() { try { return JSON.parse(sessionStorage.getItem(CACHE_KEY)); } catch { return null; } }
+    function setCachedData(data) { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
+
+    let izinData = [];
+
+    async function refreshIzin() {
+        try {
+            const res = await API.listIzin();
+            if (res.status === 'success') {
+                izinData = res.data;
+                const cached = getCachedData() || {};
+                cached.izin = izinData;
+                setCachedData(cached);
+                filterIzin();
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function filterIzin() {
+        const q = (document.getElementById('searchIzin')?.value || '').toLowerCase().trim();
+        const tgl = document.getElementById('fTglIzin')?.value || '';
+        const filtered = izinData.filter(izin =>
+            (!q || (izin.Nama_Peserta || '').toLowerCase().includes(q) || (izin.Kode_Peserta || '').toLowerCase().includes(q)) &&
+            (!tgl || izin.Tanggal === tgl)
+        );
+        renderIzinTable(filtered);
+    }
+
+    function renderIzinTable(data) {
+        const container = document.getElementById('izinTableContainer');
+        if (!container) return;
+        let rows = '';
+        data.forEach((iz, idx) => {
+            const realIdx = izinData.indexOf(iz);
+            rows += `<tr>
+                <td>${iz.Tanggal || '-'}</td>
+                <td><code>${(iz.Kode_Peserta || '').slice(-4)}</code></td>
+                <td>${iz.Nama_Peserta || '-'}</td>
+                <td>${iz.Keterangan || '-'}</td>
+                <td>${iz.Bukti_Surat ? '<a href="#" onclick="lihatBukti(' + realIdx + ')"><i class="fas fa-paperclip"></i> Lihat</a>' : '-'}</td>
+                <td>${iz.Petugas || '-'}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary p-1" onclick="editIzin(${realIdx})"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger p-1" onclick="hapusIzin(${realIdx})"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            </tr>`;
+        });
+        if (!rows) rows = '<tr><td colspan="7" class="text-center py-2">Belum ada data izin</td></tr>';
+        container.innerHTML = `
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>Tanggal</th><th>Kode</th><th>Nama</th><th>Keterangan</th><th>Bukti</th><th>Petugas</th><th class="text-center">Aksi</th></tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+    }
+
+    function renderMain() {
+        document.getElementById('mainContent').innerHTML = `
+            <h3 class="mb-3">📋 Data Izin</h3>
+            <div class="filter-bar">
+                <input type="text" class="form-control form-control-sm" id="searchIzin" placeholder="Cari kode/nama" style="width:160px" oninput="filterIzin()">
+                <input type="date" class="form-control form-control-sm" id="fTglIzin" style="width:140px" onchange="filterIzin()">
+            </div>
+            <button class="btn btn-sm btn-success rounded-pill mb-3" onclick="showIzinModal()"><i class="fas fa-plus"></i> Tambah Izin</button>
+            <div class="table-card" id="izinTableContainer"></div>`;
+        filterIzin();
+    }
+
+    function showIzinModal(index = null) {
+        const existing = index !== null ? izinData[index] : null;
+        const modalHtml = `
+        <div class="modal-overlay" id="izinModal">
+            <div class="modal-box">
+                <h5 class="fw-bold mb-3">${existing ? 'Edit Izin' : 'Tambah Izin'}</h5>
+                <div class="mb-3"><label>Kode Peserta</label><input type="text" class="form-control" id="imKode" value="${existing?.Kode_Peserta || ''}" placeholder="SRMA19-XXX" required></div>
+                <div class="mb-3"><label>Nama Peserta</label><input type="text" class="form-control" id="imNama" value="${existing?.Nama_Peserta || ''}" required></div>
+                <div class="mb-3"><label>Tanggal</label><input type="date" class="form-control" id="imTanggal" value="${existing?.Tanggal || ''}" required></div>
+                <div class="mb-3"><label>Keterangan</label><input type="text" class="form-control" id="imKeterangan" value="${existing?.Keterangan || ''}" placeholder="Sakit, izin, dll." required></div>
+                <div class="mb-3"><label>Bukti Surat (foto/scan, max 49KB)</label><input type="file" accept="image/*" class="form-control" id="imBukti">${existing?.Bukti_Surat ? '<small class="text-muted">Sudah ada bukti sebelumnya. Upload baru untuk mengganti.</small>' : ''}</div>
+                <div class="d-flex gap-2 justify-content-end">
+                    <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+                    <button class="btn btn-primary" onclick="saveIzin(${index})">Simpan</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function editIzin(index) { showIzinModal(index); }
+    function closeModal() { document.querySelectorAll('.modal-overlay').forEach(m => m.remove()); }
+
+    async function saveIzin(index) {
+        const kode = document.getElementById('imKode').value.trim().toUpperCase();
+        const nama = document.getElementById('imNama').value.trim();
+        const tgl = document.getElementById('imTanggal').value;
+        const keterangan = document.getElementById('imKeterangan').value.trim();
+        if (!kode || !nama || !tgl || !keterangan) {
+            showToast('Semua field wajib diisi.', 'error');
+            return;
+        }
+        let bukti = '';
+        const fileInput = document.getElementById('imBukti');
+        if (fileInput.files && fileInput.files[0]) {
+            if (fileInput.files[0].size > 50000) {
+                showToast('Ukuran file maksimal 50KB.', 'error');
+                return;
+            }
+            bukti = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.readAsDataURL(fileInput.files[0]);
+            });
+        } else if (index !== null && izinData[index]?.Bukti_Surat) {
+            bukti = izinData[index].Bukti_Surat;
+        }
+        const payload = {
+            kode_peserta: kode,
+            nama_peserta: nama,
+            tanggal: tgl,
+            keterangan: keterangan,
+            petugas: currentUser.nama || 'Unknown',
+            bukti_surat: bukti
+        };
+        let res;
+        if (index !== null) {
+            payload.id = izinData[index].ID;
+            res = await API.updateIzin(payload);
+        } else {
+            res = await API.addIzin(payload);
+        }
+        if (res.status === 'ok') {
+            closeModal();
+            await refreshIzin();
+            showToast(res.message, 'success');
+        } else {
+            showToast(res.message, 'error');
+        }
+    }
+
+    async function hapusIzin(index) {
+        if (!confirm('Hapus izin ini?')) return;
+        const res = await API.deleteIzin(izinData[index].ID);
+        if (res.status === 'ok') {
+            await refreshIzin();
+            showToast('Izin dihapus.', 'success');
+        } else {
+            showToast(res.message, 'error');
+        }
+    }
+
+    function lihatBukti(index) {
+        const izin = izinData[index];
+        if (!izin?.Bukti_Surat) return;
+        const win = window.open('', '_blank');
+        win.document.write(`<img src="${izin.Bukti_Surat}" style="max-width:100%; height:auto;">`);
+    }
+
+    function showToast(msg, type = 'info') {
+        const colors = {
+            success: ['#d1fae5','#10b981'],
+            error: ['#fee2e2','#ef4444'],
+            warning: ['#fef3c7','#f59e0b'],
+            info: ['#dbeafe','#3b82f6']
+        };
+        const [bg, border] = colors[type] || colors.info;
+        const el = document.createElement('div');
+        el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;';
+        el.innerHTML = `<div style="background:${bg};border-left:4px solid ${border};padding:10px 14px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);font-size:0.85rem;">${msg}</div>`;
+        document.body.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+    }
+
+    // Inisialisasi
+    (async () => {
+        const cached = getCachedData();
+        if (cached && cached.izin) {
+            izinData = cached.izin;
+            renderMain();
+        } else {
+            document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+            await refreshIzin();
+            renderMain();
+        }
+        setInterval(refreshIzin, 5 * 60 * 1000);
+    })();
+</script>
+</body>
+</html>

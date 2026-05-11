@@ -9,51 +9,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        :root {
-            --primary: #0d6efd; --accent: #ff6b35; --success: #10b981;
-            --tg-blue: #2e8bc0; --tg-bg: #f0f2f5; --dark: #1e293b;
-        }
+        :root { --primary: #0d6efd; --accent: #ff6b35; --success: #10b981; --tg-blue: #2e8bc0; --tg-bg: #f0f2f5; --dark: #1e293b; }
         * { scroll-behavior: smooth; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: var(--tg-bg); color: #333; min-height: 100vh;
-            display: flex; flex-direction: column; margin: 0;
-            -webkit-font-smoothing: antialiased;
-        }
-        .tg-header {
-            background: var(--tg-blue); color: #fff; padding: 12px 16px;
-            display: flex; align-items: center; gap: 12px; font-weight: 600;
-            position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-        }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--tg-bg); color: #333; min-height: 100vh; display: flex; flex-direction: column; margin: 0; -webkit-font-smoothing: antialiased; }
+        .tg-header { background: var(--tg-blue); color: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 12px; font-weight: 600; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
         .tg-header a, .tg-header button { color: #fff; text-decoration: none; }
         .main-container { max-width: 520px; margin: 0 auto; padding: 12px 12px 100px 12px; flex: 1; width: 100%; }
-        .card-custom {
-            background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-            margin-bottom: 10px; overflow: hidden; transition: all 0.2s;
-        }
-        .card-header-custom {
-            padding: 14px 16px; font-weight: 700; font-size: 0.95rem;
-            display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f0f0f0;
-        }
-        #reader {
-            width: 100%; border-radius: 10px; overflow: hidden; border: 2px dashed #d0d0d0;
-            background: #f8f8f8; min-height: 220px; display: flex;
-            align-items: center; justify-content: center; transition: border-color 0.3s;
-        }
+        .card-custom { background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 10px; overflow: hidden; transition: all 0.2s; }
+        .card-header-custom { padding: 14px 16px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f0f0f0; }
+        #reader { width: 100%; border-radius: 10px; overflow: hidden; border: 2px dashed #d0d0d0; background: #f8f8f8; min-height: 220px; display: flex; align-items: center; justify-content: center; transition: border-color 0.3s; }
         #reader.scanning { border-color: var(--primary); box-shadow: 0 0 0 6px rgba(13,110,253,0.06); }
         #reader video { border-radius: 10px; width: 100%; }
-        .btn-scan {
-            border-radius: 10px; font-weight: 600; padding: 12px; font-size: 0.95rem;
-            width: 100%; transition: all 0.2s; border: none; letter-spacing: 0.2px;
-        }
+        .btn-scan { border-radius: 10px; font-weight: 600; padding: 12px; font-size: 0.95rem; width: 100%; transition: all 0.2s; border: none; letter-spacing: 0.2px; }
         .btn-scan.start { background: var(--tg-blue); color: #fff; box-shadow: 0 4px 12px rgba(46,139,192,0.3); }
         .btn-scan.stop { background: #ef4444; color: #fff; box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
         .btn-scan:active { transform: scale(0.97); }
-        .btn-confirm {
-            border-radius: 10px; font-weight: 600; padding: 12px; font-size: 0.95rem;
-            width: 100%; transition: all 0.2s; border: none; letter-spacing: 0.2px;
-            background: #10b981; color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,0.3);
-        }
+        .btn-confirm { border-radius: 10px; font-weight: 600; padding: 12px; font-size: 0.95rem; width: 100%; transition: all 0.2s; border: none; letter-spacing: 0.2px; background: #10b981; color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
         .btn-confirm:active { transform: scale(0.97); }
         .btn-confirm:disabled { opacity: 0.6; }
         .result-card { animation: slideUp 0.4s ease; }
@@ -62,27 +33,14 @@
         .badge-active { background: #d1fae5; color: #065f46; }
         .badge-outside { background: #fef3c7; color: #92400e; }
         .badge-manual { background: #ede9fe; color: #5b21b6; }
-        .pulse-dot {
-            width: 8px; height: 8px; border-radius: 50%; background: #10b981;
-            display: inline-block; animation: pulse 2s infinite;
-        }
+        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; animation: pulse 2s infinite; }
         @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); } 50% { box-shadow: 0 0 0 10px rgba(16,185,129,0); } }
-        .log-item {
-            padding: 10px 14px; border-bottom: 1px solid #f5f5f5; font-size: 0.82rem;
-            display: flex; justify-content: space-between; align-items: center;
-            transition: background 0.2s;
-        }
+        .log-item { padding: 10px 14px; border-bottom: 1px solid #f5f5f5; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
         .log-item:last-child { border-bottom: none; }
         .log-item:hover { background: #fafafa; }
-        .toast-custom {
-            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-            z-index: 9999; min-width: 220px; max-width: 90%; animation: toastIn 0.3s ease;
-        }
+        .toast-custom { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 220px; max-width: 90%; animation: toastIn 0.3s ease; }
         @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-        .sound-toggle {
-            background: none; border: none; color: #fff; cursor: pointer; padding: 4px 8px;
-            border-radius: 50%; font-size: 1.2rem; transition: opacity 0.2s; opacity: 0.8;
-        }
+        .sound-toggle { background: none; border: none; color: #fff; cursor: pointer; padding: 4px 8px; border-radius: 50%; font-size: 1.2rem; transition: opacity 0.2s; opacity: 0.8; }
         .sound-toggle:hover { opacity: 1; }
         .sound-toggle.muted { opacity: 0.5; }
         .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
@@ -91,16 +49,12 @@
         .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
         input:checked + .toggle-slider { background: #8b5cf6; }
         input:checked + .toggle-slider:before { transform: translateX(20px); }
-        @media (max-width: 480px) {
-            .main-container { padding: 8px 8px 90px 8px; }
-            #reader { min-height: 200px; }
-        }
+        @media (max-width: 480px) { .main-container { padding: 8px 8px 90px 8px; } #reader { min-height: 200px; } }
     </style>
 </head>
 <body>
-
 <header class="tg-header">
-    <a href="admin.html" aria-label="Kembali"><i class="fas fa-arrow-left"></i></a>
+    <a href="#" onclick="history.back()" aria-label="Kembali"><i class="fas fa-arrow-left"></i></a>
     <span class="flex-grow-1">Absensi QR</span>
     <button class="sound-toggle" id="soundToggleBtn" title="Suara Aktif" onclick="toggleSound()">
         <i class="fas fa-volume-up" id="soundIcon"></i>
@@ -111,7 +65,7 @@
 </header>
 
 <div class="main-container">
-
+    <!-- Info sesi & mode manual -->
     <div class="card-custom" style="padding:14px;">
         <div class="d-flex justify-content-between align-items-center">
             <div>
@@ -143,6 +97,7 @@
         </div>
     </div>
 
+    <!-- Pemindai QR -->
     <div class="card-custom">
         <div class="card-header-custom"><i class="fas fa-qrcode" style="color:var(--tg-blue);"></i> Scan QR Kartu Peserta</div>
         <div class="p-3 text-center">
@@ -155,6 +110,7 @@
         </div>
     </div>
 
+    <!-- Hasil Scan -->
     <div id="resultContainer" class="d-none">
         <div class="card-custom result-card" id="resultCard">
             <div class="card-header-custom" style="background:#d1fae5;"><i class="fas fa-check-circle" style="color:#10b981;"></i> Data Peserta</div>
@@ -162,7 +118,7 @@
                 <div class="mb-3"><div id="resultAvatar" style="width:60px;height:60px;border-radius:50%;background:#e0f2fe;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:var(--tg-blue);">?</div></div>
                 <div class="small mb-3">
                     <div class="mb-1"><strong id="resultNama" class="text-dark">-</strong></div>
-                    <div class="text-muted"><span id="resultKode" style="font-family:monospace;">-</span> &bull; <span id="resultJK">-</span></div>
+                    <div class="text-muted"><span id="resultKode" style="font-family:monospace;">-</span> &bull; <span id="resultJK">-</span> &bull; <span id="resultAgama">-</span></div>
                     <div class="mt-1"><span class="badge-sesi badge-active" id="resultSesi">-</span></div>
                 </div>
                 <button class="btn btn-confirm" id="btnConfirm" onclick="confirmAbsensi()"><i class="fas fa-check-circle me-2"></i>Konfirmasi Absensi</button>
@@ -171,6 +127,7 @@
         </div>
     </div>
 
+    <!-- Log Absensi -->
     <div class="card-custom">
         <div class="card-header-custom d-flex justify-content-between align-items-center">
             <span><i class="fas fa-list-alt" style="color:var(--accent);"></i>Log Absensi</span>
@@ -196,9 +153,9 @@
     let localLog = [];
     let isManualMode = false;
     let manualSesi = null;
-    let sesiList = [];
+    let sesiList = [];   // daftar sesi dari jadwal global
 
-    // ========== SUARA ==========
+    // Suara
     const SOUND_KEY = 'srma19_sound_enabled';
     let soundEnabled = localStorage.getItem(SOUND_KEY) !== 'false';
 
@@ -215,71 +172,78 @@
             btn.classList.add('muted');
         }
     }
-
     function toggleSound() {
         soundEnabled = !soundEnabled;
         localStorage.setItem(SOUND_KEY, soundEnabled);
         updateSoundUI();
     }
-
     updateSoundUI();
 
     const user = Auth.getCurrentUser();
-    document.getElementById('userInfoDisplay')?.innerText ?? '';
     const isAdmin = user.role === 'admin';
 
+    // Ambil jadwal untuk daftar sesi (manual mode)
     async function fetchJadwal() {
         try {
             const res = await API.getJadwal();
-            if (res.status === 'success') {
-                sesiList = res.data.map((j, i) => ({ kode: 'sesi_' + (i + 1), nama: j.nama, mulai: j.mulai, selesai: j.selesai }));
-                sessionStorage.setItem('srma19_sesi', JSON.stringify(sesiList));
-                return;
+            if (res.status === 'success' && res.data.length > 0) {
+                sesiList = res.data.map(j => ({
+                    kode: String(j.id),
+                    nama: j.nama,
+                    agama: j.agama,
+                    mulai: j.mulai,
+                    selesai: j.selesai
+                }));
+            } else {
+                // fallback default Islam
+                sesiList = [
+                    { kode: '1', nama: 'Apel Pagi', agama: 'Islam', mulai: '06:00', selesai: '06:30' },
+                    { kode: '2', nama: 'Makan Pagi', agama: 'Islam', mulai: '06:30', selesai: '07:15' },
+                    { kode: '3', nama: 'Ibadah Sholat Dhuhur', agama: 'Islam', mulai: '12:00', selesai: '12:30' },
+                    { kode: '4', nama: 'Apel Makan Siang', agama: 'Islam', mulai: '12:30', selesai: '12:45' },
+                    { kode: '5', nama: 'Makan Siang', agama: 'Islam', mulai: '12:45', selesai: '13:30' },
+                    { kode: '6', nama: 'Ibadah Sholat Ashar', agama: 'Islam', mulai: '15:00', selesai: '15:30' },
+                    { kode: '7', nama: 'Ibadah Sholat Maghrib', agama: 'Islam', mulai: '17:45', selesai: '18:15' },
+                    { kode: '8', nama: 'Apel Makan Malam', agama: 'Islam', mulai: '18:15', selesai: '18:30' },
+                    { kode: '9', nama: 'Makan Malam', agama: 'Islam', mulai: '18:30', selesai: '19:15' },
+                    { kode: '10', nama: 'Apel Malam', agama: 'Islam', mulai: '21:00', selesai: '21:30' }
+                ];
             }
-        } catch (e) {}
-        sesiList = [
-            { kode: 'sesi_1', nama: 'Apel Pagi', mulai: '06:00', selesai: '06:30' },
-            { kode: 'sesi_2', nama: 'Makan Pagi', mulai: '06:30', selesai: '07:15' },
-            { kode: 'sesi_3', nama: 'Ibadah Sholat Dhuhur', mulai: '12:00', selesai: '12:30' },
-            { kode: 'sesi_4', nama: 'Apel Makan Siang', mulai: '12:30', selesai: '12:45' },
-            { kode: 'sesi_5', nama: 'Makan Siang', mulai: '12:45', selesai: '13:30' },
-            { kode: 'sesi_6', nama: 'Ibadah Sholat Ashar', mulai: '15:00', selesai: '15:30' },
-            { kode: 'sesi_7', nama: 'Ibadah Sholat Maghrib', mulai: '17:45', selesai: '18:15' },
-            { kode: 'sesi_8', nama: 'Apel Makan Malam', mulai: '18:15', selesai: '18:30' },
-            { kode: 'sesi_9', nama: 'Makan Malam', mulai: '18:30', selesai: '19:15' },
-            { kode: 'sesi_10', nama: 'Apel Malam', mulai: '21:00', selesai: '21:30' }
-        ];
+        } catch (e) {
+            console.error('Gagal fetch jadwal', e);
+        }
+        if (isAdmin) initManualSelect();
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-        await fetchJadwal();
-        initUI();
-        updateSesiDisplay();
-        loadLocalLog();
-        setInterval(updateSesiDisplay, 30000);
-        testConnection();
-        restoreManualState();
-        setTimeout(() => { if (!isScanning) startScan(); }, 500);
-    });
+    function initManualSelect() {
+        const select = document.getElementById('manualSessionSelect');
+        select.innerHTML = '<option value="">-- Pilih Sesi --</option>';
+        sesiList.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.kode;
+            opt.textContent = `[${s.agama}] ${s.nama} (${s.mulai}-${s.selesai})`;
+            select.appendChild(opt);
+        });
+    }
 
-    function initUI() {
-        if (isAdmin) {
-            document.getElementById('adminManualPanel').classList.remove('d-none');
-            const select = document.getElementById('manualSessionSelect');
-            sesiList.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.kode;
-                opt.textContent = s.nama + ' (' + s.mulai + '-' + s.selesai + ')';
-                select.appendChild(opt);
-            });
-        }
+    // Tampilkan sesi saat ini di info
+    function updateSesiDisplay() {
+        document.getElementById('currentTime').textContent =
+            new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', hour12:false });
+        if (isAdmin && isManualMode && manualSesi) return;
+        // Jika tidak manual, tampilkan "Menunggu scan..." karena sesi akan ditentukan saat scan
+        document.getElementById('currentSessionName').textContent = 'Menunggu scan...';
+        document.getElementById('currentSessionBadge').className = 'badge-sesi badge-active';
+        document.getElementById('sessionNote').innerHTML = '';
     }
 
     function toggleManualMode() {
         isManualMode = document.getElementById('manualModeSwitch').checked;
-        const selectorDiv = document.getElementById('manualSessionSelector');
-        if (isManualMode) { selectorDiv.classList.remove('d-none'); document.getElementById('manualSessionSelect').value = ''; manualSesi = null; }
-        else { selectorDiv.classList.add('d-none'); manualSesi = null; updateSesiDisplay(); }
+        document.getElementById('manualSessionSelector').classList.toggle('d-none', !isManualMode);
+        if (!isManualMode) {
+            manualSesi = null;
+            updateSesiDisplay();
+        }
         saveManualState();
     }
 
@@ -287,34 +251,41 @@
         const kode = document.getElementById('manualSessionSelect').value;
         if (kode) {
             const sesiObj = sesiList.find(s => s.kode === kode);
-            if (sesiObj) { manualSesi = { kode: sesiObj.kode, nama: sesiObj.nama }; document.getElementById('currentSessionName').textContent = sesiObj.nama + ' (Manual)'; document.getElementById('currentSessionBadge').className = 'badge-sesi badge-manual'; }
-        } else { manualSesi = null; updateSesiDisplay(); }
+            if (sesiObj) {
+                manualSesi = { kode: sesiObj.kode, nama: sesiObj.nama, agama: sesiObj.agama };
+                document.getElementById('currentSessionName').textContent = `[${sesiObj.agama}] ${sesiObj.nama} (Manual)`;
+                document.getElementById('currentSessionBadge').className = 'badge-sesi badge-manual';
+            }
+        } else {
+            manualSesi = null;
+            updateSesiDisplay();
+        }
         saveManualState();
     }
 
-    function saveManualState() { sessionStorage.setItem('srma19_absensi_state', JSON.stringify({ manualMode: isManualMode, manualSesi })); }
+    function saveManualState() {
+        sessionStorage.setItem('srma19_absensi_state', JSON.stringify({ manualMode: isManualMode, manualSesi }));
+    }
     function restoreManualState() {
         if (!isAdmin) return;
         const saved = sessionStorage.getItem('srma19_absensi_state');
-        if (saved) { try { const state = JSON.parse(saved); if (state.manualMode) { isManualMode = true; document.getElementById('manualModeSwitch').checked = true; document.getElementById('manualSessionSelector').classList.remove('d-none'); if (state.manualSesi) { document.getElementById('manualSessionSelect').value = state.manualSesi.kode; onManualSessionChange(); } } } catch(e) {} }
+        if (saved) {
+            try {
+                const state = JSON.parse(saved);
+                if (state.manualMode) {
+                    isManualMode = true;
+                    document.getElementById('manualModeSwitch').checked = true;
+                    document.getElementById('manualSessionSelector').classList.remove('d-none');
+                    if (state.manualSesi) {
+                        document.getElementById('manualSessionSelect').value = state.manualSesi.kode;
+                        onManualSessionChange();
+                    }
+                }
+            } catch(e) {}
+        }
     }
 
-    function getActiveSession() {
-        if (isAdmin && isManualMode && manualSesi) return { sesi: manualSesi.kode, nama: manualSesi.nama, dalam_sesi: true, manual: true };
-        const timeStr = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', hour12:false });
-        for (const s of sesiList) if (timeStr >= s.mulai && timeStr <= s.selesai) return { sesi: s.kode, nama: s.nama, dalam_sesi: true, manual: false };
-        return { sesi: 'di_luar_sesi', nama: 'Di Luar Sesi', dalam_sesi: false, manual: false };
-    }
-
-    function updateSesiDisplay() {
-        if (isAdmin && isManualMode && manualSesi) return;
-        document.getElementById('currentTime').textContent = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', hour12:false });
-        const active = getActiveSession();
-        document.getElementById('currentSessionName').textContent = active.nama;
-        document.getElementById('currentSessionBadge').className = 'badge-sesi ' + (active.dalam_sesi ? 'badge-active' : 'badge-outside');
-        document.getElementById('sessionNote').innerHTML = active.dalam_sesi ? '✅ Sedang berlangsung' : '⚠️ Di luar sesi';
-    }
-
+    // Kamera
     async function startScan() {
         if (isScanning) return;
         document.getElementById('reader').classList.add('scanning');
@@ -348,13 +319,29 @@
         scanCooldown = true;
         if (soundEnabled) playBeep();
         const code = decodedText.trim();
-        const sesi = getActiveSession();
         API.searchPeserta(code).then(data => {
             if (data.status === 'success') {
+                let finalSesi, finalSesiNama, dalamSesi, manual;
+                if (isAdmin && isManualMode && manualSesi) {
+                    finalSesi = manualSesi.kode;
+                    finalSesiNama = manualSesi.nama;
+                    dalamSesi = true;
+                    manual = true;
+                } else {
+                    finalSesi = data.sesi;
+                    finalSesiNama = data.sesi_nama;
+                    dalamSesi = data.dalam_sesi;
+                    manual = false;
+                }
                 currentScanData = {
-                    code: data.code, nama: data.nama, jk: data.jk,
-                    sesi: sesi.sesi, sesi_nama: sesi.nama,
-                    dalam_sesi: sesi.dalam_sesi, manual: sesi.manual,
+                    code: data.code,
+                    nama: data.nama,
+                    jk: data.jk,
+                    agama: data.agama,
+                    sesi: finalSesi,
+                    sesi_nama: finalSesiNama,
+                    dalam_sesi: dalamSesi,
+                    manual: manual,
                     timestamp: new Date().toISOString()
                 };
                 displayResult();
@@ -388,9 +375,11 @@
         document.getElementById('resultNama').textContent = d.nama;
         document.getElementById('resultKode').textContent = d.code;
         document.getElementById('resultJK').textContent = d.jk || '-';
+        document.getElementById('resultAgama').textContent = d.agama || '-';
         document.getElementById('resultSesi').textContent = d.sesi_nama + (d.manual ? ' (Manual)' : '');
         document.getElementById('resultAvatar').textContent = d.nama.charAt(0).toUpperCase();
-        document.getElementById('resultSesi').className = 'badge-sesi ' + (d.manual ? 'badge-manual' : (d.dalam_sesi ? 'badge-active' : 'badge-outside'));
+        const badge = document.getElementById('resultSesi');
+        badge.className = 'badge-sesi ' + (d.manual ? 'badge-manual' : (d.dalam_sesi ? 'badge-active' : 'badge-outside'));
         document.getElementById('resultContainer').classList.remove('d-none');
         document.getElementById('resultCard').scrollIntoView({ behavior:'smooth', block:'center' });
     }
@@ -406,7 +395,14 @@
         btn.disabled = true;
         btn.innerHTML = 'Mencatat...';
         try {
-            const hasil = await API.recordAbsensi(currentScanData.code, currentScanData.nama, currentScanData.sesi, currentScanData.sesi_nama, user?.nama || 'Unknown');
+            const hasil = await API.recordAbsensi(
+                currentScanData.code,
+                currentScanData.nama,
+                currentScanData.sesi,
+                currentScanData.sesi_nama,
+                user?.nama || 'Unknown',
+                currentScanData.agama
+            );
             if (hasil.status === 'recorded') {
                 addLocalLog('recorded');
                 resetScan();
@@ -415,7 +411,9 @@
                 addLocalLog('duplicate');
                 resetScan();
                 showToast('⚠️ Sudah tercatat', 'warning');
-            } else showToast(hasil.message, 'error');
+            } else {
+                showToast(hasil.message, 'error');
+            }
         } catch(e) { showToast('Gagal server', 'error'); }
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Konfirmasi Absensi';
@@ -423,7 +421,8 @@
 
     function addLocalLog(status) {
         localLog.unshift({
-            nama: currentScanData.nama, kode: currentScanData.code,
+            nama: currentScanData.nama,
+            kode: currentScanData.code,
             sesi: currentScanData.sesi_nama + (currentScanData.manual ? ' (M)' : ''),
             jam: new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }),
             status
@@ -440,7 +439,11 @@
     }
 
     function clearLocalLog() {
-        if (confirm('Hapus log?')) { localLog = []; localStorage.removeItem('srma19_absensi_log'); renderLog(); }
+        if (confirm('Hapus log?')) {
+            localLog = [];
+            localStorage.removeItem('srma19_absensi_log');
+            renderLog();
+        }
     }
 
     function renderLog() {
@@ -452,19 +455,45 @@
     }
 
     function showToast(msg, type='info') {
-        const c = { success:['#d1fae5','#10b981','#065f46','fa-check-circle'], error:['#fee2e2','#ef4444','#991b1b','fa-times-circle'], warning:['#fef3c7','#f59e0b','#92400e','fa-exclamation-triangle'], info:['#dbeafe','#3b82f6','#1e40af','fa-info-circle'] }[type] || ['#dbeafe','#3b82f6','#1e40af','fa-info-circle'];
-        const el = document.createElement('div'); el.className = 'toast-custom';
+        const c = {
+            success: ['#d1fae5','#10b981','#065f46','fa-check-circle'],
+            error: ['#fee2e2','#ef4444','#991b1b','fa-times-circle'],
+            warning: ['#fef3c7','#f59e0b','#92400e','fa-exclamation-triangle'],
+            info: ['#dbeafe','#3b82f6','#1e40af','fa-info-circle']
+        }[type] || ['#dbeafe','#3b82f6','#1e40af','fa-info-circle'];
+        const el = document.createElement('div');
+        el.className = 'toast-custom';
         el.innerHTML = `<div style="background:${c[0]};border-left:4px solid ${c[1]};color:${c[2]};padding:10px 14px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.15);display:flex;align-items:center;gap:6px;font-size:0.8rem;"><i class="fas ${c[3]}"></i>${msg}</div>`;
-        document.body.appendChild(el); setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(),300); }, 3000);
+        document.body.appendChild(el);
+        setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(),300); }, 3000);
     }
 
     async function testConnection() {
-        try { const r = await API.ping(); document.getElementById('connectionStatus').innerHTML = r.status==='ok' ? '<span class="pulse-dot me-1"></span><span class="text-success">Terhubung</span>' : '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Respons tidak dikenal'; } catch(e) { document.getElementById('connectionStatus').innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i>Gagal'; }
+        try {
+            const r = await API.ping();
+            document.getElementById('connectionStatus').innerHTML = r.status==='ok' ?
+                '<span class="pulse-dot me-1"></span><span class="text-success">Terhubung</span>' :
+                '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Respons tidak dikenal';
+        } catch(e) {
+            document.getElementById('connectionStatus').innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i>Gagal';
+        }
     }
 
     function handleLogout() {
         if (confirm('Logout?')) { Auth.logout(); window.location.href = 'login.html'; }
     }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', async () => {
+        await fetchJadwal();
+        updateSesiDisplay();
+        loadLocalLog();
+        restoreManualState();
+        setInterval(updateSesiDisplay, 30000);
+        testConnection();
+        // Auto start kamera jika memungkinkan
+        setTimeout(() => { if (!isScanning) startScan(); }, 500);
+    });
 </script>
 </body>
 </html>

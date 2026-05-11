@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan QR - Petugas SRMA 19</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --sidebar-width: 260px; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; margin: 0; display: flex; min-height: 100vh; }
+        .sidebar { width: var(--sidebar-width); background: #fff; border-right: 1px solid #e2e8f0; position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; display: flex; flex-direction: column; padding: 20px 0; overflow-y: auto; }
+        .sidebar a, .sidebar button { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #333; text-decoration: none; font-weight: 500; white-space: nowrap; transition: background 0.2s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-size: 0.9rem; }
+        .sidebar a:hover, .sidebar button:hover, .sidebar a.active, .sidebar button.active { background: #2e8bc0; color: #fff; }
+        .main-content { margin-left: var(--sidebar-width); flex: 1; display: flex; flex-direction: column; padding: 20px; }
+        iframe { flex: 1; border: none; border-radius: 14px; width: 100%; }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } }
+    </style>
+</head>
+<body>
+<nav class="sidebar" id="sidebar">
+    <div class="px-4 mb-4">
+        <h4 class="fw-bold"><i class="fas fa-school me-2"></i>SRMA 19</h4>
+        <small class="text-muted">Panel Petugas</small>
+    </div>
+    <button data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+    <button data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-list"></i> Data Absensi</button>
+    <button data-page="izin" onclick="navigate('izin')"><i class="fas fa-file-medical-alt"></i> Data Izin</button>
+    <button class="active" data-page="scanqr" onclick="navigate('scanqr')"><i class="fas fa-qrcode"></i> Scan QR</button>
+    <hr>
+    <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+    <a href="index.html"><i class="fas fa-globe"></i> Website</a>
+    <div class="mt-auto p-3">
+        <button class="btn btn-outline-secondary w-100" onclick="handleLogout()"><i class="fas fa-sign-out-alt me-2"></i> Logout</button>
+    </div>
+</nav>
+
+<div class="main-content">
+    <iframe src="absensi.html" allow="camera"></iframe>
+</div>
+
+<script src="api.js"></script>
+<script src="auth.js"></script>
+<script>
+    if (!Auth.requireAuth('login.html')) throw new Error('Silakan login.');
+
+    // Deteksi iframe – jika dibuka di dalam iframe, sembunyikan sidebar
+    if (window.self !== window.top) {
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) sidebar.style.display = 'none';
+            document.body.style.margin = '0';
+            const main = document.querySelector('.main-content');
+            if (main) main.style.marginLeft = '0';
+            document.body.style.padding = '0';
+        });
+    }
+
+    function navigate(page) {
+        // Redirect ke halaman dashboard_petugas.html dengan parameter, atau bisa juga langsung window.location
+        window.location.href = 'dashboard_petugas.html';
+        // Atau jika ingin navigasi di dalam iframe (jika halaman ini dibuka langsung), 
+        // bisa gunakan sessionStorage untuk memberi tahu dashboard halaman mana yang harus dibuka.
+        sessionStorage.setItem('srma19_petugas_active_page', page);
+        window.location.href = 'dashboard_petugas.html';
+    }
+
+    function handleLogout() {
+        if (confirm('Logout?')) {
+            Auth.logout();
+            sessionStorage.clear();
+            location.href = 'login.html';
+        }
+    }
+</script>
+</body>
+</html>

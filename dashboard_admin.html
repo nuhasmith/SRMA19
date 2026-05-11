@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SRMA 19 Bantul</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --sidebar-width: 260px; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; margin: 0; display: flex; min-height: 100vh; }
+        .sidebar { width: var(--sidebar-width); background: #fff; border-right: 1px solid #e2e8f0; position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; display: flex; flex-direction: column; padding: 20px 0; overflow-y: auto; }
+        .sidebar a, .sidebar button { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #333; text-decoration: none; font-weight: 500; white-space: nowrap; transition: background 0.2s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-size: 0.9rem; }
+        .sidebar a:hover, .sidebar button:hover, .sidebar a.active, .sidebar button.active { background: #2e8bc0; color: #fff; }
+        .main-content { margin-left: var(--sidebar-width); flex: 1; display: flex; flex-direction: column; }
+        iframe { flex: 1; border: none; width: 100%; }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } }
+    </style>
+</head>
+<body>
+<nav class="sidebar" id="sidebar">
+    <div class="px-4 mb-4">
+        <h4 class="fw-bold"><i class="fas fa-school me-2"></i>SRMA 19</h4>
+        <small class="text-muted">Admin Panel</small>
+    </div>
+    <button class="active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+    <button data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-list"></i> Data Absensi</button>
+    <button data-page="peserta" onclick="navigate('peserta')"><i class="fas fa-users"></i> Data Peserta</button>
+    <button data-page="jadwal" onclick="navigate('jadwal')"><i class="fas fa-calendar-alt"></i> Jadwal Kegiatan</button>
+    <button data-page="petugas" onclick="navigate('petugas')"><i class="fas fa-user-shield"></i> Data Petugas</button>
+    <button data-page="izin" onclick="navigate('izin')"><i class="fas fa-file-medical-alt"></i> Data Izin</button>
+    <button data-page="loginlog" onclick="navigate('loginlog')"><i class="fas fa-history"></i> Log Login</button>
+    <button data-page="rekap" onclick="navigate('rekap')"><i class="fas fa-chart-bar"></i> Rekap Absensi</button>
+    <hr>
+    <button data-page="scanqr" onclick="navigate('scanqr')"><i class="fas fa-qrcode"></i> Scan QR</button>
+    <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+    <a href="index.html" target="_blank"><i class="fas fa-globe"></i> Website</a>
+    <div class="mt-auto p-3">
+        <button class="btn btn-outline-secondary w-100" onclick="handleLogout()"><i class="fas fa-sign-out-alt me-2"></i> Logout</button>
+    </div>
+</nav>
+
+<div class="main-content">
+    <iframe id="contentFrame" src="dashboard_content.html" title="Konten"></iframe>
+</div>
+
+<script src="api.js"></script>
+<script src="auth.js"></script>
+<script>
+    if (!Auth.requireAuth('login.html')) throw new Error('Silakan login.');
+
+    const iframe = document.getElementById('contentFrame');
+    const buttons = document.querySelectorAll('.sidebar button[data-page]');
+
+    const pageMap = {
+        dashboard: 'dashboard_content.html',
+        absensi: 'absensi_admin.html',
+        peserta: 'peserta_admin.html',
+        jadwal: 'jadwal_admin.html',
+        petugas: 'petugas_admin.html',
+        izin: 'izin_admin.html',
+        loginlog: 'login_log_admin.html',
+        rekap: 'rekap_absensi_admin.html',
+        scanqr: 'absensi.html'
+    };
+
+    function navigate(page) {
+        buttons.forEach(b => b.classList.remove('active'));
+        const activeBtn = document.querySelector(`[data-page="${page}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+        iframe.src = pageMap[page] || 'dashboard_content.html';
+        sessionStorage.setItem('srma19_active_page', page);
+    }
+
+    // Muat halaman terakhir yang dibuka, default dashboard
+    const savedPage = sessionStorage.getItem('srma19_active_page') || 'dashboard';
+    navigate(savedPage);
+
+    // Preload data master agar semua halaman di iframe langsung mendapat cache
+    async function preloadInitialData() {
+        if (sessionStorage.getItem('srma19_admin_data')) return;
+        try {
+            const [pesertaRes, absensiRes, jadwalRes, petugasRes, izinRes] = await Promise.all([
+                API.listPeserta(),
+                API.listAbsensi('', '', 1, 100),
+                API.getJadwal(),
+                API.listPetugas(),
+                API.listIzin()
+            ]);
+            const data = {
+                peserta: pesertaRes.status === 'success' ? pesertaRes.data : [],
+                absensi: absensiRes.status === 'success' ? absensiRes.data : [],
+                jadwal: jadwalRes.status === 'success' ? jadwalRes.data : [],
+                petugas: petugasRes.status === 'success' ? petugasRes.data : [],
+                izin: izinRes.status === 'success' ? izinRes.data : []
+            };
+            sessionStorage.setItem('srma19_admin_data', JSON.stringify(data));
+        } catch (e) {
+            console.warn('Preload awal gagal, akan dimuat oleh masing-masing halaman');
+        }
+    }
+    preloadInitialData();
+
+    function handleLogout() {
+        if (confirm('Logout?')) {
+            Auth.logout();
+            sessionStorage.clear();
+            location.href = 'login.html';
+        }
+    }
+</script>
+</body>
+</html>

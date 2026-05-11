@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Absensi - Petugas SRMA 19</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 30px;
+        }
+        .filter-bar {
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            align-items: center;
+        }
+        .table-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body>
+<div id="mainContent"></div>
+
+<script src="api.js"></script>
+<script src="auth.js"></script>
+<script>
+    if (!Auth.requireAuth('login.html')) throw new Error('Silakan login.');
+    const CACHE_KEY = 'srma19_petugas_data';
+
+    function getCachedData() { try { return JSON.parse(sessionStorage.getItem(CACHE_KEY)); } catch { return null; } }
+    function setCachedData(data) { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
+
+    let absensiPage = [], currentPage = 1, totalAbsensi = 0, pageSize = 100;
+    let jadwalData = [];
+
+    // Ambil jadwal untuk dropdown sesi
+    async function refreshMasterData() {
+        try {
+            const [jadwalRes] = await Promise.all([API.getJadwal()]);
+            if (jadwalRes.status === 'success') {
+                jadwalData = jadwalRes.data;
+                const cached = getCachedData() || {};
+                cached.jadwal = jadwalData;
+                setCachedData(cached);
+                const select = document.getElementById('fSesi');
+                if (select) {
+                    const cur = select.value;
+                    select.innerHTML = '<option value="">Semua Sesi</option>' +
+                        [...new Set(jadwalData.map(j => j.nama).filter(Boolean))]
+                            .map(s => `<option>${s}</option>`).join('');
+                    select.value = cur;
+                }
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function applyFilter(page = 1) {
+        const tgl = document.getElementById('fTgl')?.value || '';
+        const sesi = document.getElementById('fSesi')?.value || '';
+        const q = document.getElementById('searchAbsensi')?.value || '';
+        document.getElementById('absensiTableContainer').innerHTML =
+            '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        try {
+            const res = await API.listAbsensi(tgl, sesi, page, pageSize);
+            if (res.status === 'success') {
+                absensiPage = res.data;
+                totalAbsensi = res.total;
+                currentPage = page;
+                renderTable();
+                renderPagination();
+            } else {
+                document.getElementById('absensiTableContainer').innerHTML =
+                    '<div class="alert alert-danger">Gagal memuat data</div>';
+            }
+        } catch (e) {
+            document.getElementById('absensiTableContainer').innerHTML =
+                '<div class="alert alert-danger">Gagal terhubung</div>';
+        }
+    }
+
+    function renderTable() {
+        let rows = '';
+        absensiPage.forEach(a => {
+            rows += `<tr>
+                <td>${a.Tanggal || '-'}</td>
+                <td>${a.Jam || '-'}</td>
+                <td><code>${(a.Kode || '').slice(-4)}</code></td>
+                <td>${a.Nama || '-'}</td>
+                <td>${a.Sesi_Nama || '-'}</td>
+                <td><span class="badge ${
+                    a.Status === 'Hadir' ? 'bg-success' :
+                    a.Status === 'Tidak Berangkat' ? 'bg-warning' :
+                    a.Status === 'Izin' ? 'bg-info' : 'bg-secondary'
+                }">${a.Status || 'Hadir'}</span></td>
+                <td>${a.Petugas || '-'}</td>
+            </tr>`;
+        });
+        if (!rows) rows = '<tr><td colspan="7" class="text-center py-2">Tidak ada data</td></tr>';
+        document.getElementById('absensiTableContainer').innerHTML = `
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+    }
+
+    function renderPagination() {
+        const totalPages = Math.ceil(totalAbsensi / pageSize);
+        let html = `<div class="d-flex justify-content-between align-items-center mt-3">
+            <small>Total: ${totalAbsensi} entri | Halaman ${currentPage} dari ${totalPages || 1}</small>
+            <div>`;
+        if (currentPage > 1) html += `<button class="btn btn-sm btn-outline-primary" onclick="applyFilter(${currentPage - 1})">← Sebelumnya</button> `;
+        if (currentPage < totalPages) html += `<button class="btn btn-sm btn-outline-primary" onclick="applyFilter(${currentPage + 1})">Berikutnya →</button>`;
+        html += `</div></div>`;
+        document.getElementById('paginationContainer').innerHTML = html;
+    }
+
+    function exportPDF() {
+        if (!absensiPage.length) { showToast('Tidak ada data', 'warning'); return; }
+        const html = `<h3 style="text-align:center">LAPORAN ABSENSI</h3>
+            <table border="1" cellpadding="5" style="width:100%;border-collapse:collapse;font-size:11px;">
+                <thead><tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr></thead>
+                <tbody>${absensiPage.map(a => `<tr><td>${a.Tanggal}</td><td>${a.Jam}</td><td>${a.Kode}</td><td>${a.Nama}</td><td>${a.Sesi_Nama}</td><td>${a.Status || 'Hadir'}</td><td>${a.Petugas}</td></tr>`).join('')}</tbody>
+            </table>`;
+        html2pdf().set({
+            filename: `absensi_${new Date().toISOString().slice(0,10)}.pdf`,
+            margin: 10,
+            html2canvas: { scale: 2 },
+            jsPDF: { format: 'a4', orientation: 'landscape' }
+        }).from(html).save();
+    }
+
+    function showToast(msg, type = 'info') {
+        const colors = {
+            success: ['#d1fae5','#10b981'],
+            error: ['#fee2e2','#ef4444'],
+            warning: ['#fef3c7','#f59e0b'],
+            info: ['#dbeafe','#3b82f6']
+        };
+        const [bg, border] = colors[type] || colors.info;
+        const el = document.createElement('div');
+        el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;';
+        el.innerHTML = `<div style="background:${bg};border-left:4px solid ${border};padding:10px 14px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);font-size:0.85rem;">${msg}</div>`;
+        document.body.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+    }
+
+    function handleLogout() {
+        if (confirm('Logout?')) { Auth.logout(); sessionStorage.clear(); location.href = 'login.html'; }
+    }
+
+    // Render UI
+    function renderMain() {
+        const sesiList = [...new Set(jadwalData.map(j => j.nama).filter(Boolean))];
+        document.getElementById('mainContent').innerHTML = `
+            <h3 class="mb-3">📋 Data Absensi</h3>
+            <div class="filter-bar">
+                <input type="text" class="form-control form-control-sm" id="searchAbsensi" placeholder="Cari..." style="width:150px">
+                <input type="date" class="form-control form-control-sm" id="fTgl" style="width:140px">
+                <select class="form-select form-select-sm" id="fSesi" style="width:150px">
+                    <option value="">Semua Sesi</option>
+                    ${sesiList.map(s => `<option>${s}</option>`).join('')}
+                </select>
+                <button class="btn btn-sm btn-outline-secondary" id="btnFilter">Terapkan</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter()">Reset</button>
+            </div>
+            <div class="d-flex gap-2 mb-3">
+                <button class="btn btn-sm btn-danger" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+            </div>
+            <div class="table-card" id="absensiTableContainer"></div>
+            <div id="paginationContainer"></div>
+        `;
+        document.getElementById('btnFilter').addEventListener('click', () => applyFilter(1));
+        document.getElementById('searchAbsensi').addEventListener('keypress', e => { if (e.key === 'Enter') applyFilter(1); });
+        applyFilter(1);
+    }
+
+    function resetFilter() {
+        document.getElementById('searchAbsensi').value = '';
+        document.getElementById('fTgl').value = '';
+        document.getElementById('fSesi').value = '';
+        applyFilter(1);
+    }
+
+    // Init
+    (async () => {
+        const cached = getCachedData();
+        if (cached?.jadwal) jadwalData = cached.jadwal;
+        renderMain();
+        refreshMasterData();
+        setInterval(refreshMasterData, 5 * 60 * 1000);
+    })();
+</script>
+</body>
+</html>

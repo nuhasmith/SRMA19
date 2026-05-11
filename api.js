@@ -1,11 +1,11 @@
 // ============================================
 // api.js - Modul Komunikasi Google Apps Script
-// SRMA 19 Bantul | Versi 7.5 (POST JSON + CORS)
+// SRMA 19 Bantul | Versi 9.3 (Login Log, Arsip Lulus, Generate, Pagination)
 // ============================================
 
 const API = (() => {
   // ⚠️ GANTI dengan URL Web App Google Apps Script Anda
-  const BASE_URL = 'https://script.google.com/macros/s/AKfycbyqOn6oKXt-7m006iwbYY5byV-NiM7fN9mS-OXSgWzKKZq8gpZ08hs_LGHl2H4kCLXj/exec';
+  const BASE_URL = 'https://script.google.com/macros/s/AKfycbzMombX8b4cdju_a9ZY2B0jCEHKf_kCE7dLHqRKGz9z30TaJpEyvAgrUKXjk0rN9P8y/exec';
 
   /**
    * Request handler untuk GET (query string)
@@ -37,7 +37,7 @@ const API = (() => {
 
   /**
    * Request handler khusus POST dengan JSON body
-   * (untuk data besar seperti foto profil)
+   * (untuk data besar seperti foto profil, bukti surat, array panjang)
    */
   async function requestPostJSON(action, data) {
     const url = new URL(BASE_URL);
@@ -64,28 +64,65 @@ const API = (() => {
 
   // --- PUBLIC API METHODS ---
   return {
+    // Tes koneksi
     ping: () => request('ping'),
-    login: (username, pin) => request('auth', { username, pin }),
+
+    // Autentikasi (dengan device info untuk log)
+    login: (username, pin) => {
+      const device = navigator.userAgent || 'Unknown';
+      return request('auth', { username, pin, device, ip: '' });
+    },
     resetPin: (username) => request('reset_pin', { username }),
+
+    // Absensi
     searchPeserta: (code) => request('search', { code }),
-    recordAbsensi: (code, nama, sesi, sesiNama, petugas = '') =>
-      request('record', { code, nama, sesi, sesi_nama: sesiNama, petugas }),
+    recordAbsensi: (code, nama, sesi, sesiNama, petugas = '', agama = '') =>
+      request('record', { code, nama, sesi, sesi_nama: sesiNama, petugas, agama }),
+
+    // listAbsensi dengan pagination (page, limit)
+    listAbsensi: (tanggal = '', sesi = '', page = 1, limit = 100) =>
+      request('list_absensi', { tanggal, sesi, page, limit }),
+
+    deleteAbsensi: (timestamps) => requestPostJSON('delete_absensi', { timestamps }),
+
+    // Peserta
     listPeserta: () => request('list_peserta'),
-    listAbsensi: (tanggal = '', sesi = '') =>
-      request('list_absensi', { tanggal, sesi }),
-    getJadwal: () => request('get_jadwal'),
-    saveJadwal: (jadwal) => request('save_jadwal', { data: JSON.stringify(jadwal) }),
     addPeserta: (data) => request('add_peserta', data),
     updatePeserta: (data) => request('update_peserta', data),
     deletePeserta: (kode) => request('delete_peserta', { kode }),
     importPeserta: (rows) => request('import_peserta', { data: JSON.stringify(rows) }),
+
+    // Jadwal
+    getJadwal: () => request('get_jadwal'),
+    saveJadwal: (jadwal) => request('save_jadwal', { data: JSON.stringify(jadwal) }),
+
+    // Petugas
     listPetugas: () => request('list_petugas'),
     addPetugas: (data) => request('add_petugas', data),
     updatePetugas: (data) => request('update_petugas', data),
     deletePetugas: (username) => request('delete_petugas', { username }),
+
+    // Profil
     getProfile: (username) => request('get_profile', { username }),
-    // Khusus untuk updateProfile (dengan foto) gunakan POST JSON
     updateProfile: (data) => requestPostJSON('update_profile', data),
+
+    // Izin (dengan bukti surat base64)
+    addIzin: (data) => requestPostJSON('add_izin', data),
+    updateIzin: (data) => requestPostJSON('update_izin', data),
+    deleteIzin: (id) => request('delete_izin', { id }),
+    listIzin: (kode = '', tanggal = '') => request('list_izin', { kode_peserta: kode, tanggal }),
+
+    // Generate ketidakhadiran + izin
+    generateAbsence: (tanggal) => request('generate_absence', { tanggal }),
+
+    // Arsip lulus & alumni
+    arsipLulus: () => request('arsip_lulus'),
+    listAlumni: () => request('list_alumni'),
+
+    // Log Login
+    listLoginLog: (limit = 500) => request('list_login_log', { limit }),
+
+    // Setup otomatis
     setup: () => request('setup')
   };
 })();
