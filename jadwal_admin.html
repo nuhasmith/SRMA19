@@ -235,6 +235,7 @@
         setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
     }
 
+    // Deteksi iframe
     if (window.self !== window.top) {
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.querySelector('.sidebar');
@@ -243,6 +244,7 @@
         });
     }
 
+    // Init: cache-first, background refresh
     (async () => {
         const cached = getCachedData();
         if (cached?.jadwal) {

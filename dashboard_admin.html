@@ -2,23 +2,92 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin Dashboard - SRMA 19 Bantul</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { --sidebar-width: 260px; }
-        body { font-family: 'Inter', sans-serif; background: #f0f2f5; margin: 0; display: flex; min-height: 100vh; }
-        .sidebar { width: var(--sidebar-width); background: #fff; border-right: 1px solid #e2e8f0; position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; display: flex; flex-direction: column; padding: 20px 0; overflow-y: auto; }
-        .sidebar a, .sidebar button { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #333; text-decoration: none; font-weight: 500; white-space: nowrap; transition: background 0.2s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-size: 0.9rem; }
-        .sidebar a:hover, .sidebar button:hover, .sidebar a.active, .sidebar button.active { background: #2e8bc0; color: #fff; }
-        .main-content { margin-left: var(--sidebar-width); flex: 1; display: flex; flex-direction: column; }
-        iframe { flex: 1; border: none; width: 100%; }
-        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Sidebar – hanya tampil di desktop */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: #fff;
+            border-right: 1px solid #e2e8f0;
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            overflow-y: auto;
+            transition: width 0.3s;
+        }
+        .sidebar a, .sidebar button {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 24px; color: #333; text-decoration: none;
+            font-weight: 500; white-space: nowrap; transition: background 0.2s;
+            cursor: pointer; border: none; background: none; width: 100%;
+            text-align: left; font-size: 0.9rem;
+        }
+        .sidebar a:hover, .sidebar button:hover,
+        .sidebar a.active, .sidebar button.active { background: #2e8bc0; color: #fff; }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 0;
+        }
+        iframe { flex: 1; border: none; width: 100%; height: 100vh; }
+
+        /* Bottom Navigation (Telegram style) – hanya tampil mobile */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #fff;
+            border-top: 1px solid #e2e8f0;
+            z-index: 1000;
+            padding: 6px 0 env(safe-area-inset-bottom, 8px);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        .bottom-nav-inner {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .bottom-nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: #687684; text-decoration: none; font-size: 0.65rem;
+            font-weight: 500; transition: color 0.2s; cursor: pointer;
+            background: none; border: none; padding: 4px 6px;
+            flex: 1; text-align: center;
+        }
+        .bottom-nav-item i { font-size: 1.3rem; margin-bottom: 2px; }
+        .bottom-nav-item.active { color: #2e8bc0; }
+        .bottom-nav-item span { font-size: 0.6rem; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding-bottom: 70px; }
+            .bottom-nav { display: block; }
+        }
+        @media (min-width: 769px) {
+            .bottom-nav { display: none !important; }
+        }
     </style>
 </head>
 <body>
+<!-- Sidebar Desktop -->
 <nav class="sidebar" id="sidebar">
     <div class="px-4 mb-4">
         <h4 class="fw-bold"><i class="fas fa-school me-2"></i>SRMA 19</h4>
@@ -41,8 +110,36 @@
     </div>
 </nav>
 
-<div class="main-content">
+<!-- Main Content (iframe) -->
+<div class="main-content" id="mainContentWrapper">
     <iframe id="contentFrame" src="dashboard_content.html" title="Konten"></iframe>
+</div>
+
+<!-- Bottom Navigation Mobile -->
+<div class="bottom-nav" id="bottomNav">
+    <div class="bottom-nav-inner">
+        <button class="bottom-nav-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></button>
+        <button class="bottom-nav-item" data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-list"></i><span>Absensi</span></button>
+        <button class="bottom-nav-item" data-page="peserta" onclick="navigate('peserta')"><i class="fas fa-users"></i><span>Peserta</span></button>
+        <button class="bottom-nav-item" data-page="jadwal" onclick="navigate('jadwal')"><i class="fas fa-calendar-alt"></i><span>Jadwal</span></button>
+        <button class="bottom-nav-item" onclick="toggleBottomSheet()"><i class="fas fa-ellipsis-h"></i><span>Lainnya</span></button>
+    </div>
+</div>
+
+<!-- Bottom sheet untuk akses menu sekunder di mobile -->
+<div class="position-fixed bottom-0 start-50 translate-middle-x bg-white border rounded-top-4 shadow-lg p-4 pb-5 w-75"
+     id="bottomSheet" style="display:none; z-index:1100; max-width:400px;">
+    <div class="d-flex flex-column gap-3">
+        <button class="btn btn-outline-secondary btn-sm" onclick="navigate('petugas'); toggleBottomSheet()"><i class="fas fa-user-shield me-2"></i>Data Petugas</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="navigate('izin'); toggleBottomSheet()"><i class="fas fa-file-medical-alt me-2"></i>Data Izin</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="navigate('loginlog'); toggleBottomSheet()"><i class="fas fa-history me-2"></i>Log Login</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="navigate('rekap'); toggleBottomSheet()"><i class="fas fa-chart-bar me-2"></i>Rekap Absensi</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="navigate('scanqr'); toggleBottomSheet()"><i class="fas fa-qrcode me-2"></i>Scan QR</button>
+        <hr>
+        <a class="btn btn-outline-secondary btn-sm" href="profile.html"><i class="fas fa-user-circle me-2"></i>Profil</a>
+        <a class="btn btn-outline-secondary btn-sm" href="index.html" target="_blank"><i class="fas fa-globe me-2"></i>Website</a>
+        <button class="btn btn-outline-danger btn-sm" onclick="handleLogout(); toggleBottomSheet()"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
+    </div>
 </div>
 
 <script src="api.js"></script>
@@ -51,7 +148,8 @@
     if (!Auth.requireAuth('login.html')) throw new Error('Silakan login.');
 
     const iframe = document.getElementById('contentFrame');
-    const buttons = document.querySelectorAll('.sidebar button[data-page]');
+    const sidebarButtons = document.querySelectorAll('.sidebar button[data-page]');
+    const bottomNavItems = document.querySelectorAll('.bottom-nav-item[data-page]');
 
     const pageMap = {
         dashboard: 'dashboard_content.html',
@@ -66,18 +164,24 @@
     };
 
     function navigate(page) {
-        buttons.forEach(b => b.classList.remove('active'));
-        const activeBtn = document.querySelector(`[data-page="${page}"]`);
-        if (activeBtn) activeBtn.classList.add('active');
+        // Update active state di sidebar & bottom nav
+        sidebarButtons.forEach(b => b.classList.remove('active'));
+        const sidebarActive = document.querySelector(`.sidebar button[data-page="${page}"]`);
+        if (sidebarActive) sidebarActive.classList.add('active');
+
+        bottomNavItems.forEach(item => item.classList.remove('active'));
+        const bottomActive = document.querySelector(`.bottom-nav-item[data-page="${page}"]`);
+        if (bottomActive) bottomActive.classList.add('active');
+
         iframe.src = pageMap[page] || 'dashboard_content.html';
         sessionStorage.setItem('srma19_active_page', page);
     }
 
-    // Muat halaman terakhir yang dibuka, default dashboard
+    // Muat halaman terakhir
     const savedPage = sessionStorage.getItem('srma19_active_page') || 'dashboard';
     navigate(savedPage);
 
-    // Preload data master agar semua halaman di iframe langsung mendapat cache
+    // Preload data master
     async function preloadInitialData() {
         if (sessionStorage.getItem('srma19_admin_data')) return;
         try {
@@ -97,7 +201,7 @@
             };
             sessionStorage.setItem('srma19_admin_data', JSON.stringify(data));
         } catch (e) {
-            console.warn('Preload awal gagal, akan dimuat oleh masing-masing halaman');
+            console.warn('Preload awal gagal');
         }
     }
     preloadInitialData();
@@ -109,6 +213,22 @@
             location.href = 'login.html';
         }
     }
+
+    // Bottom sheet toggle
+    function toggleBottomSheet() {
+        const sheet = document.getElementById('bottomSheet');
+        sheet.style.display = sheet.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Tutup bottom sheet jika klik di luar
+    document.addEventListener('click', function(e) {
+        const sheet = document.getElementById('bottomSheet');
+        if (sheet.style.display === 'block' &&
+            !sheet.contains(e.target) &&
+            !e.target.closest('.bottom-nav-item[onclick*="toggleBottomSheet"]')) {
+            sheet.style.display = 'none';
+        }
+    });
 </script>
 </body>
 </html>
