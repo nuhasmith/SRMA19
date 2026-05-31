@@ -3,42 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jadwal Kegiatan - Admin SRMA 19</title>
+    <title>Jadwal Kegiatan - Admin SRMA 19 Bantul</title>
     <link rel="icon" type="image/webp" href="srma.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f0f2f5;
-            margin: 0;
-            padding: 30px;
-        }
-        .jadwal-card {
-            background: #fff;
-            border-radius: 14px;
-            padding: 14px 18px;
-            border-left: 5px solid #0d6efd;
-            margin-bottom: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            transition: transform 0.2s;
-        }
-        .jadwal-card:hover { transform: translateX(4px); }
-        .agama-group { margin-bottom: 28px; }
-        .agama-group h5 {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 14px;
-            color: #1e293b;
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
+        :root { --primary: #0d6efd; --danger: #ef4444; --warning: #f59e0b; --success: #10b981; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; margin: 0; padding: 30px; }
         .filter-bar {
             background: #fff;
             border-radius: 12px;
@@ -50,30 +22,62 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             align-items: center;
         }
+        .jadwal-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: all 0.2s;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .jadwal-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .icon-wrap {
+            width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; flex-shrink: 0;
+        }
+        .btn-action { padding: 2px 8px; font-size: 0.8rem; }
+        .agama-group { margin-bottom: 24px; }
+        .agama-group h5 {
+            display: flex; align-items: center; gap: 8px;
+            font-weight: 700; color: #1e293b; font-size: 1rem;
+            border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;
+        }
         .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.5); z-index: 2000;
             display: flex; align-items: center; justify-content: center;
         }
         .modal-box {
-            background: #fff;
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 500px;
-            width: 92%;
+            background: #fff; border-radius: 16px; padding: 24px;
+            max-width: 500px; width: 92%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            max-height: 85vh;
-            overflow-y: auto;
+            max-height: 85vh; overflow-y: auto;
         }
+        .loading-spinner { display: flex; justify-content: center; padding: 40px; }
+        .toast-container {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            z-index: 9999; min-width: 200px; max-width: 90%;
+        }
+        .toast-custom {
+            padding: 10px 14px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            font-size: 0.85rem; display: flex; align-items: center; gap: 6px;
+        }
+        @media (max-width: 768px) { body { padding: 16px; } }
     </style>
 </head>
 <body>
-<div id="mainContent"></div>
+<div id="mainContent">
+    <div class="loading-spinner"><div class="spinner-border text-primary"></div></div>
+</div>
 
 <script src="api.js"></script>
 <script src="auth.js"></script>
 <script>
+    // ==================== AUTH & INIT ====================
     if (!Auth.requireAuth('login.html')) throw new Error('Silakan login.');
     const currentUser = Auth.getCurrentUser();
     if (currentUser.role !== 'admin') {
@@ -87,37 +91,137 @@
 
     let jadwalData = [];
     let filterAgama = '';
+    let isLoading = false;
 
-    async function refreshJadwal() {
+    // ==================== TOAST ====================
+    function showToast(msg, type = 'info') {
+        const colors = {
+            success: ['#d1fae5','#10b981'],
+            error: ['#fee2e2','#ef4444'],
+            warning: ['#fef3c7','#f59e0b'],
+            info: ['#dbeafe','#3b82f6']
+        };
+        const [bg, border] = colors[type] || colors.info;
+        const el = document.createElement('div');
+        el.className = 'toast-container';
+        el.innerHTML = `<div class="toast-custom" style="background:${bg};border-left:4px solid ${border};color:${type === 'error' ? '#991b1b' : type === 'warning' ? '#92400e' : type === 'success' ? '#065f46' : '#1e40af'};">${msg}</div>`;
+        document.body.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+    }
+
+    // ==================== FETCH JADWAL DARI SERVER ====================
+    async function refreshJadwal(silent = false) {
+        if (isLoading) return;
+        isLoading = true;
+
+        if (!silent) {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary me-2"></div>
+                    <span>Memuat jadwal dari server...</span>
+                </div>
+            `;
+        }
+
         try {
+            // Panggil API ke Apps Script
             const res = await API.getJadwal();
+
             if (res.status === 'success') {
+                // Data baru dari server
                 jadwalData = res.data.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
+
+                // Simpan ke sessionStorage
                 const cached = getCachedData() || {};
                 cached.jadwal = jadwalData;
                 setCachedData(cached);
+
                 renderJadwal();
+
+                if (!silent) {
+                    showToast('✅ Jadwal berhasil diperbarui dari server.', 'success');
+                }
+            } else {
+                showToast('❌ Gagal memuat jadwal: ' + (res.message || 'Unknown error'), 'error');
+                if (jadwalData.length === 0) {
+                    const cached = getCachedData();
+                    if (cached?.jadwal) {
+                        jadwalData = cached.jadwal.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0));
+                        renderJadwal();
+                        showToast('⚠️ Menampilkan data dari cache (offline).', 'warning');
+                    } else {
+                        document.getElementById('mainContent').innerHTML = `
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-exclamation-triangle me-2" style="color:#ef4444;"></i>
+                                Gagal memuat jadwal. <br>
+                                <button class="btn btn-sm btn-primary mt-2" onclick="refreshJadwal()">
+                                    <i class="fas fa-sync-alt me-1"></i>Coba lagi
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error('Error refreshJadwal:', e);
+            showToast('❌ Gagal terhubung ke server.', 'error');
+            if (jadwalData.length === 0) {
+                const cached = getCachedData();
+                if (cached?.jadwal) {
+                    jadwalData = cached.jadwal.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0));
+                    renderJadwal();
+                    showToast('⚠️ Menampilkan data dari cache (offline).', 'warning');
+                } else {
+                    document.getElementById('mainContent').innerHTML = `
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-exclamation-triangle me-2" style="color:#ef4444;"></i>
+                            Tidak ada data jadwal. <br>
+                            <button class="btn btn-sm btn-primary mt-2" onclick="refreshJadwal()">
+                                <i class="fas fa-sync-alt me-1"></i>Coba lagi
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        } finally {
+            isLoading = false;
+        }
     }
 
+    // ==================== RENDER JADWAL ====================
     function renderJadwal() {
         const agamaList = [...new Set(jadwalData.map(j => j.agama).filter(Boolean))].sort();
         const filtered = filterAgama ? jadwalData.filter(j => j.agama === filterAgama) : jadwalData;
 
-        let html = `<h3 class="mb-3">📅 Jadwal Kegiatan</h3>`;
-        html += `<div class="filter-bar">
-            <label><strong>Filter Agama:</strong></label>
+        let html = `
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h3 class="mb-0">📅 Jadwal Kegiatan</h3>
+            <div class="d-flex gap-2 flex-wrap">
+                <input type="date" id="prayerDate" value="${new Date().toISOString().split('T')[0]}" class="form-control form-control-sm" style="width:150px;">
+                <button class="btn btn-sm btn-warning rounded-pill" onclick="updatePrayerTimes()">
+                    <i class="fas fa-cloud-sun me-1"></i>Perbarui Sholat
+                </button>
+                <button class="btn btn-sm btn-success rounded-pill" onclick="showJadwalModal()">
+                    <i class="fas fa-plus"></i> Tambah
+                </button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="handleRefreshClick()" title="Muat ulang data dari server (Apps Script)">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <label class="fw-semibold me-2"><i class="fas fa-filter me-1"></i>Filter Agama:</label>
             <select class="form-select form-select-sm" id="filterAgamaSelect" style="width:180px" onchange="changeFilterAgama(this.value)">
                 <option value="">Semua Agama</option>
                 ${agamaList.map(a => `<option value="${a}" ${filterAgama === a ? 'selected' : ''}>${a}</option>`).join('')}
             </select>
-            <button class="btn btn-sm btn-success rounded-pill" onclick="showJadwalModal()"><i class="fas fa-plus"></i> Tambah</button>
-            <button class="btn btn-sm btn-outline-primary" onclick="refreshJadwal()" title="Refresh dari server"><i class="fas fa-sync-alt"></i></button>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="resetFilter()">Reset</button>
+            <span class="small text-muted ms-2" id="lastUpdateInfo"></span>
         </div>`;
 
         if (!jadwalData.length) {
-            html += `<div class="text-center py-5 text-muted">Belum ada jadwal. Tambahkan yang baru.</div>`;
+            html += `<div class="text-center py-5 text-muted">Belum ada jadwal. Klik "Tambah" untuk membuat baru.</div>`;
         } else if (!filtered.length) {
             html += `<div class="text-center py-5 text-muted">Tidak ada jadwal untuk agama yang dipilih.</div>`;
         } else {
@@ -129,40 +233,114 @@
 
             for (const [agama, items] of Object.entries(grouped)) {
                 html += `<div class="agama-group">
-                    <h5><i class="fas fa-users me-2"></i>${agama} <small class="text-muted">(${items.length} sesi)</small></h5>`;
+                    <h5><i class="fas fa-users me-2" style="color:var(--primary);"></i>${agama} <span class="badge bg-secondary rounded-pill">${items.length}</span></h5>
+                    <div class="row g-2">`;
                 items.forEach(j => {
                     const realIdx = jadwalData.indexOf(j);
-                    html += `<div class="jadwal-card">
-                        <div style="background:${j.bg||'#f0f0f0'};color:${j.color||'#333'};width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
-                            <i class="fas ${j.icon||'fa-circle'}"></i>
+                    html += `<div class="col-md-6 col-lg-4">
+                        <div class="jadwal-card" style="border-left:4px solid ${j.color||'#0d6efd'};">
+                            <div class="icon-wrap" style="background:${j.bg||'#f0f0f0'};color:${j.color||'#333'};">
+                                <i class="fas ${j.icon||'fa-circle'}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <strong class="small">${j.nama}</strong>
+                                <div><small class="text-muted">${j.mulai} - ${j.selesai}</small></div>
+                            </div>
+                            <div class="d-flex gap-1 flex-shrink-0">
+                                <button class="btn btn-sm btn-outline-warning btn-action" onclick="editJadwal(${realIdx})" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteJadwal(${realIdx})" title="Hapus"><i class="fas fa-trash-alt"></i></button>
+                            </div>
                         </div>
-                        <div class="flex-grow-1"><strong>${j.nama}</strong><br><small>${j.mulai} - ${j.selesai}</small></div>
-                        <button class="btn btn-sm btn-outline-warning" onclick="editJadwal(${realIdx})"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteJadwal(${realIdx})"><i class="fas fa-trash-alt"></i></button>
                     </div>`;
                 });
-                html += `</div>`;
+                html += `</div></div>`;
             }
         }
+
+        // Tambahkan timestamp update
+        const now = new Date();
+        const updateTime = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+        html += `<div class="text-end small text-muted mt-2"><i class="fas fa-clock me-1"></i>Terakhir diperbarui: ${updateTime}</div>`;
+
         document.getElementById('mainContent').innerHTML = html;
     }
 
     function changeFilterAgama(agama) { filterAgama = agama; renderJadwal(); }
+    function resetFilter() { filterAgama = ''; renderJadwal(); }
 
+    // ==================== HANDLE REFRESH CLICK ====================
+    function handleRefreshClick() {
+        sessionStorage.removeItem(CACHE_KEY);
+        refreshJadwal(false);
+    }
+
+    // ==================== UPDATE SHOLAT OTOMATIS ====================
+    async function updatePrayerTimes() {
+        const date = document.getElementById('prayerDate').value;
+        if (!date) { showToast('Pilih tanggal terlebih dahulu.', 'warning'); return; }
+        const btn = document.querySelector('button[onclick*="updatePrayerTimes"]');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Memperbarui...';
+        try {
+            const res = await API.updatePrayerTimes(date);
+            if (res.status === 'ok') {
+                showToast(res.message, 'success');
+                await refreshJadwal(true);
+            } else {
+                showToast(res.message, 'error');
+            }
+        } catch (e) {
+            showToast('Gagal terhubung ke server.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-cloud-sun me-1"></i>Perbarui Sholat';
+        }
+    }
+
+    // ==================== CRUD JADWAL ====================
     function showJadwalModal(index = null) {
         const existing = index !== null ? jadwalData[index] : null;
-        const icons = ['fa-sun','fa-coffee','fa-mosque','fa-church','fa-om','fa-dharmachakra','fa-torii-gate','fa-users','fa-utensil-spoon','fa-moon'];
-        const agamaOptions = ['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu','Lainnya'];
+        const icons = ['fa-sun','fa-coffee','fa-mosque','fa-church','fa-om','fa-dharmachakra','fa-spa','fa-users','fa-utensil-spoon','fa-moon','fa-cross'];
+        const agamaOptions = ['Islam','Kristen','Katolik','Hindu','Buddha','Penghayat','Lainnya'];
         const modalHtml = `
         <div class="modal-overlay" id="jadwalModal">
             <div class="modal-box">
-                <h5 class="fw-bold mb-3">${existing ? 'Edit Jadwal' : 'Tambah Jadwal'}</h5>
-                <div class="mb-3"><label>Agama</label><select class="form-select" id="jmAgama">${agamaOptions.map(a => `<option ${(existing?.agama||'Islam')===a?'selected':''}>${a}</option>`).join('')}</select></div>
-                <div class="mb-3"><label>Nama Kegiatan</label><input class="form-control" id="jmNama" value="${existing?.nama||''}"></div>
-                <div class="row mb-3"><div class="col"><label>Mulai</label><input type="time" class="form-control" id="jmMulai" value="${existing?.mulai||''}"></div><div class="col"><label>Selesai</label><input type="time" class="form-control" id="jmSelesai" value="${existing?.selesai||''}"></div></div>
-                <div class="mb-3"><label>Icon (FontAwesome)</label><select class="form-select" id="jmIcon">${icons.map(i => `<option value="${i}" ${existing?.icon===i?'selected':''}>${i}</option>`).join('')}</select></div>
-                <div class="mb-3"><label>Warna</label><input type="color" class="form-control" id="jmColor" value="${existing?.color||'#0d6efd'}"></div>
-                <div class="d-flex gap-2 justify-content-end"><button class="btn btn-secondary" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="saveJadwal(${index})">Simpan</button></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">${existing ? '✏️ Edit Jadwal' : '➕ Tambah Jadwal'}</h5>
+                    <button class="btn-close" onclick="closeModal()"></button>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Agama</label>
+                    <select class="form-select" id="jmAgama">${agamaOptions.map(a => `<option ${(existing?.agama||'Islam')===a?'selected':''}>${a}</option>`).join('')}</select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nama Kegiatan</label>
+                    <input class="form-control" id="jmNama" value="${existing?.nama||''}" placeholder="Contoh: Apel Pagi">
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">Mulai</label>
+                        <input type="time" class="form-control" id="jmMulai" value="${existing?.mulai||''}">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Selesai</label>
+                        <input type="time" class="form-control" id="jmSelesai" value="${existing?.selesai||''}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Icon (FontAwesome)</label>
+                    <select class="form-select" id="jmIcon">${icons.map(i => `<option value="${i}" ${existing?.icon===i?'selected':''}>${i}</option>`).join('')}</select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Warna</label>
+                    <input type="color" class="form-control" id="jmColor" value="${existing?.color||'#0d6efd'}">
+                </div>
+                <div class="d-flex gap-2 justify-content-end mt-3">
+                    <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+                    <button class="btn btn-primary" onclick="saveJadwal(${index})">
+                        <i class="fas fa-save me-1"></i>Simpan
+                    </button>
+                </div>
             </div>
         </div>`;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
@@ -179,7 +357,6 @@
         const icon = document.getElementById('jmIcon').value;
         const color = document.getElementById('jmColor').value;
         if (!nama || !mulai || !selesai) { showToast('Nama, Mulai, Selesai wajib diisi.', 'error'); return; }
-        if (!Array.isArray(jadwalData)) { showToast('Data jadwal belum siap.', 'error'); return; }
 
         const newEntry = {
             id: (index !== null && index !== undefined && jadwalData[index]?.id) ? jadwalData[index].id : Date.now(),
@@ -194,49 +371,49 @@
             updatedJadwal.push(newEntry);
         }
 
-        const res = await API.saveJadwal(updatedJadwal);
-        if (res.status === 'ok') {
-            jadwalData = updatedJadwal.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0));
-            setCachedData({...getCachedData(), jadwal: jadwalData});
-            closeModal();
-            renderJadwal();
-            showToast('Jadwal disimpan.', 'success');
-        } else {
-            showToast(res.message, 'error');
+        const btn = document.querySelector('#jadwalModal .btn-primary');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';
+
+        try {
+            const res = await API.saveJadwal(updatedJadwal);
+            if (res.status === 'ok') {
+                jadwalData = updatedJadwal.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0));
+                setCachedData({...getCachedData(), jadwal: jadwalData});
+                closeModal();
+                renderJadwal();
+                showToast('✅ Jadwal disimpan.', 'success');
+            } else {
+                showToast(res.message, 'error');
+            }
+        } catch (e) {
+            showToast('Gagal menyimpan jadwal.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save me-1"></i>Simpan';
         }
     }
 
     async function deleteJadwal(index) {
         if (!confirm('Hapus jadwal ini?')) return;
         const deleted = jadwalData.splice(index, 1);
-        const res = await API.saveJadwal(jadwalData);
-        if (res.status === 'ok') {
-            setCachedData({...getCachedData(), jadwal: jadwalData});
-            renderJadwal();
-            showToast('Jadwal dihapus.', 'success');
-        } else {
+        try {
+            const res = await API.saveJadwal(jadwalData);
+            if (res.status === 'ok') {
+                setCachedData({...getCachedData(), jadwal: jadwalData});
+                renderJadwal();
+                showToast('✅ Jadwal dihapus.', 'success');
+            } else {
+                jadwalData.splice(index, 0, deleted[0]);
+                showToast(res.message, 'error');
+            }
+        } catch (e) {
             jadwalData.splice(index, 0, deleted[0]);
-            showToast(res.message, 'error');
-            await refreshJadwal();
+            showToast('Gagal menghapus jadwal.', 'error');
         }
     }
 
-    function showToast(msg, type = 'info') {
-        const colors = {
-            success: ['#d1fae5','#10b981'],
-            error: ['#fee2e2','#ef4444'],
-            warning: ['#fef3c7','#f59e0b'],
-            info: ['#dbeafe','#3b82f6']
-        };
-        const [bg, border] = colors[type] || colors.info;
-        const el = document.createElement('div');
-        el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;';
-        el.innerHTML = `<div style="background:${bg};border-left:4px solid ${border};padding:10px 14px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);font-size:0.85rem;">${msg}</div>`;
-        document.body.appendChild(el);
-        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
-    }
-
-    // Deteksi iframe
+    // ==================== DETEKSI IFRAME ====================
     if (window.self !== window.top) {
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.querySelector('.sidebar');
@@ -245,17 +422,21 @@
         });
     }
 
-    // Init: cache-first, background refresh
+    // ==================== INISIALISASI ====================
     (async () => {
         const cached = getCachedData();
         if (cached?.jadwal) {
             jadwalData = cached.jadwal.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0));
             renderJadwal();
         } else {
-            document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
-            await refreshJadwal();
+            document.getElementById('mainContent').innerHTML = '<div class="loading-spinner"><div class="spinner-border text-primary"></div></div>';
         }
-        setInterval(refreshJadwal, 5 * 60 * 1000);
+
+        await refreshJadwal(true);
+
+        setInterval(() => {
+            refreshJadwal(true);
+        }, 5 * 60 * 1000);
     })();
 </script>
 </body>

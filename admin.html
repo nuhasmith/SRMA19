@@ -48,9 +48,6 @@
         .table thead { background: #f8fafc; }
         .table th { font-weight: 600; color: #687684; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; border-bottom: 1px solid #e2e8f0; }
         .filter-bar { background: #fff; border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .jadwal-card { background: #fff; border-radius: 14px; padding: 16px; border-left: 5px solid var(--primary); margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: var(--transition); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .modal-box { background: #fff; border-radius: 16px; padding: 24px; max-width: 500px; width: 92%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
         .absensi-iframe { width: 100%; height: calc(100vh - 80px); border: none; border-radius: 14px; }
         .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e2e8f0; z-index: 900; padding: 4px 0 env(safe-area-inset-bottom, 8px) 0; box-shadow: 0 -1px 8px rgba(0,0,0,0.05); }
         .bottom-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 0; color: #687684; font-size: 0.65rem; font-weight: 500; flex: 1; transition: all 0.2s; cursor: pointer; border: none; background: none; text-decoration: none; }
@@ -66,6 +63,8 @@
     </style>
 </head>
 <body>
+
+<!-- Sidebar desktop -->
 <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <div class="d-flex align-items-center gap-2">
@@ -94,14 +93,18 @@
         <button class="btn btn-outline-secondary btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt me-2"></i> <span>Logout</span></button>
     </div>
 </div>
+
+<!-- Navigasi bawah mobile -->
 <div class="bottom-nav" id="bottomNav">
-    <button class="bottom-nav-item" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i><span>Beranda</span></button>
+    <button class="bottom-nav-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i><span>Beranda</span></button>
     <button class="bottom-nav-item" data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-check"></i><span>Absensi</span></button>
     <button class="bottom-nav-item" data-page="peserta" onclick="navigate('peserta')"><i class="fas fa-user-friends"></i><span>Peserta</span></button>
     <button class="bottom-nav-item" data-page="jadwal" onclick="navigate('jadwal')"><i class="fas fa-calendar-alt"></i><span>Jadwal</span></button>
     <button class="bottom-nav-item" data-page="izin" onclick="navigate('izin')"><i class="fas fa-file-medical-alt"></i><span>Izin</span></button>
     <button class="bottom-nav-item" onclick="toggleBottomSheet()"><i class="fas fa-ellipsis-h"></i><span>Lainnya</span></button>
 </div>
+
+<!-- Bottom sheet mobile -->
 <div class="bottom-sheet" id="bottomSheet">
     <button onclick="navigate('petugas'); toggleBottomSheet();"><i class="fas fa-user-shield"></i> Data Petugas</button>
     <button onclick="navigate('absensi_qr'); toggleBottomSheet();"><i class="fas fa-qrcode"></i> Scan QR</button>
@@ -109,7 +112,10 @@
     <a href="index.html" target="_blank"><i class="fas fa-globe"></i> Website Utama</a>
     <button onclick="handleLogout(); toggleBottomSheet();" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
 </div>
+
+<!-- Konten utama -->
 <div class="main-content" id="mainContent"></div>
+
 <script src="api.js"></script>
 <script src="auth.js"></script>
 <script>
@@ -170,18 +176,56 @@ let pesertaFiltered = [], selectedPeserta = new Set();
 let absensiFiltered = [], selectedAbsensi = new Set();
 let userProfile = null;
 
+function updateSidebarAvatar(profile) {
+    const av = document.getElementById('sidebarAvatar'), nm = document.getElementById('sidebarName');
+    if (profile && profile.Foto && profile.Foto.startsWith('data:image')) { av.innerHTML = `<img src="${profile.Foto}" alt="Avatar">`; av.style.background = 'transparent'; }
+    else { const ini = (profile?.Nama || currentUser.nama || 'A').charAt(0).toUpperCase(); av.innerHTML = ini; av.style.background = 'var(--tg-blue)'; }
+    if (nm && profile) nm.textContent = profile.Nama || currentUser.nama || 'Admin SRMA 19';
+}
+
+// ==================== PERBAIKAN PRELOAD ====================
 async function preloadAllData() {
     try { const pr = await API.getProfile(currentUser.username); if (pr.status === 'success') { userProfile = pr.data; updateSidebarAvatar(userProfile); } } catch(e) {}
+    
+    const sessionData = sessionStorage.getItem('srma19_admin_data');
+    if (sessionData) {
+        try {
+            const parsed = JSON.parse(sessionData);
+            if (parsed.peserta && parsed.absensi && parsed.jadwal && parsed.petugas && parsed.izin) {
+                pesertaData = parsed.peserta;
+                absensiData = parsed.absensi;
+                jadwalData = parsed.jadwal;
+                petugasData = parsed.petugas;
+                izinData = parsed.izin;
+                setCachedData({ peserta: pesertaData, absensi: absensiData, jadwal: jadwalData, petugas: petugasData, izin: izinData });
+                console.log('Data loaded from sessionStorage (preload login)');
+                const page = localStorage.getItem(MENU_KEY) || 'dashboard';
+                updateMenuUI(page);
+                navigate(page);
+                refreshAllData(false);
+                return;
+            }
+        } catch(e) { console.warn('Gagal parse sessionStorage', e); }
+    }
+
     const cached = getCachedData();
     if (cached) {
-        pesertaData = cached.peserta || []; absensiData = cached.absensi || []; jadwalData = cached.jadwal || []; petugasData = cached.petugas || []; izinData = cached.izin || [];
-        const page = localStorage.getItem(MENU_KEY) || 'dashboard'; updateMenuUI(page); navigate(page);
+        pesertaData = cached.peserta || [];
+        absensiData = cached.absensi || [];
+        jadwalData = cached.jadwal || [];
+        petugasData = cached.petugas || [];
+        izinData = cached.izin || [];
+        const page = localStorage.getItem(MENU_KEY) || 'dashboard';
+        updateMenuUI(page);
+        navigate(page);
         refreshAllData(false);
-    } else {
-        document.getElementById('mainContent').innerHTML = `<div class="loading-overlay"><div class="spinner-border text-primary"></div></div>`;
-        await refreshAllData(true);
+        return;
     }
+
+    document.getElementById('mainContent').innerHTML = `<div class="loading-overlay"><div class="spinner-border text-primary"></div></div>`;
+    await refreshAllData(true);
 }
+
 async function refreshAllData(initial = false) {
     try {
         const [a, p, j, t, i] = await Promise.all([API.listAbsensi(), API.listPeserta(), API.getJadwal(), API.listPetugas(), API.listIzin()]);
@@ -191,25 +235,63 @@ async function refreshAllData(initial = false) {
         if (t.status === 'success') petugasData = t.data;
         if (i.status === 'success') izinData = i.data;
         setCachedData({ peserta: pesertaData, absensi: absensiData, jadwal: jadwalData, petugas: petugasData, izin: izinData });
+        sessionStorage.setItem('srma19_admin_data', JSON.stringify({ peserta: pesertaData, absensi: absensiData, jadwal: jadwalData, petugas: petugasData, izin: izinData }));
         if (initial) { const page = localStorage.getItem(MENU_KEY) || 'dashboard'; updateMenuUI(page); navigate(page); }
         else { const cur = localStorage.getItem(MENU_KEY) || 'dashboard'; navigate(cur); }
     } catch(e) { if (initial) document.getElementById('mainContent').innerHTML = `<div class="alert alert-danger m-4">Gagal memuat data.</div>`; }
 }
-function updateSidebarAvatar(profile) {
-    const av = document.getElementById('sidebarAvatar'), nm = document.getElementById('sidebarName');
-    if (profile && profile.Foto && profile.Foto.startsWith('data:image')) { av.innerHTML = `<img src="${profile.Foto}" alt="Avatar">`; av.style.background = 'transparent'; }
-    else { const ini = (profile?.Nama || currentUser.nama || 'A').charAt(0).toUpperCase(); av.innerHTML = ini; av.style.background = 'var(--tg-blue)'; }
-    if (nm && profile) nm.textContent = profile.Nama || currentUser.nama || 'Admin SRMA 19';
+
+// ==================== CLEAR CACHE & RELOAD ====================
+async function clearCacheAndReload() {
+    if (!confirm('Hapus semua cache dan muat ulang data dari server?')) return;
+    showToast('Membersihkan cache dan memuat ulang data...', 'info');
+    sessionStorage.removeItem('srma19_admin_data');
+    sessionStorage.removeItem('srma19_petugas_data');
+    sessionStorage.removeItem('srma19_petugas_cache');
+    sessionStorage.removeItem('srma19_admin_cache');
+    localStorage.removeItem('srma19_admin_cache');
+    localStorage.removeItem('srma19_petugas_cache');
+    window.location.reload();
 }
 
 // ==================== DASHBOARD ====================
 function renderDashboard() {
     const hariIni = new Date().toISOString().split('T')[0];
     document.getElementById('mainContent').innerHTML = `
-        <div class="page-header"><h5>📊 Dashboard</h5><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary rounded-pill" onclick="backupAllData()"><i class="fas fa-cloud-download-alt me-1"></i>Backup Data</button><span class="text-muted small align-self-center">${new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</span></div></div>
-        <div class="row g-3 mb-4"><div class="col-6 col-md-3"><div class="stat-card"><div class="stat-label">Total Peserta</div><div class="stat-value">${pesertaData.length}</div></div></div><div class="col-6 col-md-3"><div class="stat-card"><div class="stat-label">Total Absensi</div><div class="stat-value">${absensiData.length}</div></div></div><div class="col-6 col-md-3"><div class="stat-card"><div class="stat-label">Hadir Hari Ini</div><div class="stat-value">${absensiData.filter(a=>a.Tanggal===hariIni && a.Status==='Hadir').length}</div></div></div><div class="col-6 col-md-3"><div class="stat-card"><div class="stat-label">Izin Hari Ini</div><div class="stat-value">${izinData.filter(i=>i.Tanggal===hariIni).length}</div></div></div></div>
-        <div class="card-table"><div class="p-3 border-bottom"><h6>Absensi Terbaru</h6></div><div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th></tr></thead><tbody>${absensiData.slice(0,6).map(r=>`<tr><td>${r.Tanggal||'-'}</td><td>${r.Jam||'-'}</td><td><code>${(r.Kode||'').slice(-4)}</code></td><td>${r.Nama||'-'}</td><td class="small">${r.Sesi_Nama||'-'}</td><td><span class="badge ${r.Status==='Hadir'?'bg-success':'bg-warning'}">${r.Status||'Hadir'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="text-center py-2">Belum ada</td></tr>'}</tbody></table></div></div>`;
+        <div class="page-header">
+            <h5>📊 Dashboard</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshDashboard()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
+                <button class="btn btn-sm btn-danger rounded-pill" onclick="clearCacheAndReload()" title="Hapus cache dan muat ulang data dari server">
+                    <i class="fas fa-trash-alt me-1"></i> Clear Cache
+                </button>
+                <button class="btn-backup" onclick="backupAllData()"><i class="fas fa-cloud-download-alt me-1"></i> Backup Data</button>
+            </div>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-label">Total Peserta</div><div class="stat-value">${pesertaData.length}</div></div></div>
+            <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-label">Total Absensi</div><div class="stat-value">${absensiData.length}</div></div></div>
+            <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-label">Hadir Hari Ini</div><div class="stat-value">${absensiData.filter(a=>a.Tanggal===hariIni && a.Status==='Hadir').length}</div></div></div>
+            <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-label">Izin Hari Ini</div><div class="stat-value">${izinData.filter(i=>i.Tanggal===hariIni).length}</div></div></div>
+        </div>
+        <div class="card-table">
+            <div class="p-3 border-bottom"><h6>Absensi Terbaru</h6></div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead><tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th></tr></thead>
+                    <tbody>${absensiData.slice(0,6).map(r=>`<tr><td>${r.Tanggal||'-'}</td><td>${r.Jam||'-'}</td><td><code>${(r.Kode||'').slice(-4)}</code></td><td>${r.Nama||'-'}</td><td class="small">${r.Sesi_Nama||'-'}</td><td><span class="badge ${r.Status==='Hadir'?'bg-success':(r.Status==='Izin'?'bg-info':'bg-warning')}">${r.Status||'Hadir'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="text-center py-2">Belum ada</td></tr>'}</tbody>
+                </table>
+            </div>
+        </div>`;
 }
+
+async function refreshDashboard() {
+    showToast('Memperbarui data dashboard...', 'info');
+    sessionStorage.removeItem('srma19_admin_data');
+    await refreshAllData(false);
+    showToast('Data dashboard diperbarui.', 'success');
+}
+
 async function backupAllData() {
     showToast('Mengumpulkan data...', 'info');
     try {
@@ -254,7 +336,7 @@ function renderAbsensiTable() {
     document.getElementById('absensiTable').innerHTML = `
         <div class="p-2 border-bottom small">Total: ${absensiFiltered.length} entri</div>
         <div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th style="width:30px;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAbsensiAll(this.checked)"></th><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr></thead>
-        <tbody>${absensiFiltered.length ? absensiFiltered.map(a => `<tr><td><input type="checkbox" ${selectedAbsensi.has(a.Timestamp)?'checked':''} onchange="toggleSelectAbsensi('${a.Timestamp}', this.checked)"></td><td>${a.Tanggal||'-'}</td><td>${a.Jam||'-'}</td><td><code>${(a.Kode||'').slice(-4)}</code></td><td>${a.Nama||'-'}</td><td class="small">${a.Sesi_Nama||'-'}</td><td><span class="badge ${a.Status==='Hadir'?'bg-success':(a.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${a.Status||'Hadir'}</span></td><td class="small">${a.Petugas||'-'}</td></tr>`).join('') : '<tr><td colspan="8" class="text-center py-2">Tidak ada</td></tr>'}</tbody></table></div>`;
+        <tbody>${absensiFiltered.length ? absensiFiltered.map(a => `<tr><td><input type="checkbox" ${selectedAbsensi.has(a.Timestamp)?'checked':''} onchange="toggleSelectAbsensi('${a.Timestamp}', this.checked)"></td><td>${a.Tanggal||'-'}</td><td>${a.Jam||'-'}</td><td><code>${(a.Kode||'').slice(-4)}</code></td><td>${a.Nama||'-'}</td><td class="small">${a.Sesi_Nama||'-'}</td><td><span class="badge ${a.Status==='Hadir'?'bg-success':(a.Status==='Izin'?'bg-info':a.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${a.Status||'Hadir'}</span></td><td class="small">${a.Petugas||'-'}</td></tr>`).join('') : '<tr><td colspan="8" class="text-center py-2">Tidak ada</td></tr>'}</tbody></table></div>`;
 }
 function resetFilterAbsensi() { document.getElementById('searchAbsensi').value = ''; document.getElementById('fTgl').value = ''; document.getElementById('fSesi').value = ''; applyFilterAbsensi(); }
 async function deleteSelectedAbsensi() {
@@ -455,20 +537,89 @@ async function refreshPeserta() {
     } catch(e) { showToast('Gagal refresh peserta.', 'error'); }
 }
 
-// ==================== JADWAL ====================
+// ==================== JADWAL (CRUD Lengkap) ====================
 function renderJadwal() {
     if (!jadwalData.length) { document.getElementById('mainContent').innerHTML = `<div class="text-center py-5">Memuat jadwal...</div>`; return; }
-    let html = `<div class="page-header"><h5>📅 Jadwal Kegiatan</h5><button class="btn btn-sm btn-success rounded-pill" onclick="showJadwalModal()"><i class="fas fa-plus"></i> Tambah</button></div><div id="jadwalList">`;
-    jadwalData.forEach((j, i) => {
-        html += `<div class="jadwal-card"><div class="jadwal-icon-wrap" style="background:${j.bg||'#f0f0f0'};color:${j.color||'#333'};"><i class="fas ${j.icon||'fa-circle'}"></i></div><div class="flex-grow-1"><strong>${j.nama}</strong> <span class="badge bg-primary ms-1">${j.agama || 'Islam'}</span><br><small>${j.mulai} - ${j.selesai}</small></div><button class="btn btn-sm btn-outline-warning" onclick="editJadwal(${i})"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger" onclick="deleteJadwal(${i})"><i class="fas fa-trash-alt"></i></button></div>`;
+    let html = `<div class="page-header"><h5>📅 Jadwal Kegiatan</h5>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-sm btn-success rounded-pill" onclick="showJadwalModal()"><i class="fas fa-plus"></i> Tambah</button>
+            <button class="btn btn-sm btn-warning rounded-pill" onclick="updatePrayerTimes()"><i class="fas fa-cloud-sun me-1"></i> Perbarui Sholat Otomatis</button>
+            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshJadwal()" title="Muat ulang data dari server"><i class="fas fa-sync-alt"></i> Refresh</button>
+        </div>
+    </div>
+    <div class="filter-bar mb-3">
+        <label class="fw-semibold me-2">Filter Agama:</label>
+        <select class="form-select form-select-sm" id="filterJadwalAgama" style="width:180px" onchange="filterJadwal()">
+            <option value="">Semua Agama</option>
+        </select>
+    </div>
+    <div id="jadwalList">`;
+    // Render semua jadwal tanpa filter
+    const agamaList = [...new Set(jadwalData.map(j => j.agama).filter(Boolean))].sort();
+    html += `<div class="row g-2">`;
+    jadwalData.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0)).forEach((j, i) => {
+        const realIdx = jadwalData.indexOf(j);
+        html += `<div class="col-md-6 col-lg-4">
+            <div class="card-custom p-2" style="border-left:5px solid ${j.color||'#0d6efd'}; border-radius:10px; background:#fff; margin-bottom:8px; display:flex; align-items:center; gap:10px;">
+                <div style="background:${j.bg||'#f0f0f0'};color:${j.color||'#333'};width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">
+                    <i class="fas ${j.icon||'fa-circle'}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <strong class="small">${j.nama}</strong><br>
+                    <small class="text-muted">${j.mulai} - ${j.selesai} &nbsp;<span class="badge bg-secondary">${j.agama}</span></small>
+                </div>
+                <button class="btn btn-sm btn-outline-warning p-1" onclick="editJadwal(${realIdx})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-outline-danger p-1" onclick="deleteJadwal(${realIdx})"><i class="fas fa-trash-alt"></i></button>
+            </div>
+        </div>`;
+    });
+    html += `</div></div>`;
+    document.getElementById('mainContent').innerHTML = html;
+    // Populate filter
+    const filterSelect = document.getElementById('filterJadwalAgama');
+    if (filterSelect) {
+        filterSelect.innerHTML = '<option value="">Semua Agama</option>' + agamaList.map(a => `<option value="${a}">${a}</option>`).join('');
+        filterSelect.value = '';
+    }
+}
+
+function filterJadwal() {
+    const agama = document.getElementById('filterJadwalAgama')?.value || '';
+    const filtered = agama ? jadwalData.filter(j => j.agama === agama) : jadwalData;
+    const container = document.getElementById('jadwalList');
+    if (!container) return;
+    let html = `<div class="row g-2">`;
+    filtered.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0)).forEach((j, i) => {
+        const realIdx = jadwalData.indexOf(j);
+        html += `<div class="col-md-6 col-lg-4">
+            <div class="card-custom p-2" style="border-left:5px solid ${j.color||'#0d6efd'}; border-radius:10px; background:#fff; margin-bottom:8px; display:flex; align-items:center; gap:10px;">
+                <div style="background:${j.bg||'#f0f0f0'};color:${j.color||'#333'};width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">
+                    <i class="fas ${j.icon||'fa-circle'}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <strong class="small">${j.nama}</strong><br>
+                    <small class="text-muted">${j.mulai} - ${j.selesai} &nbsp;<span class="badge bg-secondary">${j.agama}</span></small>
+                </div>
+                <button class="btn btn-sm btn-outline-warning p-1" onclick="editJadwal(${realIdx})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-outline-danger p-1" onclick="deleteJadwal(${realIdx})"><i class="fas fa-trash-alt"></i></button>
+            </div>
+        </div>`;
     });
     html += `</div>`;
-    document.getElementById('mainContent').innerHTML = html;
+    container.innerHTML = html;
 }
+
+function refreshJadwal() {
+    showToast('Memperbarui jadwal...', 'info');
+    refreshAllData(false);
+    renderJadwal();
+    showToast('Jadwal diperbarui.', 'success');
+}
+
 function showJadwalModal(index = null) {
     const existing = index !== null ? jadwalData[index] : null;
-    const icons = ['fa-sun','fa-coffee','fa-mosque','fa-users','fa-utensil-spoon','fa-moon'];
-    const agamaOptions = ['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu','Lainnya'];
+    const icons = ['fa-sun','fa-coffee','fa-mosque','fa-church','fa-om','fa-dharmachakra','fa-spa','fa-users','fa-utensil-spoon','fa-moon','fa-cross'];
+    const agamaOptions = ['Islam','Kristen','Katolik','Hindu','Buddha','Penghayat','Lainnya'];
     const modalHtml = `
         <div class="modal-overlay" id="jadwalModal"><div class="modal-box"><h5 class="fw-bold mb-3">${existing ? 'Edit Jadwal' : 'Tambah Jadwal'}</h5>
         <div class="mb-3"><label>Agama</label><select class="form-select" id="jmAgama">${agamaOptions.map(a=>`<option ${(existing?.agama||'Islam')===a?'selected':''}>${a}</option>`).join('')}</select></div>
@@ -479,7 +630,9 @@ function showJadwalModal(index = null) {
         <div class="d-flex gap-2 justify-content-end"><button class="btn btn-secondary" onclick="closeModal()">Batal</button><button class="btn btn-primary" onclick="saveJadwal(${index})">Simpan</button></div></div></div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
+
 function editJadwal(index) { showJadwalModal(index); }
+
 async function saveJadwal(index) {
     const agama = document.getElementById('jmAgama').value;
     const nama = document.getElementById('jmNama').value.trim();
@@ -491,23 +644,44 @@ async function saveJadwal(index) {
     if (!Array.isArray(jadwalData)) { showToast('Data jadwal belum siap.', 'error'); return; }
     const newEntry = { id: (index !== null && index !== undefined && jadwalData[index]?.id) ? jadwalData[index].id : Date.now(), agama, nama, mulai, selesai, icon, color, bg: color + '1a' };
     let updatedJadwal = [...jadwalData];
-    if (index !== null && index !== undefined && index >= 0) {
+    if (index !== null && index >= 0) {
         if (index < updatedJadwal.length) updatedJadwal[index] = newEntry;
         else { showToast('Index tidak valid.', 'error'); return; }
     } else updatedJadwal.push(newEntry);
     if (updatedJadwal.length === 0) { showToast('Data kosong.', 'error'); return; }
     try {
         const res = await API.saveJadwal(updatedJadwal);
-        if (res.status === 'ok') { jadwalData = updatedJadwal; setCachedData({ peserta: pesertaData, absensi: absensiData, jadwal: jadwalData, petugas: petugasData, izin: izinData }); closeModal(); renderJadwal(); showToast('Jadwal disimpan.', 'success'); }
-        else showToast(res.message, 'error');
+        if (res.status === 'ok') {
+            jadwalData = updatedJadwal;
+            setCachedData({ peserta: pesertaData, absensi: absensiData, jadwal: jadwalData, petugas: petugasData, izin: izinData });
+            closeModal();
+            renderJadwal();
+            showToast('Jadwal disimpan.', 'success');
+        } else showToast(res.message, 'error');
     } catch (e) { showToast('Gagal menyimpan.', 'error'); console.error(e); }
 }
+
 async function deleteJadwal(index) {
     if (!confirm('Hapus jadwal ini?')) return;
     jadwalData.splice(index, 1);
     const res = await API.saveJadwal(jadwalData);
-    if (res.status === 'ok') { renderJadwal(); showToast('Jadwal dihapus.', 'success'); }
-    else showToast(res.message, 'error');
+    if (res.status === 'ok') {
+        renderJadwal();
+        showToast('Jadwal dihapus.', 'success');
+    } else showToast(res.message, 'error');
+}
+
+async function updatePrayerTimes() {
+    const date = new Date().toISOString().split('T')[0];
+    if (!date) { showToast('Pilih tanggal terlebih dahulu.', 'warning'); return; }
+    const btn = document.querySelector('button[onclick*="updatePrayerTimes"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Memperbarui...'; }
+    try {
+        const res = await API.updatePrayerTimes(date);
+        if (res.status === 'ok') { showToast(res.message, 'success'); await refreshAllData(); renderJadwal(); }
+        else showToast(res.message, 'error');
+    } catch (e) { showToast('Gagal terhubung ke server.', 'error'); }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-sun me-1"></i> Perbarui Sholat Otomatis'; }
 }
 
 // ==================== PETUGAS ====================
@@ -647,7 +821,9 @@ async function refreshIzin() {
 }
 
 // ==================== SCAN QR ====================
-function renderAbsensiQR() { document.getElementById('mainContent').innerHTML = `<iframe src="absensi.html" class="absensi-iframe" allow="camera"></iframe>`; }
+function renderAbsensiQR() { 
+    document.getElementById('mainContent').innerHTML = `<iframe src="absensi.html" class="absensi-iframe" allow="camera; microphone; autoplay"></iframe>`;
+}
 
 // ==================== BOTTOM SHEET ====================
 function toggleBottomSheet() { document.getElementById('bottomSheet').classList.toggle('show'); }

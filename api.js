@@ -1,11 +1,11 @@
 // ============================================
 // api.js - Modul Komunikasi Google Apps Script
-// SRMA 19 Bantul | Versi 9.3 (Login Log, Arsip Lulus, Generate, Pagination)
+// SRMA 19 Bantul | Versi 12.0 (Status Kehadiran, Puasa, Pelanggaran, Kesehatan, Jadwal Sholat Otomatis)
 // ============================================
 
 const API = (() => {
   // ⚠️ GANTI dengan URL Web App Google Apps Script Anda
-  const BASE_URL = 'https://script.google.com/macros/s/AKfycbzMombX8b4cdju_a9ZY2B0jCEHKf_kCE7dLHqRKGz9z30TaJpEyvAgrUKXjk0rN9P8y/exec';
+  const BASE_URL = 'https://script.google.com/macros/s/AKfycbz5Y4x_jofSVpcQ9nT0Uep3rUSA7fJCRFUD1PybG_0HQkitoeGd-xkPgIWem3ZuQDeR/exec';
 
   /**
    * Request handler untuk GET (query string)
@@ -76,8 +76,36 @@ const API = (() => {
 
     // Absensi
     searchPeserta: (code) => request('search', { code }),
-    recordAbsensi: (code, nama, sesi, sesiNama, petugas = '', agama = '') =>
-      request('record', { code, nama, sesi, sesi_nama: sesiNama, petugas, agama }),
+
+    // 🔥 recordAbsensi dengan parameter lengkap (status kehadiran, puasa, pelanggaran, kesehatan)
+    recordAbsensi: (
+      code, 
+      nama, 
+      sesi, 
+      sesiNama, 
+      petugas = '', 
+      agama = '', 
+      puasa = 'Tidak', 
+      pelanggaran = 'Tidak Ada', 
+      pelanggaranKeterangan = '', 
+      kondisiKesehatan = 'Sehat', 
+      keteranganKesehatan = '',
+      status = 'Hadir' // 🔥 tambahan status kehadiran
+    ) =>
+      request('record', { 
+        code, 
+        nama, 
+        sesi, 
+        sesi_nama: sesiNama, 
+        petugas, 
+        agama,
+        puasa,
+        pelanggaran,
+        pelanggaran_keterangan: pelanggaranKeterangan,
+        kondisi_kesehatan: kondisiKesehatan,
+        keterangan_kesehatan: keteranganKesehatan,
+        status // 🔥 dikirim ke backend
+      }),
 
     // listAbsensi dengan pagination (page, limit)
     listAbsensi: (tanggal = '', sesi = '', page = 1, limit = 100) =>
@@ -95,6 +123,7 @@ const API = (() => {
     // Jadwal
     getJadwal: () => request('get_jadwal'),
     saveJadwal: (jadwal) => request('save_jadwal', { data: JSON.stringify(jadwal) }),
+    updatePrayerTimes: (date) => request('update_prayer_times', { date }),
 
     // Petugas
     listPetugas: () => request('list_petugas'),

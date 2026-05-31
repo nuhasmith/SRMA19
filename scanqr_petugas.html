@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scan QR - Petugas SRMA 19</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scan QR - Petugas SRMA 19 Bantul</title>
     <link rel="icon" type="image/webp" href="srma.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
@@ -15,11 +15,14 @@
         .sidebar a, .sidebar button { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #333; text-decoration: none; font-weight: 500; white-space: nowrap; transition: background 0.2s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-size: 0.9rem; }
         .sidebar a:hover, .sidebar button:hover, .sidebar a.active, .sidebar button.active { background: #2e8bc0; color: #fff; }
         .main-content { margin-left: var(--sidebar-width); flex: 1; display: flex; flex-direction: column; padding: 20px; }
-        iframe { flex: 1; border: none; border-radius: 14px; width: 100%; }
-        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } }
+        iframe { flex: 1; border: none; border-radius: 14px; width: 100%; height: calc(100vh - 80px); }
+        .loading-indicator { display: flex; justify-content: center; align-items: center; height: 100%; font-size: 1.2rem; color: #687684; }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; padding: 10px; } iframe { height: calc(100vh - 100px); } }
     </style>
 </head>
 <body>
+
+<!-- Sidebar -->
 <nav class="sidebar" id="sidebar">
     <div class="px-4 mb-4">
         <h4 class="fw-bold"><i class="fas fa-school me-2"></i>SRMA 19</h4>
@@ -31,14 +34,26 @@
     <button class="active" data-page="scanqr" onclick="navigate('scanqr')"><i class="fas fa-qrcode"></i> Scan QR</button>
     <hr>
     <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
-    <a href="index.html"><i class="fas fa-globe"></i> Website</a>
+    <a href="index.html" target="_blank"><i class="fas fa-globe"></i> Website</a>
     <div class="mt-auto p-3">
         <button class="btn btn-outline-secondary w-100" onclick="handleLogout()"><i class="fas fa-sign-out-alt me-2"></i> Logout</button>
     </div>
 </nav>
 
+<!-- Konten Utama (iframe scan QR) -->
 <div class="main-content">
-    <iframe src="absensi.html" allow="camera"></iframe>
+    <div class="d-flex justify-content-end mb-2">
+        <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="reloadIframe()" title="Muat ulang halaman scan">
+            <i class="fas fa-sync-alt me-1"></i> Refresh
+        </button>
+    </div>
+    <iframe 
+        id="absensiIframe"
+        src="absensi.html" 
+        allow="camera; microphone; autoplay" 
+        title="Scan QR Absensi"
+        onload="onIframeLoad()">
+    </iframe>
 </div>
 
 <script src="api.js"></script>
@@ -46,23 +61,7 @@
 <script>
     if (!Auth.requireAuth('login.html')) throw new Error('Silakan login.');
 
-    // Deteksi iframe – jika dibuka di dalam iframe, sembunyikan sidebar
-    if (window.self !== window.top) {
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar) sidebar.style.display = 'none';
-            document.body.style.margin = '0';
-            const main = document.querySelector('.main-content');
-            if (main) main.style.marginLeft = '0';
-            document.body.style.padding = '0';
-        });
-    }
-
     function navigate(page) {
-        // Redirect ke halaman dashboard_petugas.html dengan parameter, atau bisa juga langsung window.location
-        window.location.href = 'dashboard_petugas.html';
-        // Atau jika ingin navigasi di dalam iframe (jika halaman ini dibuka langsung), 
-        // bisa gunakan sessionStorage untuk memberi tahu dashboard halaman mana yang harus dibuka.
         sessionStorage.setItem('srma19_petugas_active_page', page);
         window.location.href = 'dashboard_petugas.html';
     }
@@ -74,6 +73,40 @@
             location.href = 'login.html';
         }
     }
+
+    function onIframeLoad() {
+        const iframe = document.getElementById('absensiIframe');
+        if (iframe) {
+            iframe.contentWindow.postMessage('unlock_audio', '*');
+            console.log('Pesan unlock_audio dikirim ke iframe.');
+        }
+    }
+
+    function reloadIframe() {
+        const iframe = document.getElementById('absensiIframe');
+        if (iframe) {
+            iframe.src = 'absensi.html';
+        }
+    }
+
+    window.addEventListener('message', function(e) {
+        if (e.data === 'request_unlock_audio') {
+            const iframe = document.getElementById('absensiIframe');
+            if (iframe) {
+                iframe.contentWindow.postMessage('unlock_audio', '*');
+                console.log('Pesan unlock_audio dikirim ulang ke iframe.');
+            }
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const iframe = document.getElementById('absensiIframe');
+        if (iframe && iframe.contentWindow) {
+            setTimeout(() => {
+                iframe.contentWindow.postMessage('unlock_audio', '*');
+            }, 1000);
+        }
+    });
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Absensi - Admin SRMA 19</title>
+    <title>Rekap Absensi - Admin SRMA 19 Bantul</title>
     <link rel="icon" type="image/webp" href="srma.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
@@ -80,13 +80,21 @@
     const CACHE_KEY = 'srma19_admin_data';
 
     function getCachedData() { try { return JSON.parse(sessionStorage.getItem(CACHE_KEY)); } catch { return null; } }
+    function setCachedData(data) { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
 
     let pesertaList = [];
     let jadwalList = [];
     let rekapData = {};
     let dates = [];
 
-    // Ambil peserta & jadwal, gabungkan cache & API jika perlu
+    // 🔥 Refresh manual – memuat ulang data dari server
+    async function refreshData() {
+        showToast('Memperbarui data rekap absensi...', 'info');
+        sessionStorage.removeItem('srma19_admin_data');
+        await loadMasterData();
+        showToast('Data rekap absensi diperbarui.', 'success');
+    }
+
     async function loadMasterData() {
         const cached = getCachedData();
         if (cached?.peserta) {
@@ -108,14 +116,14 @@
         const tglSelesai = document.getElementById('tglSelesai').value;
 
         if (!tglMulai || !tglSelesai) {
-            alert('Pilih rentang tanggal terlebih dahulu.');
+            showToast('Pilih rentang tanggal terlebih dahulu.', 'warning');
             return;
         }
 
         const start = new Date(tglMulai);
         const end = new Date(tglSelesai);
         if (end < start) {
-            alert('Tanggal selesai harus setelah tanggal mulai.');
+            showToast('Tanggal selesai harus setelah tanggal mulai.', 'warning');
             return;
         }
 
@@ -126,7 +134,7 @@
             current.setDate(current.getDate() + 1);
         }
         if (dates.length > 14) {
-            alert('Maksimal rentang 14 hari untuk performa.');
+            showToast('Maksimal rentang 14 hari untuk performa.', 'warning');
             return;
         }
 
@@ -140,7 +148,6 @@
 
         rekapData = {};
 
-        // Ambil data absensi per tanggal (gunakan page size besar)
         for (const tgl of dates) {
             let page = 1;
             let totalExpected = Infinity;
@@ -172,22 +179,19 @@
         let totalHadir = 0, totalIzin = 0, totalTidak = 0, totalTanpaData = 0;
         const ringkasan = {};
 
-        // Inisialisasi ringkasan
         pesertaList.forEach(p => {
             ringkasan[p.Kode] = { Hadir: 0, Izin: 0, 'Tidak Berangkat': 0, '-': 0 };
         });
 
-        // Hitung status per peserta per sesi
         pesertaList.forEach(p => {
             sesiList.forEach(s => {
                 let foundStatus = null;
-                // Cari data di rentang tanggal untuk peserta dan sesi ini
                 for (const tgl of dates) {
                     const key = `${p.Kode.toUpperCase()}|${s.id}|${tgl}`;
                     const status = rekapData[key];
                     if (status) {
                         foundStatus = status;
-                        break; // ambil status pertama yang ditemukan (bisa Hadir/Izin/Tidak)
+                        break;
                     }
                 }
                 if (foundStatus) {
@@ -202,14 +206,12 @@
             totalTanpaData += ringkasan[p.Kode]['-'];
         });
 
-        // Bangun header tabel
         let headerRow = '<th>Nama</th><th>Kode</th>';
         sesiList.forEach(s => {
             headerRow += `<th title="${s.nama} (${s.agama})">${s.nama.substring(0, 10)}</th>`;
         });
         headerRow += '<th>Hadir</th><th>Izin</th><th>Tidak</th><th>Tanpa</th>';
 
-        // Bangun isi tabel
         let bodyRows = '';
         pesertaList.forEach(p => {
             let row = `<td>${p.Nama || '-'}</td><td><code>${(p.Kode || '').slice(-4)}</code></td>`;
@@ -265,6 +267,21 @@
         }).from(element).save();
     }
 
+    function showToast(msg, type = 'info') {
+        const colors = {
+            success: ['#d1fae5','#10b981'],
+            error: ['#fee2e2','#ef4444'],
+            warning: ['#fef3c7','#f59e0b'],
+            info: ['#dbeafe','#3b82f6']
+        };
+        const [bg, border] = colors[type] || colors.info;
+        const el = document.createElement('div');
+        el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;';
+        el.innerHTML = `<div style="background:${bg};border-left:4px solid ${border};padding:10px 14px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);font-size:0.85rem;">${msg}</div>`;
+        document.body.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+    }
+
     function renderMain() {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('mainContent').innerHTML = `
@@ -276,6 +293,10 @@
                 <input type="date" class="form-control form-control-sm" id="tglSelesai" value="${today}" style="width:140px">
                 <button class="btn btn-sm btn-primary" onclick="loadRekap()"><i class="fas fa-search"></i> Tampilkan</button>
                 <button class="btn btn-sm btn-outline-primary" onclick="loadRekap()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+                <!-- 🔥 Refresh Manual -->
+                <button class="btn btn-sm btn-outline-primary" onclick="refreshData()" title="Muat ulang data dari server">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
                 <button class="btn btn-sm btn-danger" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
             </div>
             <div id="rekapContainer">

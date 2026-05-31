@@ -81,7 +81,12 @@
         const izinHariIni = izin.filter(i => i.Tanggal === today).length;
 
         document.getElementById('mainContent').innerHTML = `
-            <h3 class="mb-4">📊 Dashboard Petugas</h3>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0">📊 Dashboard Petugas</h3>
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshDashboard()" title="Muat ulang data dari server">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh
+                </button>
+            </div>
             <div class="row g-3 mb-4">
                 <div class="col-6 col-md-4">
                     <div class="stat-card">
@@ -136,6 +141,30 @@
         }
     }
 
+    // 🔥 Refresh manual – memuat ulang data dari server dan menghapus cache
+    async function refreshDashboard() {
+        showToast('Memperbarui data dashboard...', 'info');
+        sessionStorage.removeItem('srma19_petugas_data');
+        await refreshBackground();
+        showToast('Data dashboard diperbarui.', 'success');
+    }
+
+    function showToast(msg, type = 'info') {
+        const colors = {
+            success: ['#d1fae5','#10b981'],
+            error: ['#fee2e2','#ef4444'],
+            warning: ['#fef3c7','#f59e0b'],
+            info: ['#dbeafe','#3b82f6']
+        };
+        const [bg, border] = colors[type] || colors.info;
+        const el = document.createElement('div');
+        el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;';
+        el.innerHTML = `<div style="background:${bg};border-left:4px solid ${border};padding:10px 14px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);font-size:0.85rem;">${msg}</div>`;
+        document.body.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+    }
+
+    // Inisialisasi
     (async () => {
         const cached = getCachedData();
         if (cached) {

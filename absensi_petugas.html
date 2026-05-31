@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Absensi - Petugas SRMA 19</title>
+    <title>Data Absensi - Petugas SRMA 19 Bantul</title>
     <link rel="icon" type="image/webp" href="srma.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
@@ -36,7 +36,9 @@
     </style>
 </head>
 <body>
-<div id="mainContent"></div>
+<div id="mainContent">
+    <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+</div>
 
 <script src="api.js"></script>
 <script src="auth.js"></script>
@@ -71,12 +73,14 @@
         } catch (e) { console.error(e); }
     }
 
-    async function applyFilter(page = 1) {
+    async function applyFilter(page = 1, silent = false) {
+        if (!silent) {
+            document.getElementById('absensiTableContainer').innerHTML =
+                '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        }
         const tgl = document.getElementById('fTgl')?.value || '';
         const sesi = document.getElementById('fSesi')?.value || '';
         const q = document.getElementById('searchAbsensi')?.value || '';
-        document.getElementById('absensiTableContainer').innerHTML =
-            '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
         try {
             const res = await API.listAbsensi(tgl, sesi, page, pageSize);
             if (res.status === 'success') {
@@ -85,14 +89,32 @@
                 currentPage = page;
                 renderTable();
                 renderPagination();
-            } else {
+                // Simpan cache untuk halaman pertama tanpa filter
+                if (page === 1 && !tgl && !sesi && !q) {
+                    const cached = getCachedData() || {};
+                    cached.absensi = res.data;
+                    cached.totalAbsensi = res.total;
+                    setCachedData(cached);
+                }
+            } else if (!silent) {
                 document.getElementById('absensiTableContainer').innerHTML =
                     '<div class="alert alert-danger">Gagal memuat data</div>';
             }
         } catch (e) {
-            document.getElementById('absensiTableContainer').innerHTML =
-                '<div class="alert alert-danger">Gagal terhubung</div>';
+            if (!silent) {
+                document.getElementById('absensiTableContainer').innerHTML =
+                    '<div class="alert alert-danger">Gagal terhubung</div>';
+            }
         }
+    }
+
+    // 🔥 Refresh manual – memuat ulang data dari server
+    async function refreshData() {
+        showToast('Memperbarui data dari server...', 'info');
+        // Hapus cache sessionStorage agar dipaksa fetch ulang
+        sessionStorage.removeItem('srma19_petugas_data');
+        await applyFilter(currentPage);
+        showToast('Data diperbarui.', 'success');
     }
 
     function renderTable() {
@@ -163,11 +185,6 @@
         setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
     }
 
-    function handleLogout() {
-        if (confirm('Logout?')) { Auth.logout(); sessionStorage.clear(); location.href = 'login.html'; }
-    }
-
-    // Render UI
     function renderMain() {
         const sesiList = [...new Set(jadwalData.map(j => j.nama).filter(Boolean))];
         document.getElementById('mainContent').innerHTML = `
@@ -181,6 +198,8 @@
                 </select>
                 <button class="btn btn-sm btn-outline-secondary" id="btnFilter">Terapkan</button>
                 <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter()">Reset</button>
+                <!-- 🔥 Tombol Refresh Manual -->
+                <button class="btn btn-sm btn-outline-primary" onclick="refreshData()" title="Muat ulang data dari server"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
             <div class="d-flex gap-2 mb-3">
                 <button class="btn btn-sm btn-danger" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
@@ -188,9 +207,17 @@
             <div class="table-card" id="absensiTableContainer"></div>
             <div id="paginationContainer"></div>
         `;
+
         document.getElementById('btnFilter').addEventListener('click', () => applyFilter(1));
         document.getElementById('searchAbsensi').addEventListener('keypress', e => { if (e.key === 'Enter') applyFilter(1); });
-        applyFilter(1);
+
+        if (absensiPage.length > 0) {
+            renderTable();
+            renderPagination();
+            applyFilter(1, true);
+        } else {
+            applyFilter(1);
+        }
     }
 
     function resetFilter() {
@@ -200,10 +227,15 @@
         applyFilter(1);
     }
 
-    // Init
+    // Inisialisasi
     (async () => {
         const cached = getCachedData();
         if (cached?.jadwal) jadwalData = cached.jadwal;
+        if (cached?.absensi && Array.isArray(cached.absensi)) {
+            absensiPage = cached.absensi;
+            totalAbsensi = cached.totalAbsensi || absensiPage.length;
+            currentPage = 1;
+        }
         renderMain();
         refreshMasterData();
         setInterval(refreshMasterData, 5 * 60 * 1000);

@@ -164,7 +164,7 @@
         alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
     }
 
-    // Preload data & redirect
+    // 🔥 Preload data & redirect (menggunakan sessionStorage untuk dashboard instant)
     async function preloadAndRedirect(role) {
         preloadOverlay.classList.add('show');
         preloadStatus.textContent = 'Mengambil data...';
@@ -185,6 +185,7 @@
                 izin: izinRes.status === 'success' ? izinRes.data : [],
                 timestamp: Date.now()
             };
+            // Simpan di sessionStorage agar dashboard langsung pakai
             sessionStorage.setItem(cacheKey, JSON.stringify(data));
             preloadStatus.textContent = 'Data siap, mengalihkan...';
             setTimeout(() => {
@@ -192,6 +193,7 @@
             }, 600);
         } catch (e) {
             console.error('Preload gagal:', e);
+            // Tetap redirect, dashboard akan fetch sendiri jika sessionStorage kosong
             window.location.href = role === 'admin' ? 'dashboard_admin.html' : 'dashboard_petugas.html';
         }
     }

@@ -3,39 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Petugas - Admin SRMA 19</title>
+    <title>Data Petugas - Admin SRMA 19 Bantul</title>
     <link rel="icon" type="image/webp" href="srma.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f0f2f5;
-            margin: 0;
-            padding: 30px;
-        }
-        .table-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; margin: 0; padding: 30px; }
+        .table-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
         .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.5); z-index: 2000;
-            display: flex; align-items: center; justify-content: center;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center;
         }
         .modal-box {
-            background: #fff;
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 500px;
-            width: 92%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            max-height: 85vh;
-            overflow-y: auto;
+            background: #fff; border-radius: 16px; padding: 24px; max-width: 500px; width: 92%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;
         }
     </style>
 </head>
@@ -47,6 +29,12 @@
 <script>
     if (!Auth.requireAuth('login.html')) throw new Error('Silakan login.');
     const currentUser = Auth.getCurrentUser();
+
+    if (currentUser.role !== 'admin') {
+        window.location.href = 'dashboard_petugas.html';
+        throw new Error('Akses ditolak');
+    }
+
     const CACHE_KEY = 'srma19_admin_data';
 
     function getCachedData() { try { return JSON.parse(sessionStorage.getItem(CACHE_KEY)); } catch { return null; } }
@@ -63,8 +51,12 @@
                 cached.petugas = petugasData;
                 setCachedData(cached);
                 renderTable();
+            } else {
+                showToast('Gagal memuat data petugas.', 'error');
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            showToast('Gagal terhubung ke server.', 'error');
+        }
     }
 
     function renderTable() {
@@ -95,7 +87,13 @@
     function renderMain() {
         document.getElementById('mainContent').innerHTML = `
             <h3 class="mb-3">🛡️ Data Petugas</h3>
-            <button class="btn btn-sm btn-success rounded-pill mb-3" onclick="showModal(null)"><i class="fas fa-plus"></i> Tambah Petugas</button>
+            <div class="d-flex gap-2 mb-3 flex-wrap">
+                <button class="btn btn-sm btn-success rounded-pill" onclick="showModal(null)"><i class="fas fa-plus"></i> Tambah Petugas</button>
+                <!-- 🔥 Refresh Manual -->
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshPetugas()" title="Muat ulang data dari server">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
             <div class="table-card" id="petugasTableContainer"></div>`;
         renderTable();
     }
@@ -184,6 +182,15 @@
         el.innerHTML = `<div style="background:${bg};border-left:4px solid ${border};padding:10px 14px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);font-size:0.85rem;">${msg}</div>`;
         document.body.appendChild(el);
         setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+    }
+
+    // Deteksi iframe – sembunyikan sidebar jika diakses dari dashboard induk
+    if (window.self !== window.top) {
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) sidebar.style.display = 'none';
+            document.body.style.padding = '30px';
+        });
     }
 
     // Inisialisasi

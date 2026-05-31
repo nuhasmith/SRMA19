@@ -54,6 +54,14 @@
             --card-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.12);
             --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             --radius: 18px; --radius-sm: 12px; --navbar-height: 72px;
+
+            /* Warna Agama untuk Timeline */
+            --color-islam: #10b981;
+            --color-kristen: #3b82f6;
+            --color-katolik: #8b5cf6;
+            --color-hindu: #f59e0b;
+            --color-buddha: #6366f1;
+            --color-penghayat: #22c55e;
         }
         * { scroll-behavior: smooth; box-sizing: border-box; }
         body {
@@ -71,7 +79,6 @@
         .navbar-brand {
             font-weight: 800; font-size: 1.35rem; color: var(--primary) !important;
             letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px;
-            text-decoration: none;
         }
         .navbar-brand img { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
         .nav-link {
@@ -134,45 +141,94 @@
         .stat-section { background: #fff; border-radius: var(--radius); box-shadow: var(--card-shadow); padding: 50px 30px; margin-top: -50px; position: relative; z-index: 10; }
         .stat-number { font-size: 2.8rem; font-weight: 900; background: linear-gradient(135deg, var(--primary), #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .stat-label { font-size: 0.9rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
-        .jadwal-table {
-            width: 100%; border-collapse: collapse; background: #fff;
-            border-radius: var(--radius); overflow: hidden; box-shadow: var(--card-shadow);
+
+        /* ========== TIMELINE VIEW (JADWAL HARIAN) ========== */
+        .timeline-wrapper {
+            background: #fff;
+            border-radius: var(--radius);
+            box-shadow: var(--card-shadow);
+            padding: 20px 20px 10px 20px;
+            position: relative;
         }
-        .jadwal-table thead th {
-            background: #f8fafc; font-weight: 700; color: #1e293b; font-size: 0.85rem;
-            padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0;
+        .timeline-wrapper::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 30px;
+            bottom: 30px;
+            width: 3px;
+            background: #e2e8f0;
+            z-index: 0;
         }
-        .jadwal-table tbody td {
-            padding: 10px 16px; border-bottom: 1px solid #f1f5f9; font-size: 0.88rem; color: #334155;
+        .timeline-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
-        .jadwal-table tbody tr:hover { background: #f8fafc; }
-        .badge-agama {
-            display: inline-block; padding: 4px 12px; border-radius: 50px;
-            font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;
+        .timeline-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 2px var(--primary);
+            flex-shrink: 0;
+            margin-right: 16px;
+            margin-top: 4px;
+            position: relative;
+            z-index: 2;
         }
-        .badge-islam { background: #10b98120; color: #10b981; border: 1px solid #10b981; }
-        .badge-kristen { background: #3b82f620; color: #3b82f6; border: 1px solid #3b82f6; }
-        .badge-katolik { background: #8b5cf620; color: #8b5cf6; border: 1px solid #8b5cf6; }
-        .badge-hindu { background: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b; }
-        .badge-buddha { background: #6366f120; color: #6366f1; border: 1px solid #6366f1; }
-        .badge-konghucu { background: #ef444420; color: #ef4444; border: 1px solid #ef4444; }
+        .timeline-time {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--primary);
+            min-width: 60px;
+            padding-top: 2px;
+            flex-shrink: 0;
+        }
+        .timeline-content {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .activity-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+        }
+        .activity-card i { font-size: 0.8rem; }
+        .activity-islam { background: var(--color-islam); }
+        .activity-kristen { background: var(--color-kristen); }
+        .activity-katolik { background: var(--color-katolik); }
+        .activity-hindu { background: var(--color-hindu); }
+        .activity-buddha { background: var(--color-buddha); }
+        .activity-penghayat { background: var(--color-penghayat); }
         .filter-jadwal {
-            background: #fff; border-radius: 12px; padding: 12px 16px;
-            margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         .map-wrapper { border-radius: var(--radius); overflow: hidden; box-shadow: var(--card-shadow); border: 4px solid #fff; }
         .map-wrapper iframe { width: 100%; height: 380px; border: none; display: block; }
         .btn-maps {
-            display: inline-block;
-            background: #4285F4;
-            color: #fff !important;
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            text-decoration: none;
-            transition: background 0.2s;
+            display: inline-block; background: #4285F4; color: #fff !important;
+            padding: 8px 16px; border-radius: 50px; font-weight: 600; font-size: 0.85rem;
+            text-decoration: none; transition: background 0.2s;
         }
         .btn-maps:hover { background: #3367d6; }
         .footer { background: #0b1e3d; color: rgba(255, 255, 255, 0.75); padding: 50px 0 20px; }
@@ -183,14 +239,13 @@
         .bottom-nav {
             display: none; position: fixed; bottom: 0; left: 0; right: 0;
             background: #fff; border-top: 1px solid #e2e8f0; z-index: 900;
-            padding: 4px 0 env(safe-area-inset-bottom, 8px) 0;
+            padding: 4px 0 env(safe-area-inset-bottom, 8px);
             box-shadow: 0 -1px 8px rgba(0,0,0,0.05);
         }
         .bottom-nav .bottom-nav-item {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 6px 0; color: #687684; text-decoration: none; font-size: 0.65rem;
-            font-weight: 500; flex: 1; transition: all 0.2s; cursor: pointer;
-            border: none; background: none;
+            font-weight: 500; flex: 1; transition: all 0.2s; cursor: pointer; border: none; background: none;
         }
         .bottom-nav .bottom-nav-item.active { color: var(--primary); }
         .bottom-nav .bottom-nav-item i { font-size: 1.3rem; margin-bottom: 2px; }
@@ -228,23 +283,11 @@
             .navbar { display: none; }
             body { padding-bottom: 70px; }
             .wa-float { bottom: 90px; right: 16px; width: 50px; height: 50px; }
-            #btnScrollTop {
-                bottom: 145px;
-                right: calc(16px + (50px - 40px) / 2);
-                width: 40px; height: 40px; font-size: 1rem;
-            }
-            .jadwal-table thead { display: none; }
-            .jadwal-table tbody td {
-                display: block; padding: 8px 12px;
-            }
-            .jadwal-table tbody td::before {
-                content: attr(data-label);
-                font-weight: 600; display: inline-block; width: 90px; color: #64748b;
-            }
-            .jadwal-table tbody tr {
-                display: block; margin-bottom: 12px;
-                border: 1px solid #e2e8f0; border-radius: 12px;
-            }
+            #btnScrollTop { bottom: 145px; right: calc(16px + (50px - 40px) / 2); width: 40px; height: 40px; font-size: 1rem; }
+            .timeline-wrapper::before { left: 18px; }
+            .timeline-dot { margin-right: 10px; }
+            .timeline-time { font-size: 0.75rem; min-width: 45px; }
+            .activity-card { font-size: 0.65rem; padding: 4px 8px; }
         }
         @media (min-width: 769px) { .bottom-nav { display: none; } }
     </style>
@@ -331,7 +374,7 @@
                 <option value="">Semua Agama</option>
             </select>
         </div>
-        <div class="table-responsive" id="jadwalContainer"></div>
+        <div id="jadwalContainer"></div>
     </div>
 </section>
 
@@ -339,7 +382,7 @@
     <div class="container py-4">
         <div class="text-center mb-5"><span class="section-badge">Lokasi</span><h2 class="section-title">Temukan Kami</h2><p class="section-subtitle">Berada di kawasan strategis Sentra Terpadu Prof. Dr. Soeharso, mudah diakses.</p></div>
         <div class="row g-4">
-            <div class="col-lg-5"><div class="card-custom p-4 h-100"><h5 class="fw-bold text-dark mb-3"><i class="fas fa-map-pin me-2" style="color:var(--accent);"></i>Alamat Lengkap</h5><p><strong>Sentra Terpadu Prof. Dr. Soeharso</strong><br>Jl. Kesejahteraan Sosial No. 1<br>Sonosewu, Ngestiharjo<br>Kec. Kasihan, Kab. Bantul<br>DIY</p><hr>
+            <div class="col-lg-5"><div class="card-custom p-4 h-100"><h5 class="fw-bold text-dark mb-3"><i class="fas fa-map-pin me-2" style="color:var(--accent);"></i>Alamat Lengkap</h5><p><strong>Sentra Terpadu Prof. Dr. Soeharso</strong><br>Sonosewu, Ngestiharjo<br>Kec. Kasihan, Kab. Bantul<br>DIY</p><hr>
                 <a href="https://maps.app.goo.gl/qCGz2qiij2d6h9pK7" target="_blank" class="btn-maps"><i class="fas fa-map-marker-alt me-1"></i> Buka di Google Maps</a>
             </div></div>
             <div class="col-lg-7">
@@ -383,35 +426,25 @@
 <script src="api.js"></script>
 <script src="auth.js"></script>
 <script>
-    // ========== NAVBAR USER AREA ==========
+    // ==================== NAVBAR USER AREA ====================
     function updateNavbarUser() {
         const container = document.getElementById('navbarUserArea');
         if (!container) return;
         const user = Auth.getCurrentUser();
         if (user && user.username) {
-            container.innerHTML = `
-                <div class="dropdown">
-                    <button class="btn btn-nav-cta dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user-circle me-1"></i>${user.nama} <span class="badge bg-light text-dark ms-1">${user.role}</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="dashboard_admin.html"><i class="fas fa-tachometer-alt me-2"></i>Dashboard ${user.role === 'admin' ? 'Admin' : 'Petugas'}</a></li>
-                        <li><a class="dropdown-item" href="absensi.html"><i class="fas fa-qrcode me-2"></i>Scan QR</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" onclick="handleLogoutFromIndex()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                    </ul>
-                </div>`;
+            container.innerHTML = `<div class="dropdown"><button class="btn btn-nav-cta dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="fas fa-user-circle me-1"></i>${user.nama} <span class="badge bg-light text-dark ms-1">${user.role}</span></button><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="dashboard_admin.html"><i class="fas fa-tachometer-alt me-2"></i>Dashboard ${user.role==='admin'?'Admin':'Petugas'}</a></li><li><a class="dropdown-item" href="absensi.html"><i class="fas fa-qrcode me-2"></i>Scan QR</a></li><li><hr class="dropdown-divider"></li><li><a class="dropdown-item" href="#" onclick="handleLogoutFromIndex()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li></ul></div>`;
         } else {
             container.innerHTML = `<a href="login.html" class="btn btn-nav-cta"><i class="fas fa-user-lock me-2"></i>Area Petugas</a>`;
         }
     }
-
     function handleLogoutFromIndex() { Auth.logout(); window.location.reload(); }
     document.addEventListener('DOMContentLoaded', updateNavbarUser);
 
+    // ==================== NAVBAR SCROLL ====================
     const navbar = document.getElementById('navbar');
     if (navbar) window.addEventListener('scroll', () => navbar.classList.toggle('scrolled', window.scrollY > 50));
 
+    // ==================== SCROLL SPY ====================
     const sections = document.querySelectorAll('section[id]');
     const navLinks = document.querySelectorAll('.nav-link');
     const bottomNavItems = document.querySelectorAll('.bottom-nav-item[href^="#"]');
@@ -423,6 +456,7 @@
         if (current) sessionStorage.setItem('srma19_active_section', current);
     });
 
+    // ==================== STATISTIK PESERTA ====================
     const CACHE_KEY = 'srma19_public_data', CACHE_EXPIRY = 5 * 60 * 1000;
     function getPublicCache() { try { const raw = sessionStorage.getItem(CACHE_KEY); if (!raw) return null; const data = JSON.parse(raw); if (Date.now() - data.timestamp > CACHE_EXPIRY) { sessionStorage.removeItem(CACHE_KEY); return null; } return data; } catch(e) { return null; } }
     function setPublicCache(data) { try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, timestamp: Date.now() })); } catch(e) {} }
@@ -445,37 +479,99 @@
         try { const res = await API.listPeserta(); if (res.status === 'success') { const rombelSet = new Set(res.data.map(x => x.Rombel).filter(Boolean)); const putra = res.data.filter(x => (x.Jenis_Kelamin || x.jk || '').toLowerCase().includes('laki')).length; const putri = res.data.filter(x => (x.Jenis_Kelamin || x.jk || '').toLowerCase().includes('perempuan')).length; renderStats(res.total, putra, putri, rombelSet.size); setPublicCache({ peserta: res }); } } catch(e) {}
     }
 
-    const AGAMA_BADGE_CLASS = { 'Islam': 'badge-islam', 'Kristen': 'badge-kristen', 'Katolik': 'badge-katolik', 'Hindu': 'badge-hindu', 'Buddha': 'badge-buddha', 'Konghucu': 'badge-konghucu' };
+    // ==================== JADWAL – TIMELINE VIEW ====================
+    const ACTIVITY_CLASS = {
+        'Islam': 'activity-islam',
+        'Kristen': 'activity-kristen',
+        'Katolik': 'activity-katolik',
+        'Hindu': 'activity-hindu',
+        'Buddha': 'activity-buddha',
+        'Penghayat': 'activity-penghayat'
+    };
+
     let fullJadwal = [];
 
     function applyFilterJadwal() {
         const agama = document.getElementById('filterAgamaSelect')?.value || '';
         const filtered = agama ? fullJadwal.filter(j => j.agama === agama) : fullJadwal;
-        renderJadwalTable(filtered);
+        renderTimeline(filtered);
     }
 
-    function renderJadwalTable(data) {
+    function renderTimeline(jadwalList) {
         const container = document.getElementById('jadwalContainer');
         if (!container) return;
-        if (!data.length) { container.innerHTML = '<p class="text-center text-muted py-3">Tidak ada data jadwal.</p>'; return; }
-        data.sort((a, b) => a.mulai.localeCompare(b.mulai));
-        let rows = '';
-        data.forEach((j, idx) => { const badge = AGAMA_BADGE_CLASS[j.agama] || 'badge-islam'; rows += `<tr><td data-label="No">${idx+1}</td><td data-label="Waktu">${j.mulai} - ${j.selesai}</td><td data-label="Kegiatan">${j.nama}</td><td data-label="Agama"><span class="badge-agama ${badge}">${j.agama}</span></td></tr>`; });
-        container.innerHTML = `<table class="jadwal-table"><thead><tr><th style="width:50px;">No</th><th style="width:160px;">Waktu</th><th>Kegiatan</th><th style="width:120px;">Agama</th></tr></thead><tbody>${rows}</tbody></table>`;
+        if (!jadwalList.length) {
+            container.innerHTML = '<p class="text-center text-muted py-3">Memuat jadwal...</p>';
+            return;
+        }
+
+        // Grup berdasarkan waktu (mulai|selesai)
+        const groups = {};
+        jadwalList.forEach(j => {
+            const key = j.mulai + '|' + j.selesai;
+            if (!groups[key]) groups[key] = {
+                mulai: j.mulai,
+                selesai: j.selesai,
+                items: []
+            };
+            groups[key].items.push({
+                nama: j.nama,
+                agama: j.agama
+            });
+        });
+
+        // Urutkan berdasarkan jam mulai
+        const sortedKeys = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+        let html = `<div class="timeline-wrapper">`;
+        sortedKeys.forEach(key => {
+            const g = groups[key];
+            html += `<div class="timeline-item">`;
+            html += `<div class="timeline-dot"></div>`;
+            html += `<span class="timeline-time">${g.mulai}</span>`;
+            html += `<div class="timeline-content">`;
+            g.items.forEach(item => {
+                const classColor = ACTIVITY_CLASS[item.agama] || 'activity-islam';
+                html += `<span class="activity-card ${classColor}">
+                            <i class="fas fa-circle"></i> ${item.nama}
+                         </span>`;
+            });
+            html += `</div>`;
+            html += `</div>`;
+        });
+        html += `</div>`;
+        container.innerHTML = html;
     }
 
     async function fetchAndUpdateJadwal() {
-        try { const res = await API.getJadwal(); if (res.status === 'success') { fullJadwal = res.data; const agamaSet = new Set(fullJadwal.map(j => j.agama).filter(Boolean)); const select = document.getElementById('filterAgamaSelect'); if (select) select.innerHTML = '<option value="">Semua Agama</option>' + [...agamaSet].sort().map(a => `<option value="${a}">${a}</option>`).join(''); applyFilterJadwal(); const pub = getPublicCache() || {}; pub.jadwal = fullJadwal; setPublicCache(pub); } } catch(e) {}
+        try {
+            const res = await API.getJadwal();
+            if (res.status === 'success') {
+                fullJadwal = res.data;
+                const agamaSet = new Set(fullJadwal.map(j => j.agama).filter(Boolean));
+                const select = document.getElementById('filterAgamaSelect');
+                if (select) select.innerHTML = '<option value="">Semua Agama</option>' + [...agamaSet].sort().map(a => `<option value="${a}">${a}</option>`).join('');
+                applyFilterJadwal();
+                const pub = getPublicCache() || {};
+                pub.jadwal = fullJadwal;
+                setPublicCache(pub);
+            }
+        } catch(e) {}
     }
 
+    // ==================== SCROLL TO TOP ====================
     const btnScrollTop = document.getElementById('btnScrollTop');
     if (btnScrollTop) { window.addEventListener('scroll', () => { btnScrollTop.classList.toggle('show', window.scrollY > 500); }); btnScrollTop.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); }); }
 
-    document.addEventListener('DOMContentLoaded', () => { fetchAndUpdateStats(); fetchAndUpdateJadwal(); });
+    // ==================== INIT ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchAndUpdateStats();
+        fetchAndUpdateJadwal();
+    });
 
+    // ==================== INTERSECTION OBSERVER ====================
     const observerOptions = { threshold: 0.15, rootMargin: '0px 0px -40px 0px' };
     const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.style.opacity = '1'; entry.target.style.transform = 'translateY(0)'; } }); }, observerOptions);
-    document.querySelectorAll('.card-custom, .jadwal-table, .stat-section').forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateY(30px)'; el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)'; observer.observe(el); if (el.getBoundingClientRect().top < window.innerHeight) { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; } });
+    document.querySelectorAll('.card-custom, .timeline-wrapper, .stat-section').forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateY(30px)'; el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)'; observer.observe(el); if (el.getBoundingClientRect().top < window.innerHeight) { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; } });
     window.addEventListener('load', () => { const section = sessionStorage.getItem('srma19_active_section'); if (section) { const el = document.getElementById(section); if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 300); } });
 </script>
 </body>

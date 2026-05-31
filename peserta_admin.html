@@ -3,52 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Peserta - Admin SRMA 19</title>
+    <title>Data Peserta - Admin SRMA 19 Bantul</title>
     <link rel="icon" type="image/webp" href="srma.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f0f2f5;
-            margin: 0;
-            padding: 30px;
-        }
-        .filter-bar {
-            background: #fff;
-            border-radius: 12px;
-            padding: 12px 16px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            align-items: center;
-        }
-        .table-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.5); z-index: 2000;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .modal-box {
-            background: #fff;
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 500px;
-            width: 92%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            max-height: 85vh;
-            overflow-y: auto;
-        }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; margin: 0; padding: 30px; }
+        .filter-bar { background: #fff; border-radius: 12px; padding: 12px 16px; display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); align-items: center; }
+        .table-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .modal-box { background: #fff; border-radius: 16px; padding: 24px; max-width: 500px; width: 92%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -71,13 +37,12 @@
     function setCachedData(data) { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
 
     let pesertaData = [];
-    let filtered = [];
+    let pesertaFiltered = [];
     let selectedKode = new Set();
 
+    // 🔥 Refresh manual – memuat ulang data dari server
     async function refreshPeserta(silent = false) {
-        if (!silent) {
-            showToast('Memperbarui data peserta...', 'info');
-        }
+        if (!silent) showToast('Memperbarui data peserta...', 'info');
         try {
             const res = await API.listPeserta();
             if (res.status === 'success') {
@@ -86,9 +51,7 @@
                 cached.peserta = pesertaData;
                 setCachedData(cached);
                 applyFilter();
-                if (!silent) {
-                    showToast('Data peserta diperbarui', 'success');
-                }
+                if (!silent) showToast('Data peserta diperbarui', 'success');
             } else {
                 showToast('Gagal memperbarui data peserta.', 'error');
             }
@@ -104,27 +67,32 @@
         const angkatan = document.getElementById('filterAngkatan')?.value || '';
         const agama = document.getElementById('filterAgama')?.value || '';
 
-        filtered = pesertaData.filter(p =>
+        pesertaFiltered = pesertaData.filter(p =>
             (!q || (p.Kode || '').toLowerCase().includes(q) || (p.Nama || '').toLowerCase().includes(q)) &&
             (!status || (p.Keterangan || 'Aktif') === status) &&
             (!rombel || p.Rombel === rombel) &&
             (!angkatan || (p.Angkatan || '') === angkatan) &&
             (!agama || p.Agama === agama)
         );
-        for (const k of selectedKode) { if (!filtered.some(p => p.Kode === k)) selectedKode.delete(k); }
+        // Bersihkan selectedKode yang tidak ada di filtered
+        for (const k of selectedKode) { if (!pesertaFiltered.some(p => p.Kode === k)) selectedKode.delete(k); }
         renderTable();
         updateDeleteButton();
     }
 
     function toggleSelectAll(checked) {
-        if (checked) filtered.forEach(p => selectedKode.add(p.Kode));
+        if (checked) pesertaFiltered.forEach(p => selectedKode.add(p.Kode));
         else selectedKode.clear();
-        renderTable(); updateDeleteButton();
-    }
-    function toggleSelect(kode, checked) {
-        if (checked) selectedKode.add(kode); else selectedKode.delete(kode);
+        renderTable();
         updateDeleteButton();
     }
+
+    function toggleSelect(kode, checked) {
+        if (checked) selectedKode.add(kode);
+        else selectedKode.delete(kode);
+        updateDeleteButton();
+    }
+
     function updateDeleteButton() {
         const btn = document.getElementById('btnDeleteSelected');
         const cnt = document.getElementById('selectedCount');
@@ -133,9 +101,9 @@
     }
 
     function renderTable() {
-        const allChecked = filtered.length > 0 && filtered.every(p => selectedKode.has(p.Kode));
+        const allChecked = pesertaFiltered.length > 0 && pesertaFiltered.every(p => selectedKode.has(p.Kode));
         let rows = '';
-        filtered.forEach(p => {
+        pesertaFiltered.forEach(p => {
             const idx = pesertaData.indexOf(p);
             rows += `<tr>
                 <td><input type="checkbox" ${selectedKode.has(p.Kode) ? 'checked' : ''} onchange="toggleSelect('${p.Kode}', this.checked)"></td>
@@ -144,12 +112,12 @@
                 <td>${p.Jenis_Kelamin || p.jk || '-'}</td>
                 <td>${p.Agama || '-'}</td>
                 <td>${p.Rombel || '-'}</td>
-                <td><span class="badge ${(p.Keterangan||'Aktif')==='Aktif'?'bg-success':(p.Keterangan==='Nonaktif'?'bg-secondary':'bg-warning')}">${p.Keterangan||'Aktif'}</span></td>
+                <td><span class="badge ${(p.Keterangan||'Aktif')==='Aktif'?'bg-success':(p.Keterangan||'Aktif')==='Nonaktif'?'bg-secondary':'bg-warning'}">${p.Keterangan||'Aktif'}</span></td>
                 <td>${p.Angkatan || '-'}</td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary p-1" onclick="showModal(${idx})"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-outline-warning p-1" onclick="toggleStatus(${idx})"><i class="fas fa-toggle-on"></i></button>
-                    <button class="btn btn-sm btn-outline-danger p-1" onclick="deleteSingle(${idx})"><i class="fas fa-trash-alt"></i></button>
+                    <button class="btn btn-sm btn-outline-primary p-1" onclick="showPesertaModal(${idx})"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-warning p-1" onclick="togglePesertaStatus(${idx})"><i class="fas fa-toggle-on"></i></button>
+                    <button class="btn btn-sm btn-outline-danger p-1" onclick="deletePesertaSingle(${idx})"><i class="fas fa-trash-alt"></i></button>
                 </td>
             </tr>`;
         });
@@ -164,9 +132,8 @@
             </table>`;
     }
 
-    // Modal
-    function showModal(index = null) {
-        const existing = index !== null && index >= 0 ? pesertaData[index] : null;
+    function showPesertaModal(index = null) {
+        const existing = index !== null ? pesertaData[index] : null;
         const title = existing ? 'Edit Peserta' : 'Tambah Peserta';
         const agamaOptions = ['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu','Lainnya'];
         const modalHtml = `
@@ -183,14 +150,16 @@
             </div></div>`;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
+
     function closeModal() { document.querySelectorAll('.modal-overlay').forEach(m => m.remove()); }
 
     async function savePeserta(index) {
-        const kode = document.getElementById('pmKode').value.trim().toUpperCase();
+        const kode = document.getElementById('pmKode').value.trim();
         const nama = document.getElementById('pmNama').value.trim();
-        if (!kode || !nama) { showToast('Kode dan Nama wajib', 'error'); return; }
+        if (!kode || !nama) { showToast('Kode dan Nama wajib.', 'error'); return; }
         const data = {
-            kode, nama,
+            kode: kode.toUpperCase(),
+            nama: nama,
             jk: document.getElementById('pmJK').value,
             agama: document.getElementById('pmAgama').value,
             asal: document.getElementById('pmAsal').value.trim(),
@@ -205,7 +174,7 @@
         else showToast(res.message, 'error');
     }
 
-    async function toggleStatus(index) {
+    async function togglePesertaStatus(index) {
         const p = pesertaData[index];
         if (!p) return;
         const newStatus = (p.Keterangan === 'Aktif' || !p.Keterangan) ? 'Nonaktif' : 'Aktif';
@@ -214,23 +183,60 @@
         else showToast(res.message, 'error');
     }
 
-    async function deleteSingle(index) {
+    async function deletePesertaSingle(index) {
         const p = pesertaData[index];
         if (!p) return;
         if (!confirm(`Hapus peserta ${p.Nama}?`)) return;
         const res = await API.deletePeserta(p.Kode);
-        if (res.status === 'ok') { await refreshPeserta(true); showToast('Peserta dihapus', 'success'); }
+        if (res.status === 'ok') { await refreshPeserta(true); showToast('Peserta dihapus.', 'success'); }
         else showToast(res.message, 'error');
     }
 
-    async function deleteSelected() {
+    async function deleteSelectedPeserta() {
         if (selectedKode.size === 0) return;
         if (!confirm(`Hapus ${selectedKode.size} peserta terpilih?`)) return;
         const deleted = [];
-        for (const kode of selectedKode) { const res = await API.deletePeserta(kode); if (res.status==='ok') deleted.push(kode); }
+        for (const kode of selectedKode) {
+            const res = await API.deletePeserta(kode);
+            if (res.status === 'ok') deleted.push(kode);
+        }
         selectedKode.clear();
         await refreshPeserta(true);
-        showToast(`${deleted.length} peserta dihapus`, 'success');
+        showToast(`${deleted.length} peserta dihapus.`, 'success');
+    }
+
+    function exportCSV() {
+        const filtered = pesertaFiltered.length ? pesertaFiltered : pesertaData;
+        if (!filtered.length) { showToast('Tidak ada data.', 'warning'); return; }
+        const rows = [['Kode','Nama','JK','Agama','Asal','Rombel','Keterangan','Angkatan']];
+        filtered.forEach(p => rows.push([p.Kode, p.Nama, p.Jenis_Kelamin||p.jk||'', p.Agama||'', p.Asal||'', p.Rombel||'', p.Keterangan||'Aktif', p.Angkatan||'']));
+        const csv = rows.map(r=>r.join(',')).join('\n');
+        const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'peserta.csv'; a.click();
+    }
+
+    function exportPesertaPDF() {
+        const filtered = pesertaFiltered.length ? pesertaFiltered : pesertaData;
+        if (!filtered.length) { showToast('Tidak ada data.', 'warning'); return; }
+        const now = new Date();
+        const tanggalCetak = now.toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' });
+        const html = `<div style="text-align:center;margin-bottom:20px;"><h3>SEKOLAH RAKYAT MENENGAH ATAS 19 BANTUL</h3><p>Sentra Terpadu Prof. Dr. Soeharso, Sonosewu</p><hr><h4>DAFTAR PESERTA DIDIK</h4><p>Dicetak: ${tanggalCetak}</p></div><table border="1" cellpadding="5" style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr><th>Kode</th><th>Nama</th><th>JK</th><th>Agama</th><th>Asal</th><th>Rombel</th><th>Status</th><th>Angkatan</th></tr></thead><tbody>${filtered.map(p=>`<tr><td>${p.Kode}</td><td>${p.Nama}</td><td>${p.Jenis_Kelamin||p.jk||''}</td><td>${p.Agama||''}</td><td>${p.Asal||''}</td><td>${p.Rombel||''}</td><td>${p.Keterangan||'Aktif'}</td><td>${p.Angkatan||''}</td></tr>`).join('')}</tbody></table>`;
+        html2pdf().set({ filename:`peserta_${now.toISOString().slice(0,10)}.pdf`, margin:[10,10,10,10], image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'landscape'} }).from(html).save();
+    }
+
+    async function importCSV(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const lines = e.target.result.split('\n').filter(l=>l.trim());
+            if (lines.length < 2) { showToast('File CSV kosong atau tidak valid.', 'error'); return; }
+            const rows = lines.slice(1).map(l=>l.split(',').map(c=>c.trim().replace(/^"(.*)"$/,'$1')));
+            const res = await API.importPeserta(JSON.stringify(rows));
+            if (res.status === 'ok') { await refreshPeserta(true); showToast(`Impor selesai. ${res.added||0} baru, ${res.updated||0} diperbarui.`, 'success'); }
+            else showToast(res.message, 'error');
+        };
+        reader.readAsText(file);
     }
 
     async function arsipLulus() {
@@ -245,43 +251,13 @@
         }
     }
 
-    function exportCSV() {
-        const data = filtered.length ? filtered : pesertaData;
-        if (!data.length) { showToast('Tidak ada data', 'warning'); return; }
-        const rows = [['Kode','Nama','JK','Agama','Asal','Rombel','Keterangan','Angkatan']];
-        data.forEach(p => rows.push([p.Kode,p.Nama,p.Jenis_Kelamin||p.jk||'',p.Agama||'',p.Asal||'',p.Rombel||'',p.Keterangan||'Aktif',p.Angkatan||'']));
-        const csv = rows.map(r=>r.join(',')).join('\n');
-        const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'peserta.csv'; a.click();
-    }
-
-    function exportPDF() {
-        const data = filtered.length ? filtered : pesertaData;
-        if (!data.length) { showToast('Tidak ada data', 'warning'); return; }
-        const now = new Date();
-        const tanggalCetak = now.toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' });
-        const html = `<div style="text-align:center"><h3>SEKOLAH RAKYAT MENENGAH ATAS 19 BANTUL</h3><hr><h4>DAFTAR PESERTA DIDIK</h4><p>Dicetak: ${tanggalCetak}</p></div>
-        <table border="1" cellpadding="5" style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr><th>Kode</th><th>Nama</th><th>JK</th><th>Agama</th><th>Asal</th><th>Rombel</th><th>Status</th><th>Angkatan</th></tr></thead>
-        <tbody>${data.map(p=>`<tr><td>${p.Kode}</td><td>${p.Nama}</td><td>${p.Jenis_Kelamin||p.jk||''}</td><td>${p.Agama||''}</td><td>${p.Asal||''}</td><td>${p.Rombel||''}</td><td>${p.Keterangan||'Aktif'}</td><td>${p.Angkatan||''}</td></tr>`).join('')}</tbody></table>`;
-        html2pdf().set({ filename:`peserta_${now.toISOString().slice(0,10)}.pdf`, margin:10, html2canvas:{scale:2}, jsPDF:{format:'a4',orientation:'landscape'} }).from(html).save();
-    }
-
-    async function importCSV(input) {
-        const file = input.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            const lines = e.target.result.split('\n').filter(l=>l.trim());
-            if (lines.length < 2) { showToast('File CSV kosong', 'error'); return; }
-            const rows = lines.slice(1).map(l=>l.split(',').map(c=>c.trim().replace(/^"(.*)"$/,'$1')));
-            const res = await API.importPeserta(JSON.stringify(rows));
-            if (res.status === 'ok') { await refreshPeserta(true); showToast(`Impor selesai. ${res.added||0} baru, ${res.updated||0} diperbarui`, 'success'); }
-            else showToast(res.message, 'error');
-        };
-        reader.readAsText(file);
-    }
-
     function showToast(msg, type='info') {
-        const colors = { success:['#d1fae5','#10b981'], error:['#fee2e2','#ef4444'], warning:['#fef3c7','#f59e0b'], info:['#dbeafe','#3b82f6'] };
+        const colors = {
+            success: ['#d1fae5','#10b981'],
+            error: ['#fee2e2','#ef4444'],
+            warning: ['#fef3c7','#f59e0b'],
+            info: ['#dbeafe','#3b82f6']
+        };
         const [bg, border] = colors[type] || colors.info;
         const el = document.createElement('div');
         el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;';
@@ -302,31 +278,37 @@
                 <select class="form-select form-select-sm" id="filterRombel" style="width:130px" onchange="applyFilter()"><option value="">Rombel</option>${rombelList.map(r=>`<option>${r}</option>`).join('')}</select>
                 <select class="form-select form-select-sm" id="filterAngkatan" style="width:130px" onchange="applyFilter()"><option value="">Angkatan</option>${angkatanList.map(a=>`<option>${a}</option>`).join('')}</select>
                 <select class="form-select form-select-sm" id="filterAgama" style="width:120px" onchange="applyFilter()"><option value="">Agama</option>${agamaList.map(a=>`<option>${a}</option>`).join('')}</select>
-                <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('searchPeserta').value='';document.getElementById('filterStatus').value='';document.getElementById('filterRombel').value='';document.getElementById('filterAngkatan').value='';document.getElementById('filterAgama').value='';applyFilter()">Reset</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter()">Reset</button>
+                <!-- 🔥 Tombol Refresh Manual -->
+                <button class="btn btn-sm btn-outline-primary" onclick="refreshPeserta(false)"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
             <div class="d-flex gap-2 mb-3 flex-wrap">
-                <button class="btn btn-sm btn-success" onclick="showModal(null)"><i class="fas fa-plus"></i> Tambah</button>
+                <button class="btn btn-sm btn-success" onclick="showPesertaModal(null)"><i class="fas fa-plus"></i> Tambah</button>
                 <button class="btn btn-sm btn-outline-success" onclick="document.getElementById('importCSV').click()"><i class="fas fa-upload"></i> Impor</button>
                 <input type="file" id="importCSV" accept=".csv" style="display:none" onchange="importCSV(this)">
                 <button class="btn btn-sm btn-primary" onclick="exportCSV()"><i class="fas fa-download"></i> CSV</button>
-                <button class="btn btn-sm btn-danger" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
-                <button class="btn btn-sm btn-outline-danger" id="btnDeleteSelected" disabled onclick="deleteSelected()"><i class="fas fa-trash-alt"></i> Hapus <span id="selectedCount">0</span></button>
+                <button class="btn btn-sm btn-danger" onclick="exportPesertaPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="btn btn-sm btn-outline-danger" id="btnDeleteSelected" disabled onclick="deleteSelectedPeserta()"><i class="fas fa-trash-alt"></i> Hapus <span id="selectedCount">0</span></button>
                 <button class="btn btn-sm btn-outline-secondary" onclick="arsipLulus()"><i class="fas fa-archive"></i> Arsip Lulus</button>
-                <!-- ✅ Tombol Refresh Manual -->
-                <button class="btn btn-sm btn-outline-primary" onclick="refreshPeserta(false)" title="Muat ulang data dari server"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
             <div class="table-card" id="pesertaTableContainer"></div>`;
         applyFilter();
     }
 
-    // Deteksi iframe – sembunyikan sidebar jika diakses dari dashboard induk
+    function resetFilter() {
+        document.getElementById('searchPeserta').value = '';
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterRombel').value = '';
+        document.getElementById('filterAngkatan').value = '';
+        document.getElementById('filterAgama').value = '';
+        applyFilter();
+    }
+
+    // Deteksi jika di dalam iframe – sembunyikan sidebar
     if (window.self !== window.top) {
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.querySelector('.sidebar');
             if (sidebar) sidebar.style.display = 'none';
-            document.body.style.margin = '0';
-            const main = document.querySelector('.main-content');
-            if (main) main.style.marginLeft = '0';
             document.body.style.padding = '30px';
         });
     }
