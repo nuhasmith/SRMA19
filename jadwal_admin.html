@@ -16,12 +16,14 @@
             border-radius: 12px;
             padding: 12px 16px;
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
             margin-bottom: 20px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             align-items: center;
         }
+        .filter-bar label { font-weight: 600; font-size: 0.9rem; color: #1e293b; margin: 0; }
+        .filter-bar .form-select { width: auto; min-width: 160px; }
         .jadwal-card {
             background: #fff;
             border-radius: 12px;
@@ -66,7 +68,15 @@
             padding: 10px 14px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             font-size: 0.85rem; display: flex; align-items: center; gap: 6px;
         }
-        @media (max-width: 768px) { body { padding: 16px; } }
+        .filter-info {
+            font-size: 0.85rem;
+            color: #64748b;
+            padding: 4px 12px;
+            background: #f8fafc;
+            border-radius: 50px;
+            display: inline-block;
+        }
+        @media (max-width: 768px) { body { padding: 16px; } .filter-bar .form-select { min-width: 120px; } }
     </style>
 </head>
 <body>
@@ -124,20 +134,13 @@
         }
 
         try {
-            // Panggil API ke Apps Script
             const res = await API.getJadwal();
-
             if (res.status === 'success') {
-                // Data baru dari server
                 jadwalData = res.data.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
-
-                // Simpan ke sessionStorage
                 const cached = getCachedData() || {};
                 cached.jadwal = jadwalData;
                 setCachedData(cached);
-
                 renderJadwal();
-
                 if (!silent) {
                     showToast('✅ Jadwal berhasil diperbarui dari server.', 'success');
                 }
@@ -188,9 +191,11 @@
         }
     }
 
-    // ==================== RENDER JADWAL ====================
+    // ==================== RENDER JADWAL DENGAN FILTER ====================
     function renderJadwal() {
+        // Ambil daftar agama unik dari data
         const agamaList = [...new Set(jadwalData.map(j => j.agama).filter(Boolean))].sort();
+        // Filter data berdasarkan filterAgama
         const filtered = filterAgama ? jadwalData.filter(j => j.agama === filterAgama) : jadwalData;
 
         let html = `
@@ -210,13 +215,15 @@
             </div>
         </div>
 
+        <!-- FILTER BAR -->
         <div class="filter-bar">
-            <label class="fw-semibold me-2"><i class="fas fa-filter me-1"></i>Filter Agama:</label>
-            <select class="form-select form-select-sm" id="filterAgamaSelect" style="width:180px" onchange="changeFilterAgama(this.value)">
+            <label><i class="fas fa-filter me-1"></i>Filter Agama:</label>
+            <select class="form-select form-select-sm" id="filterAgamaSelect" onchange="changeFilterAgama(this.value)">
                 <option value="">Semua Agama</option>
                 ${agamaList.map(a => `<option value="${a}" ${filterAgama === a ? 'selected' : ''}>${a}</option>`).join('')}
             </select>
             <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="resetFilter()">Reset</button>
+            ${filterAgama ? `<span class="filter-info"><i class="fas fa-check-circle me-1" style="color:var(--success);"></i>Menampilkan: <strong>${filterAgama}</strong></span>` : ''}
             <span class="small text-muted ms-2" id="lastUpdateInfo"></span>
         </div>`;
 
@@ -225,6 +232,7 @@
         } else if (!filtered.length) {
             html += `<div class="text-center py-5 text-muted">Tidak ada jadwal untuk agama yang dipilih.</div>`;
         } else {
+            // Kelompokkan berdasarkan agama untuk tampilan
             const grouped = {};
             filtered.forEach(j => {
                 if (!grouped[j.agama]) grouped[j.agama] = [];
@@ -265,8 +273,22 @@
         document.getElementById('mainContent').innerHTML = html;
     }
 
-    function changeFilterAgama(agama) { filterAgama = agama; renderJadwal(); }
-    function resetFilter() { filterAgama = ''; renderJadwal(); }
+    // ==================== FUNGSI FILTER ====================
+    function changeFilterAgama(agama) {
+        filterAgama = agama;
+        renderJadwal();
+        // Simpan filter ke sessionStorage agar tetap saat refresh
+        sessionStorage.setItem('srma19_jadwal_filter', agama);
+    }
+
+    function resetFilter() {
+        filterAgama = '';
+        sessionStorage.removeItem('srma19_jadwal_filter');
+        renderJadwal();
+        // Reset dropdown
+        const select = document.getElementById('filterAgamaSelect');
+        if (select) select.value = '';
+    }
 
     // ==================== HANDLE REFRESH CLICK ====================
     function handleRefreshClick() {
@@ -424,6 +446,10 @@
 
     // ==================== INISIALISASI ====================
     (async () => {
+        // Ambil filter dari sessionStorage
+        const savedFilter = sessionStorage.getItem('srma19_jadwal_filter');
+        if (savedFilter) filterAgama = savedFilter;
+
         const cached = getCachedData();
         if (cached?.jadwal) {
             jadwalData = cached.jadwal.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0));
