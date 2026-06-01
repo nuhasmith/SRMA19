@@ -167,8 +167,26 @@ function showToast(msg, type = 'info') {
 }
 
 // ==================== CACHING ====================
-function getCachedData() { try { const raw = localStorage.getItem(CACHE_KEY); if (!raw) return null; const data = JSON.parse(raw); if (Date.now() - data.timestamp > CACHE_DURATION) { localStorage.removeItem(CACHE_KEY); return null; } return data.payload; } catch(e) { return null; } }
-function setCachedData(payload) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), payload })); } catch(e) {} }
+function getCachedData() {
+    try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (Date.now() - data.timestamp > CACHE_DURATION) {
+            localStorage.removeItem(CACHE_KEY);
+            return null;
+        }
+        if (data.payload && data.payload.peserta) {
+            data.payload.peserta = data.payload.peserta.map(p => ({ ...p, Kode: String(p.Kode || '') }));
+        }
+        return data.payload;
+    } catch(e) { return null; }
+}
+function setCachedData(payload) {
+    try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), payload }));
+    } catch(e) {}
+}
 
 // ==================== DATA GLOBAL ====================
 let pesertaData = [], absensiData = [], jadwalData = [], petugasData = [], izinData = [];
@@ -178,20 +196,33 @@ let userProfile = null;
 
 function updateSidebarAvatar(profile) {
     const av = document.getElementById('sidebarAvatar'), nm = document.getElementById('sidebarName');
-    if (profile && profile.Foto && profile.Foto.startsWith('data:image')) { av.innerHTML = `<img src="${profile.Foto}" alt="Avatar">`; av.style.background = 'transparent'; }
-    else { const ini = (profile?.Nama || currentUser.nama || 'A').charAt(0).toUpperCase(); av.innerHTML = ini; av.style.background = 'var(--tg-blue)'; }
+    if (profile && profile.Foto && profile.Foto.startsWith('data:image')) {
+        av.innerHTML = `<img src="${profile.Foto}" alt="Avatar">`;
+        av.style.background = 'transparent';
+    } else {
+        const ini = (profile?.Nama || currentUser.nama || 'A').charAt(0).toUpperCase();
+        av.innerHTML = ini;
+        av.style.background = 'var(--tg-blue)';
+    }
     if (nm && profile) nm.textContent = profile.Nama || currentUser.nama || 'Admin SRMA 19';
 }
 
-// ==================== PERBAIKAN PRELOAD ====================
+// ==================== PRELOAD DATA ====================
 async function preloadAllData() {
-    try { const pr = await API.getProfile(currentUser.username); if (pr.status === 'success') { userProfile = pr.data; updateSidebarAvatar(userProfile); } } catch(e) {}
+    try {
+        const pr = await API.getProfile(currentUser.username);
+        if (pr.status === 'success') {
+            userProfile = pr.data;
+            updateSidebarAvatar(userProfile);
+        }
+    } catch(e) {}
     
     const sessionData = sessionStorage.getItem('srma19_admin_data');
     if (sessionData) {
         try {
             const parsed = JSON.parse(sessionData);
             if (parsed.peserta && parsed.absensi && parsed.jadwal && parsed.petugas && parsed.izin) {
+                parsed.peserta = parsed.peserta.map(p => ({ ...p, Kode: String(p.Kode || '') }));
                 pesertaData = parsed.peserta;
                 absensiData = parsed.absensi;
                 jadwalData = parsed.jadwal;
@@ -210,6 +241,7 @@ async function preloadAllData() {
 
     const cached = getCachedData();
     if (cached) {
+        if (cached.peserta) cached.peserta = cached.peserta.map(p => ({ ...p, Kode: String(p.Kode || '') }));
         pesertaData = cached.peserta || [];
         absensiData = cached.absensi || [];
         jadwalData = cached.jadwal || [];
@@ -230,7 +262,9 @@ async function refreshAllData(initial = false) {
     try {
         const [a, p, j, t, i] = await Promise.all([API.listAbsensi(), API.listPeserta(), API.getJadwal(), API.listPetugas(), API.listIzin()]);
         if (a.status === 'success') absensiData = a.data;
-        if (p.status === 'success') pesertaData = p.data;
+        if (p.status === 'success') {
+            pesertaData = p.data.map(pes => ({ ...pes, Kode: String(pes.Kode || '') }));
+        }
         if (j.status === 'success') jadwalData = j.data;
         if (t.status === 'success') petugasData = t.data;
         if (i.status === 'success') izinData = i.data;
@@ -265,7 +299,7 @@ function renderDashboard() {
                 <button class="btn btn-sm btn-danger rounded-pill" onclick="clearCacheAndReload()" title="Hapus cache dan muat ulang data dari server">
                     <i class="fas fa-trash-alt me-1"></i> Clear Cache
                 </button>
-                <button class="btn-backup" onclick="backupAllData()"><i class="fas fa-cloud-download-alt me-1"></i> Backup Data</button>
+                <button class="btn btn-sm btn-primary rounded-pill" onclick="backupAllData()"><i class="fas fa-cloud-download-alt me-1"></i> Backup Data</button>
             </div>
         </div>
         <div class="row g-3 mb-4">
@@ -279,7 +313,7 @@ function renderDashboard() {
             <div class="table-responsive">
                 <table class="table table-sm table-hover mb-0">
                     <thead><tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th></tr></thead>
-                    <tbody>${absensiData.slice(0,6).map(r=>`<tr><td>${r.Tanggal||'-'}</td><td>${r.Jam||'-'}</td><td><code>${(r.Kode||'').slice(-4)}</code></td><td>${r.Nama||'-'}</td><td class="small">${r.Sesi_Nama||'-'}</td><td><span class="badge ${r.Status==='Hadir'?'bg-success':(r.Status==='Izin'?'bg-info':'bg-warning')}">${r.Status||'Hadir'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="text-center py-2">Belum ada</td></tr>'}</tbody>
+                    <tbody>${absensiData.slice(0,6).map(r=>`<tr><td>${r.Tanggal||'-'}</td><td>${r.Jam||'-'}</td><td><code>${String(r.Kode||'').slice(-4)}</code></td><td>${r.Nama||'-'}</td><td class="small">${r.Sesi_Nama||'-'}</td><td><span class="badge ${r.Status==='Hadir'?'bg-success':(r.Status==='Izin'?'bg-info':'bg-warning')}">${r.Status||'Hadir'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="text-center py-2">Belum ada</td></tr>'}</tbody>
                 </table>
             </div>
         </div>`;
@@ -307,7 +341,16 @@ async function backupAllData() {
 // ==================== ABSENSI ====================
 function renderAbsensi() {
     document.getElementById('mainContent').innerHTML = `
-        <div class="page-header"><h5>📋 Data Absensi</h5><div class="d-flex gap-2"><button class="btn btn-sm btn-danger rounded-pill" onclick="exportAbsensiPDF()"><i class="fas fa-file-pdf"></i> PDF</button><button class="btn btn-sm btn-success rounded-pill" onclick="exportAbsensiCSV()"><i class="fas fa-download"></i> CSV</button><button class="btn btn-sm btn-warning rounded-pill" onclick="generateAbsence()"><i class="fas fa-robot"></i> Generate Tidak Berangkat</button><button class="btn btn-sm btn-outline-danger rounded-pill" id="btnDeleteAbsensi" onclick="deleteSelectedAbsensi()" disabled><i class="fas fa-trash-alt me-1"></i>Hapus Terpilih (<span id="absensiSelectedCount">0</span>)</button></div></div>
+        <div class="page-header">
+            <h5>📋 Data Absensi</h5>
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-sm btn-danger rounded-pill" onclick="exportAbsensiPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="btn btn-sm btn-success rounded-pill" onclick="exportAbsensiCSV()"><i class="fas fa-download"></i> CSV</button>
+                <button class="btn btn-sm btn-warning rounded-pill" onclick="generateAbsence()"><i class="fas fa-robot"></i> Generate Tidak Berangkat</button>
+                <button class="btn btn-sm btn-outline-danger rounded-pill" id="btnDeleteAbsensi" onclick="deleteSelectedAbsensi()" disabled><i class="fas fa-trash-alt me-1"></i>Hapus Terpilih (<span id="absensiSelectedCount">0</span>)</button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshAbsensi()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
+            </div>
+        </div>
         <div class="filter-bar"><input type="text" class="form-control form-control-sm rounded-pill" id="searchAbsensi" placeholder="🔍 Cari..." style="width:150px;" oninput="applyFilterAbsensi()"><input type="date" class="form-control form-control-sm rounded-pill" id="fTgl" style="width:140px;" onchange="applyFilterAbsensi()"><select class="form-select form-select-sm rounded-pill" id="fSesi" style="width:150px;" onchange="applyFilterAbsensi()"><option value="">Semua Sesi</option></select><button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="resetFilterAbsensi()">Reset</button></div>
         <div class="card-table" id="absensiTable"></div>`;
     populateSesiFilter();
@@ -315,6 +358,14 @@ function renderAbsensi() {
     applyFilterAbsensi();
     updateAbsensiDeleteButton();
 }
+
+async function refreshAbsensi() {
+    showToast('🔄 Memperbarui data absensi...', 'info');
+    await refreshAllData(false);
+    renderAbsensi();
+    showToast('✅ Data absensi diperbarui.', 'success');
+}
+
 function populateSesiFilter() { const sel = document.getElementById('fSesi'); if (!sel) return; const unique = [...new Set(absensiData.map(a => a.Sesi_Nama).filter(Boolean))]; sel.innerHTML = '<option value="">Semua Sesi</option>' + unique.map(s => `<option>${s}</option>`).join(''); }
 function applyFilterAbsensi() {
     const q = document.getElementById('searchAbsensi')?.value.toLowerCase().trim() || '';
@@ -324,36 +375,43 @@ function applyFilterAbsensi() {
         (!q || (a.Nama||'').toLowerCase().includes(q) || (a.Kode||'').toLowerCase().includes(q) || (a.Petugas||'').toLowerCase().includes(q)) &&
         (!t || a.Tanggal === t) && (!s || a.Sesi_Nama === s)
     );
-    for (const ts of selectedAbsensi) { if (!absensiFiltered.some(a => a.Timestamp === ts)) selectedAbsensi.delete(ts); }
+    for (const ts of selectedAbsensi) { if (!absensiFiltered.some(a => String(a.Timestamp) === ts)) selectedAbsensi.delete(ts); }
     updateAbsensiDeleteButton();
     renderAbsensiTable();
 }
 function updateAbsensiDeleteButton() { const btn = document.getElementById('btnDeleteAbsensi'); const cnt = document.getElementById('absensiSelectedCount'); if (btn) { btn.disabled = selectedAbsensi.size === 0; if (cnt) cnt.textContent = selectedAbsensi.size; } }
-function toggleSelectAbsensiAll(checked) { if (checked) absensiFiltered.forEach(a => selectedAbsensi.add(a.Timestamp)); else selectedAbsensi.clear(); updateAbsensiDeleteButton(); renderAbsensiTable(); }
-function toggleSelectAbsensi(ts, checked) { if (checked) selectedAbsensi.add(ts); else selectedAbsensi.delete(ts); updateAbsensiDeleteButton(); }
+function toggleSelectAbsensiAll(checked) { if (checked) absensiFiltered.forEach(a => selectedAbsensi.add(String(a.Timestamp))); else selectedAbsensi.clear(); updateAbsensiDeleteButton(); renderAbsensiTable(); }
+function toggleSelectAbsensi(ts, checked) { if (checked) selectedAbsensi.add(String(ts)); else selectedAbsensi.delete(String(ts)); updateAbsensiDeleteButton(); }
 function renderAbsensiTable() {
-    const allChecked = absensiFiltered.length > 0 && absensiFiltered.every(a => selectedAbsensi.has(a.Timestamp));
+    const allChecked = absensiFiltered.length > 0 && absensiFiltered.every(a => selectedAbsensi.has(String(a.Timestamp)));
     document.getElementById('absensiTable').innerHTML = `
         <div class="p-2 border-bottom small">Total: ${absensiFiltered.length} entri</div>
         <div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th style="width:30px;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAbsensiAll(this.checked)"></th><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr></thead>
-        <tbody>${absensiFiltered.length ? absensiFiltered.map(a => `<tr><td><input type="checkbox" ${selectedAbsensi.has(a.Timestamp)?'checked':''} onchange="toggleSelectAbsensi('${a.Timestamp}', this.checked)"></td><td>${a.Tanggal||'-'}</td><td>${a.Jam||'-'}</td><td><code>${(a.Kode||'').slice(-4)}</code></td><td>${a.Nama||'-'}</td><td class="small">${a.Sesi_Nama||'-'}</td><td><span class="badge ${a.Status==='Hadir'?'bg-success':(a.Status==='Izin'?'bg-info':a.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${a.Status||'Hadir'}</span></td><td class="small">${a.Petugas||'-'}</td></tr>`).join('') : '<tr><td colspan="8" class="text-center py-2">Tidak ada</td></tr>'}</tbody></table></div>`;
+        <tbody>${absensiFiltered.length ? absensiFiltered.map(a => `<tr><td><input type="checkbox" ${selectedAbsensi.has(String(a.Timestamp))?'checked':''} onchange="toggleSelectAbsensi('${String(a.Timestamp)}', this.checked)"></td><td>${a.Tanggal||'-'}</td><td>${a.Jam||'-'}</td><td><code>${String(a.Kode||'').slice(-4)}</code></td><td>${a.Nama||'-'}</td><td class="small">${a.Sesi_Nama||'-'}</td><td><span class="badge ${a.Status==='Hadir'?'bg-success':(a.Status==='Izin'?'bg-info':a.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${a.Status||'Hadir'}</span></td><td class="small">${a.Petugas||'-'}</td></tr>`).join('') : '<tr><td colspan="8" class="text-center py-2">Tidak ada</td></tr>'}</tbody></table></div>`;
 }
 function resetFilterAbsensi() { document.getElementById('searchAbsensi').value = ''; document.getElementById('fTgl').value = ''; document.getElementById('fSesi').value = ''; applyFilterAbsensi(); }
 async function deleteSelectedAbsensi() {
     if (selectedAbsensi.size === 0) return;
     if (!confirm(`Hapus ${selectedAbsensi.size} data absensi terpilih?`)) return;
-    const timestamps = Array.from(selectedAbsensi);
+    const timestamps = Array.from(selectedAbsensi).map(ts => String(ts));
+    const btn = document.getElementById('btnDeleteAbsensi');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
     try {
         const res = await API.deleteAbsensi(timestamps);
         if (res.status === 'ok') {
-            absensiData = absensiData.filter(a => !selectedAbsensi.has(a.Timestamp));
+            absensiData = absensiData.filter(a => !timestamps.includes(String(a.Timestamp)));
             setCachedData({ peserta: pesertaData, absensi: absensiData, jadwal: jadwalData, petugas: petugasData, izin: izinData });
             selectedAbsensi.clear();
             updateAbsensiDeleteButton();
             applyFilterAbsensi();
             showToast(`✅ ${res.message}`, 'success');
         } else showToast(`❌ ${res.message}`, 'error');
-    } catch(e) { showToast('❌ Gagal menghapus.', 'error'); }
+    } catch(e) { showToast('❌ Gagal menghapus.', 'error'); } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash-alt me-1"></i> Hapus Terpilih';
+        updateAbsensiDeleteButton();
+    }
 }
 async function generateAbsence() {
     const tgl = document.getElementById('fTgl')?.value;
@@ -371,13 +429,13 @@ function exportAbsensiPDF() {
     const sesi = document.getElementById('fSesi')?.value || 'Semua';
     const now = new Date();
     const tanggalCetak = now.toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' });
-    const html = `<div style="text-align:center;margin-bottom:20px;"><h3>SEKOLAH RAKYAT MENENGAH ATAS 19 BANTUL</h3><p>Sentra Terpadu Prof. Dr. Soeharso, Sonosewu, Ngestiharjo, Kasihan, Bantul</p><hr><h4>LAPORAN ABSENSI</h4><p>Filter: ${tgl} | Sesi: ${sesi}</p><p>Dicetak: ${tanggalCetak}</p></div><table border="1" cellpadding="5" style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr><th>No</th><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr></thead><tbody>${absensiFiltered.map((a,i)=>`<tr><td>${i+1}</td><td>${a.Tanggal}</td><td>${a.Jam}</td><td>${a.Kode.slice(-4)}</td><td>${a.Nama}</td><td>${a.Sesi_Nama}</td><td>${a.Status||'Hadir'}</td><td>${a.Petugas}</td></tr>`).join('')}</tbody></table>`;
+    const html = `<div style="text-align:center;margin-bottom:20px;"><h3>SEKOLAH RAKYAT MENENGAH ATAS 19 BANTUL</h3><p>Sentra Terpadu Prof. Dr. Soeharso, Sonosewu, Ngestiharjo, Kasihan, Bantul</p><hr><h4>LAPORAN ABSENSI</h4><p>Filter: ${tgl} | Sesi: ${sesi}</p><p>Dicetak: ${tanggalCetak}</p></div><table border="1" cellpadding="5" style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr><th>No</th><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr></thead><tbody>${absensiFiltered.map((a,i)=>`<tr><td>${i+1}</td><td>${a.Tanggal}</td><td>${a.Jam}</td><td>${String(a.Kode).slice(-4)}</td><td>${a.Nama}</td><td>${a.Sesi_Nama}</td><td>${a.Status||'Hadir'}</td><td>${a.Petugas}</td></tr>`).join('')}</tbody></table>`;
     html2pdf().set({ filename: `Laporan_Absensi_${tgl}_${now.toISOString().slice(0,10)}.pdf`, margin:[10,10,10,10], image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'landscape'} }).from(html).save();
 }
 function exportAbsensiCSV() {
     if (!absensiFiltered.length) { showToast('Tidak ada data.', 'warning'); return; }
     const rows = [['"Tanggal","Jam","Kode","Nama","Sesi","Status","Petugas"']];
-    absensiFiltered.forEach(a => rows.push([`"${a.Tanggal}"`,`"${a.Jam}"`,`"${a.Kode}"`,`"${a.Nama}"`,`"${a.Sesi_Nama}"`,`"${a.Status||'Hadir'}"`,`"${a.Petugas}"`]));
+    absensiFiltered.forEach(a => rows.push([`"${a.Tanggal}"`,`"${a.Jam}"`,`"${String(a.Kode)}"`,`"${a.Nama}"`,`"${a.Sesi_Nama}"`,`"${a.Status||'Hadir'}"`,`"${a.Petugas}"`]));
     const csv = rows.map(r=>r.join(',')).join('\n');
     const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
     const url = URL.createObjectURL(blob);
@@ -387,7 +445,19 @@ function exportAbsensiCSV() {
 // ==================== PESERTA ====================
 function renderPeserta() {
     document.getElementById('mainContent').innerHTML = `
-        <div class="page-header"><h5>👥 Data Peserta</h5><div class="d-flex gap-1 flex-wrap"><button class="btn btn-sm btn-success rounded-pill" onclick="showPesertaModal(null)"><i class="fas fa-plus"></i> Tambah</button><button class="btn btn-sm btn-outline-success rounded-pill" onclick="document.getElementById('importCSV').click()"><i class="fas fa-upload"></i> Impor</button><input type="file" id="importCSV" accept=".csv" style="display:none;" onchange="importCSV(this)"><button class="btn btn-sm btn-primary rounded-pill" onclick="exportCSV()"><i class="fas fa-download"></i> CSV</button><button class="btn btn-sm btn-danger rounded-pill" onclick="exportPesertaPDF()"><i class="fas fa-file-pdf"></i> PDF</button><button class="btn btn-sm btn-outline-danger rounded-pill" id="btnDeleteSelected" onclick="deleteSelectedPeserta()" disabled><i class="fas fa-trash-alt me-1"></i>Hapus Terpilih (<span id="selectedCount">0</span>)</button></div></div>
+        <div class="page-header">
+            <h5>👥 Data Peserta</h5>
+            <div class="d-flex gap-1 flex-wrap">
+                <button class="btn btn-sm btn-success rounded-pill" onclick="showPesertaModal(null)"><i class="fas fa-plus"></i> Tambah</button>
+                <button class="btn btn-sm btn-outline-success rounded-pill" onclick="document.getElementById('importCSV').click()"><i class="fas fa-upload"></i> Impor</button>
+                <input type="file" id="importCSV" accept=".csv" style="display:none;" onchange="importCSV(this)">
+                <button class="btn btn-sm btn-primary rounded-pill" onclick="exportCSV()"><i class="fas fa-download"></i> CSV</button>
+                <button class="btn btn-sm btn-danger rounded-pill" onclick="exportPesertaPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="btn btn-sm btn-outline-danger rounded-pill" id="btnDeleteSelected" onclick="deleteSelectedPeserta()" disabled><i class="fas fa-trash-alt me-1"></i>Hapus Terpilih (<span id="selectedCount">0</span>)</button>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="arsipLulus()"><i class="fas fa-archive"></i> Arsip Lulus</button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshPeserta()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
+            </div>
+        </div>
         <div class="filter-bar"><input type="text" class="form-control form-control-sm rounded-pill" id="searchPeserta" placeholder="🔍 Cari..." style="width:150px;" oninput="filterPeserta()"><select class="form-select form-select-sm rounded-pill" id="filterStatus" style="width:120px;" onchange="filterPeserta()"><option value="">Status</option><option>Aktif</option><option>Nonaktif</option><option>Lulus</option></select><select class="form-select form-select-sm rounded-pill" id="filterRombel" style="width:130px;" onchange="filterPeserta()"><option value="">Rombel</option></select><select class="form-select form-select-sm rounded-pill" id="filterAngkatan" style="width:130px;" onchange="filterPeserta()"><option value="">Angkatan</option></select><select class="form-select form-select-sm rounded-pill" id="filterAgama" style="width:120px;" onchange="filterPeserta()"><option value="">Agama</option></select><button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="resetPesertaFilter()">Reset</button></div>
         <div class="card-table" id="pesertaTable"></div>`;
     selectedPeserta.clear();
@@ -396,6 +466,14 @@ function renderPeserta() {
     populateAgamaFilter();
     filterPeserta();
 }
+
+async function refreshPeserta() {
+    showToast('🔄 Memperbarui data peserta...', 'info');
+    await refreshAllData(false);
+    renderPeserta();
+    showToast('✅ Data peserta diperbarui.', 'success');
+}
+
 function populateRombelFilter() { const sel = document.getElementById('filterRombel'); if (!sel) return; sel.innerHTML = '<option value="">Rombel</option>' + [...new Set(pesertaData.map(p=>p.Rombel).filter(Boolean))].map(r=>`<option>${r}</option>`).join(''); }
 function populateAngkatanFilter() { const sel = document.getElementById('filterAngkatan'); if (!sel) return; sel.innerHTML = '<option value="">Angkatan</option>' + [...new Set(pesertaData.map(p=>p.Angkatan).filter(Boolean))].map(a=>`<option>${a}</option>`).join(''); }
 function populateAgamaFilter() { const sel = document.getElementById('filterAgama'); if (!sel) return; sel.innerHTML = '<option value="">Agama</option>' + [...new Set(pesertaData.map(p=>p.Agama).filter(Boolean))].map(a=>`<option>${a}</option>`).join(''); }
@@ -406,27 +484,28 @@ function filterPeserta() {
     const a = document.getElementById('filterAngkatan')?.value || '';
     const g = document.getElementById('filterAgama')?.value || '';
     pesertaFiltered = pesertaData.filter(p =>
-        (!q || (p.Kode||'').toLowerCase().includes(q) || (p.Nama||'').toLowerCase().includes(q)) &&
+        (!q || (String(p.Kode||'').toLowerCase().includes(q) || (p.Nama||'').toLowerCase().includes(q)) &&
         (!s || (p.Keterangan||'Aktif') === s) &&
         (!r || p.Rombel === r) &&
         (!a || (p.Angkatan||'') === a) &&
         (!g || p.Agama === g)
-    );
-    for (const k of selectedPeserta) { if (!pesertaFiltered.some(p=>p.Kode===k)) selectedPeserta.delete(k); }
+    ));
+    for (const k of selectedPeserta) { if (!pesertaFiltered.some(p=>String(p.Kode)===k)) selectedPeserta.delete(k); }
     updateDeleteButton();
     renderPesertaTable();
 }
 function updateDeleteButton() { const btn = document.getElementById('btnDeleteSelected'), cnt = document.getElementById('selectedCount'); if (btn) { btn.disabled = selectedPeserta.size === 0; if (cnt) cnt.textContent = selectedPeserta.size; } }
-function toggleSelectAll(checked) { if (checked) pesertaFiltered.forEach(p=>selectedPeserta.add(p.Kode)); else selectedPeserta.clear(); updateDeleteButton(); renderPesertaTable(); }
+function toggleSelectAll(checked) { if (checked) pesertaFiltered.forEach(p=>selectedPeserta.add(String(p.Kode))); else selectedPeserta.clear(); updateDeleteButton(); renderPesertaTable(); }
 function toggleSelectPeserta(kode, checked) { if (checked) selectedPeserta.add(kode); else selectedPeserta.delete(kode); updateDeleteButton(); }
 function renderPesertaTable() {
-    const allChecked = pesertaFiltered.length > 0 && pesertaFiltered.every(p=>selectedPeserta.has(p.Kode));
+    const allChecked = pesertaFiltered.length > 0 && pesertaFiltered.every(p => selectedPeserta.has(String(p.Kode)));
     document.getElementById('pesertaTable').innerHTML = `
         <div class="p-2 border-bottom small">Total: ${pesertaFiltered.length}</div>
         <div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th style="width:30px;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAll(this.checked)"></th><th>Nama</th><th>Kode</th><th>JK</th><th>Agama</th><th>Rombel</th><th>Status</th><th>Angkatan</th><th class="text-center">Aksi</th></tr></thead>
         <tbody>${pesertaFiltered.length ? pesertaFiltered.map(p => {
             const idx = pesertaData.indexOf(p);
-            return `<tr><td><input type="checkbox" ${selectedPeserta.has(p.Kode)?'checked':''} onchange="toggleSelectPeserta('${p.Kode}', this.checked)"></td><td>${p.Nama||'-'}</td><td><code>${(p.Kode||'').slice(-4)}</code></td><td>${p.Jenis_Kelamin||p.jk||'-'}</td><td>${p.Agama||'-'}</td><td>${p.Rombel||'-'}</td><td><span class="badge ${(p.Keterangan||'Aktif')==='Aktif'?'bg-success':(p.Keterangan||'Aktif')==='Nonaktif'?'bg-secondary':'bg-warning'}">${p.Keterangan||'Aktif'}</span></td><td>${p.Angkatan||'-'}</td><td class="text-center"><button class="btn btn-sm btn-outline-primary p-1" onclick="showPesertaModal(${idx})"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-warning p-1" onclick="togglePesertaStatus(${idx})"><i class="fas fa-toggle-on"></i></button><button class="btn btn-sm btn-outline-danger p-1" onclick="deletePesertaSingle(${idx})"><i class="fas fa-trash-alt"></i></button></td></tr>`;
+            const kodeStr = String(p.Kode || '');
+            return `<tr><td><input type="checkbox" ${selectedPeserta.has(kodeStr)?'checked':''} onchange="toggleSelectPeserta('${kodeStr}', this.checked)"></td><td>${p.Nama||'-'}</td><td><code>${kodeStr.slice(-4)}</code></td><td>${p.Jenis_Kelamin||p.jk||'-'}</td><td>${p.Agama||'-'}</td><td>${p.Rombel||'-'}</td><td><span class="badge ${(p.Keterangan||'Aktif')==='Aktif'?'bg-success':(p.Keterangan||'Aktif')==='Nonaktif'?'bg-secondary':'bg-warning'}">${p.Keterangan||'Aktif'}</span></td><td>${p.Angkatan||'-'}</td><td class="text-center"><button class="btn btn-sm btn-outline-primary p-1" onclick="showPesertaModal(${idx})"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-warning p-1" onclick="togglePesertaStatus(${idx})"><i class="fas fa-toggle-on"></i></button><button class="btn btn-sm btn-outline-danger p-1" onclick="deletePesertaSingle(${idx})"><i class="fas fa-trash-alt"></i></button></td></tr>`;
         }).join('') : '<tr><td colspan="9" class="text-center py-2">Tidak ada data</td></tr>'}</tbody></table></div>`;
 }
 function resetPesertaFilter() { document.getElementById('searchPeserta').value = ''; document.getElementById('filterStatus').value = ''; document.getElementById('filterRombel').value = ''; document.getElementById('filterAngkatan').value = ''; document.getElementById('filterAgama').value = ''; filterPeserta(); }
@@ -500,7 +579,7 @@ function exportCSV() {
     const filtered = pesertaFiltered.length ? pesertaFiltered : pesertaData;
     if (!filtered.length) { showToast('Tidak ada data.', 'warning'); return; }
     const rows = [['Kode','Nama','JK','Agama','Asal','Rombel','Keterangan','Angkatan']];
-    filtered.forEach(p => rows.push([p.Kode,p.Nama,p.Jenis_Kelamin||p.jk||'',p.Agama||'',p.Asal||'',p.Rombel||'',p.Keterangan||'Aktif',p.Angkatan||'']));
+    filtered.forEach(p => rows.push([String(p.Kode),p.Nama,p.Jenis_Kelamin||p.jk||'',p.Agama||'',p.Asal||'',p.Rombel||'',p.Keterangan||'Aktif',p.Angkatan||'']));
     const csv = rows.map(r=>r.join(',')).join('\n');
     const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
     const url = URL.createObjectURL(blob);
@@ -511,7 +590,7 @@ function exportPesertaPDF() {
     if (!filtered.length) { showToast('Tidak ada data.', 'warning'); return; }
     const now = new Date();
     const tanggalCetak = now.toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' });
-    const html = `<div style="text-align:center;margin-bottom:20px;"><h3>SEKOLAH RAKYAT MENENGAH ATAS 19 BANTUL</h3><p>Sentra Terpadu Prof. Dr. Soeharso, Sonosewu</p><hr><h4>DAFTAR PESERTA DIDIK</h4><p>Dicetak: ${tanggalCetak}</p></div><table border="1" cellpadding="5" style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr><th>Kode</th><th>Nama</th><th>JK</th><th>Agama</th><th>Asal</th><th>Rombel</th><th>Status</th><th>Angkatan</th></tr></thead><tbody>${filtered.map(p=>`<tr><td>${p.Kode}</td><td>${p.Nama}</td><td>${p.Jenis_Kelamin||p.jk||''}</td><td>${p.Agama||''}</td><td>${p.Asal||''}</td><td>${p.Rombel||''}</td><td>${p.Keterangan||'Aktif'}</td><td>${p.Angkatan||''}</td></tr>`).join('')}</tbody></table>`;
+    const html = `<div style="text-align:center;margin-bottom:20px;"><h3>SEKOLAH RAKYAT MENENGAH ATAS 19 BANTUL</h3><p>Sentra Terpadu Prof. Dr. Soeharso, Sonosewu</p><hr><h4>DAFTAR PESERTA DIDIK</h4><p>Dicetak: ${tanggalCetak}</p></div><table border="1" cellpadding="5" style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr><th>Kode</th><th>Nama</th><th>JK</th><th>Agama</th><th>Asal</th><th>Rombel</th><th>Status</th><th>Angkatan</th></tr></thead><tbody>${filtered.map(p=>`<tr><td>${String(p.Kode)}</td><td>${p.Nama}</td><td>${p.Jenis_Kelamin||p.jk||''}</td><td>${p.Agama||''}</td><td>${p.Asal||''}</td><td>${p.Rombel||''}</td><td>${p.Keterangan||'Aktif'}</td><td>${p.Angkatan||''}</td></tr>`).join('')}</tbody></table>`;
     html2pdf().set({ filename:`peserta_${now.toISOString().slice(0,10)}.pdf`, margin:[10,10,10,10], image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'landscape'} }).from(html).save();
 }
 async function importCSV(input) {
@@ -528,23 +607,26 @@ async function importCSV(input) {
     };
     reader.readAsText(file);
 }
-async function refreshPeserta() {
-    try {
-        const res = await API.listPeserta();
-        if (res.status === 'success') pesertaData = res.data;
-        setCachedData({ peserta: pesertaData, absensi: absensiData, jadwal: jadwalData, petugas: petugasData, izin: izinData });
-        filterPeserta();
-    } catch(e) { showToast('Gagal refresh peserta.', 'error'); }
+async function arsipLulus() {
+    if (!confirm('Pindahkan semua peserta dengan status "Lulus" ke arsip alumni?')) return;
+    showToast('Memproses...', 'info');
+    const res = await API.arsipLulus();
+    if (res.status === 'ok') {
+        await refreshPeserta();
+        showToast(res.message, 'success');
+    } else {
+        showToast(res.message, 'error');
+    }
 }
 
-// ==================== JADWAL (CRUD Lengkap) ====================
+// ==================== JADWAL ====================
 function renderJadwal() {
     if (!jadwalData.length) { document.getElementById('mainContent').innerHTML = `<div class="text-center py-5">Memuat jadwal...</div>`; return; }
     let html = `<div class="page-header"><h5>📅 Jadwal Kegiatan</h5>
         <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-sm btn-success rounded-pill" onclick="showJadwalModal()"><i class="fas fa-plus"></i> Tambah</button>
             <button class="btn btn-sm btn-warning rounded-pill" onclick="updatePrayerTimes()"><i class="fas fa-cloud-sun me-1"></i> Perbarui Sholat Otomatis</button>
-            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshJadwal()" title="Muat ulang data dari server"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshJadwal()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
         </div>
     </div>
     <div class="filter-bar mb-3">
@@ -554,7 +636,6 @@ function renderJadwal() {
         </select>
     </div>
     <div id="jadwalList">`;
-    // Render semua jadwal tanpa filter
     const agamaList = [...new Set(jadwalData.map(j => j.agama).filter(Boolean))].sort();
     html += `<div class="row g-2">`;
     jadwalData.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0)).forEach((j, i) => {
@@ -575,7 +656,6 @@ function renderJadwal() {
     });
     html += `</div></div>`;
     document.getElementById('mainContent').innerHTML = html;
-    // Populate filter
     const filterSelect = document.getElementById('filterJadwalAgama');
     if (filterSelect) {
         filterSelect.innerHTML = '<option value="">Semua Agama</option>' + agamaList.map(a => `<option value="${a}">${a}</option>`).join('');
@@ -686,13 +766,23 @@ async function updatePrayerTimes() {
 
 // ==================== PETUGAS ====================
 function renderPetugas() {
-    let html = `<div class="page-header"><h5>🛡️ Data Petugas</h5><button class="btn btn-sm btn-success rounded-pill" onclick="showPetugasModal(null)"><i class="fas fa-plus"></i> Tambah</button></div><div class="card-table"><div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Status</th><th class="text-center">Aksi</th></tr></thead><tbody>`;
+    let html = `<div class="page-header"><h5>🛡️ Data Petugas</h5><button class="btn btn-sm btn-success rounded-pill" onclick="showPetugasModal(null)"><i class="fas fa-plus"></i> Tambah</button>
+        <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshPetugas()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
+    </div><div class="card-table"><div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Status</th><th class="text-center">Aksi</th></tr></thead><tbody>`;
     petugasData.forEach((p, i) => {
         html += `<tr><td>${p.Username}</td><td>${p.Nama}</td><td>${p.Role}</td><td><span class="badge ${p.Status==='Aktif'?'bg-success':'bg-secondary'}">${p.Status||'Aktif'}</span></td><td class="text-center"><button class="btn btn-sm btn-outline-primary p-1" onclick="showPetugasModal(${i})"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-warning p-1" onclick="togglePetugasStatus(${i})"><i class="fas fa-toggle-on"></i></button><button class="btn btn-sm btn-outline-danger p-1" onclick="deletePetugas(${i})"><i class="fas fa-trash-alt"></i></button></td></tr>`;
     });
     html += `</tbody></table></div></div>`;
     document.getElementById('mainContent').innerHTML = html;
 }
+
+async function refreshPetugas() {
+    showToast('🔄 Memperbarui data petugas...', 'info');
+    await refreshAllData(false);
+    renderPetugas();
+    showToast('✅ Data petugas diperbarui.', 'success');
+}
+
 function showPetugasModal(index) {
     const existing = index !== null && index >= 0 ? petugasData[index] : null;
     const title = existing ? 'Edit Petugas' : 'Tambah Petugas';
@@ -737,23 +827,28 @@ async function deletePetugas(index) {
     if (res.status === 'ok') { await refreshPetugas(); }
     else showToast(res.message, 'error');
 }
-async function refreshPetugas() {
-    try {
-        const res = await API.listPetugas();
-        if (res.status === 'success') petugasData = res.data;
-        setCachedData({ peserta: pesertaData, absensi: absensiData, jadwal: jadwalData, petugas: petugasData, izin: izinData });
-        renderPetugas();
-    } catch(e) { showToast('Gagal refresh petugas.', 'error'); }
-}
 
 // ==================== IZIN ====================
 function renderIzin() {
     document.getElementById('mainContent').innerHTML = `
-        <div class="page-header"><h5>📋 Data Izin</h5><button class="btn btn-sm btn-success rounded-pill" onclick="showIzinModal()"><i class="fas fa-plus"></i> Tambah Izin</button></div>
+        <div class="page-header"><h5>📋 Data Izin</h5>
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-sm btn-success rounded-pill" onclick="showIzinModal()"><i class="fas fa-plus"></i> Tambah Izin</button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshIzin()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
+            </div>
+        </div>
         <div class="filter-bar"><input type="text" class="form-control form-control-sm rounded-pill" id="searchIzin" placeholder="Cari kode/nama" style="width:160px;" oninput="filterIzin()"><input type="date" class="form-control form-control-sm rounded-pill" id="fTglIzin" style="width:140px;" onchange="filterIzin()"></div>
         <div class="card-table" id="izinTable"></div>`;
     filterIzin();
 }
+
+async function refreshIzin() {
+    showToast('🔄 Memperbarui data izin...', 'info');
+    await refreshAllData(false);
+    renderIzin();
+    showToast('✅ Data izin diperbarui.', 'success');
+}
+
 function filterIzin() {
     const q = (document.getElementById('searchIzin')?.value || '').toLowerCase().trim();
     const tgl = document.getElementById('fTglIzin')?.value || '';
@@ -765,7 +860,7 @@ function renderIzinTable(data) {
     container.innerHTML = `
         <div class="p-2 border-bottom small">Total: ${data.length} izin</div>
         <div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Tanggal</th><th>Kode</th><th>Nama</th><th>Keterangan</th><th>Bukti</th><th>Petugas</th><th class="text-center">Aksi</th></tr></thead>
-        <tbody>${data.map((iz, idx) => { const realIdx = izinData.indexOf(iz); return `<tr><td>${iz.Tanggal}</td><td><code>${(iz.Kode_Peserta||'').slice(-4)}</code></td><td>${iz.Nama_Peserta}</td><td>${iz.Keterangan}</td><td>${iz.Bukti_Surat ? '<a href="#" onclick="lihatBukti('+realIdx+')"><i class="fas fa-paperclip"></i> Lihat</a>' : '-'}</td><td>${iz.Petugas}</td><td class="text-center"><button class="btn btn-sm btn-outline-primary p-1" onclick="editIzin(${realIdx})"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger p-1" onclick="hapusIzin(${realIdx})"><i class="fas fa-trash-alt"></i></button></td></tr>`; }).join('') || '<tr><td colspan="7" class="text-center py-2">Belum ada data izin</td></tr>'}</tbody></table></div>`;
+        <tbody>${data.map((iz, idx) => { const realIdx = izinData.indexOf(iz); return `<tr><td>${iz.Tanggal}</td><td><code>${String(iz.Kode_Peserta||'').slice(-4)}</code></td><td>${iz.Nama_Peserta}</td><td>${iz.Keterangan}</td><td>${iz.Bukti_Surat ? '<a href="#" onclick="lihatBukti('+realIdx+')"><i class="fas fa-paperclip"></i> Lihat</a>' : '-'}</td><td>${iz.Petugas}</td><td class="text-center"><button class="btn btn-sm btn-outline-primary p-1" onclick="editIzin(${realIdx})"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger p-1" onclick="hapusIzin(${realIdx})"><i class="fas fa-trash-alt"></i></button></td></tr>`; }).join('') || '<tr><td colspan="7" class="text-center py-2">Belum ada data izin</td></tr>'}</tbody></table></div>`;
 }
 function showIzinModal(index = null) {
     const existing = index !== null ? izinData[index] : null;
@@ -810,14 +905,6 @@ function lihatBukti(index) {
     if (!izin?.Bukti_Surat) return;
     const win = window.open('', '_blank');
     win.document.write(`<img src="${izin.Bukti_Surat}" style="max-width:100%; height:auto;">`);
-}
-async function refreshIzin() {
-    try {
-        const res = await API.listIzin();
-        if (res.status === 'success') izinData = res.data;
-        setCachedData({ peserta: pesertaData, absensi: absensiData, jadwal: jadwalData, petugas: petugasData, izin: izinData });
-        filterIzin();
-    } catch(e) { showToast('Gagal memuat izin.', 'error'); }
 }
 
 // ==================== SCAN QR ====================
