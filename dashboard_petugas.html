@@ -158,34 +158,65 @@ function showToast(msg, type = 'info') {
 }
 
 // ==================== CACHING ====================
-function getCachedData() { try { const raw = localStorage.getItem(CACHE_KEY); if (!raw) return null; const data = JSON.parse(raw); if (Date.now() - data.timestamp > CACHE_DURATION) { localStorage.removeItem(CACHE_KEY); return null; } return data.payload; } catch(e) { return null; } }
-function setCachedData(payload) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), payload })); } catch(e) {} }
+function getCachedData() {
+    try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (Date.now() - data.timestamp > CACHE_DURATION) {
+            localStorage.removeItem(CACHE_KEY);
+            return null;
+        }
+        // 🔥 Perbaiki data peserta agar Kode selalu string
+        if (data.payload && data.payload.peserta) {
+            data.payload.peserta = data.payload.peserta.map(p => ({
+                ...p,
+                Kode: String(p.Kode || '')
+            }));
+        }
+        return data.payload;
+    } catch(e) { return null; }
+}
+function setCachedData(payload) {
+    try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), payload }));
+    } catch(e) {}
+}
 
 // ==================== DATA GLOBAL ====================
-let pesertaData = [], absensiData = [], izinData = [], jadwalData = [];
+let absensiData = [], pesertaData = [], izinData = [], jadwalData = [];
 let absensiFiltered = [];
 let userProfile = null;
 
 function updateSidebarAvatar(profile) {
     const av = document.getElementById('sidebarAvatar'), nm = document.getElementById('sidebarName');
-    if (profile && profile.Foto && profile.Foto.startsWith('data:image')) { av.innerHTML = `<img src="${profile.Foto}" alt="Avatar">`; av.style.background = 'transparent'; }
-    else { const ini = (profile?.Nama || currentUser.nama || 'P').charAt(0).toUpperCase(); av.innerHTML = ini; av.style.background = 'var(--tg-blue)'; }
+    if (profile && profile.Foto && profile.Foto.startsWith('data:image')) {
+        av.innerHTML = `<img src="${profile.Foto}" alt="Avatar">`;
+        av.style.background = 'transparent';
+    } else {
+        const ini = (profile?.Nama || currentUser.nama || 'P').charAt(0).toUpperCase();
+        av.innerHTML = ini;
+        av.style.background = 'var(--tg-blue)';
+    }
     if (nm && profile) nm.textContent = profile.Nama || currentUser.nama || 'Petugas SRMA 19';
 }
 
-// ==================== PERBAIKAN PRELOAD ====================
+// ==================== PRELOAD DATA ====================
 async function preloadAllData() {
-    // Ambil profil user untuk avatar
-    try { const pr = await API.getProfile(currentUser.username); if (pr.status === 'success') { userProfile = pr.data; updateSidebarAvatar(userProfile); } } catch(e) {}
+    try {
+        const pr = await API.getProfile(currentUser.username);
+        if (pr.status === 'success') {
+            userProfile = pr.data;
+            updateSidebarAvatar(userProfile);
+        }
+    } catch(e) {}
     
-    // Cek data di sessionStorage (preload saat login)
     const sessionData = sessionStorage.getItem('srma19_petugas_data');
-    
-    // Prioritaskan sessionStorage
     if (sessionData) {
         try {
             const parsed = JSON.parse(sessionData);
             if (parsed.peserta && parsed.absensi && parsed.izin && parsed.jadwal) {
+                parsed.peserta = parsed.peserta.map(p => ({ ...p, Kode: String(p.Kode || '') }));
                 pesertaData = parsed.peserta;
                 absensiData = parsed.absensi;
                 izinData = parsed.izin;
@@ -201,9 +232,9 @@ async function preloadAllData() {
         } catch(e) { console.warn('Gagal parse sessionStorage', e); }
     }
 
-    // Jika tidak ada sessionStorage, gunakan localStorage cache
     const cached = getCachedData();
     if (cached) {
+        if (cached.peserta) cached.peserta = cached.peserta.map(p => ({ ...p, Kode: String(p.Kode || '') }));
         pesertaData = cached.peserta || [];
         absensiData = cached.absensi || [];
         izinData = cached.izin || [];
@@ -215,7 +246,6 @@ async function preloadAllData() {
         return;
     }
 
-    // Jika tidak ada cache sama sekali, lakukan fetch
     document.getElementById('mainContent').innerHTML = `<div class="loading-overlay"><div class="spinner-border text-primary"></div></div>`;
     await refreshAllData(true);
 }
@@ -224,11 +254,12 @@ async function refreshAllData(initial = false) {
     try {
         const [a, p, i, j] = await Promise.all([API.listAbsensi(), API.listPeserta(), API.listIzin(), API.getJadwal()]);
         if (a.status === 'success') absensiData = a.data;
-        if (p.status === 'success') pesertaData = p.data;
+        if (p.status === 'success') {
+            pesertaData = p.data.map(pes => ({ ...pes, Kode: String(pes.Kode || '') }));
+        }
         if (i.status === 'success') izinData = i.data;
         if (j.status === 'success') jadwalData = j.data;
         setCachedData({ peserta: pesertaData, absensi: absensiData, izin: izinData, jadwal: jadwalData });
-        // Simpan ke sessionStorage untuk preload berikutnya
         sessionStorage.setItem('srma19_petugas_data', JSON.stringify({ peserta: pesertaData, absensi: absensiData, izin: izinData, jadwal: jadwalData }));
         if (initial) { const page = localStorage.getItem(MENU_KEY) || 'dashboard'; updateMenuUI(page); navigate(page); }
         else { const cur = localStorage.getItem(MENU_KEY) || 'dashboard'; navigate(cur); }
@@ -255,7 +286,7 @@ function renderDashboard() {
         <div class="page-header">
             <h5>📊 Dashboard Petugas</h5>
             <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshDashboard()" title="Muat ulang data dari server">
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshDashboard()">
                     <i class="fas fa-sync-alt me-1"></i> Refresh
                 </button>
                 <button class="btn btn-sm btn-danger rounded-pill" onclick="clearCacheAndReload()" title="Hapus cache dan muat ulang data dari server">
@@ -275,7 +306,7 @@ function renderDashboard() {
             <div class="table-responsive">
                 <table class="table table-sm table-hover mb-0">
                     <thead><tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th></tr></thead>
-                    <tbody>${absensiData.slice(0,6).map(r=>`<tr><td>${r.Tanggal||'-'}</td><td>${r.Jam||'-'}</td><td><code>${(r.Kode||'').slice(-4)}</code></td><td>${r.Nama||'-'}</td><td class="small">${r.Sesi_Nama||'-'}</td><td><span class="badge ${r.Status==='Hadir'?'bg-success':(r.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${r.Status||'Hadir'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="text-center py-2">Belum ada</td></tr>'}</tbody>
+                    <tbody>${absensiData.slice(0,6).map(r=>`<tr><td>${r.Tanggal||'-'}</td><td>${r.Jam||'-'}</td><td><code>${String(r.Kode||'').slice(-4)}</code></td><td>${r.Nama||'-'}</td><td class="small">${r.Sesi_Nama||'-'}</td><td><span class="badge ${r.Status==='Hadir'?'bg-success':(r.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${r.Status||'Hadir'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="text-center py-2">Belum ada</td></tr>'}</tbody>
                 </table>
             </div>
         </div>
@@ -283,43 +314,56 @@ function renderDashboard() {
 }
 
 async function refreshDashboard() {
-    showToast('Memperbarui data dashboard...', 'info');
+    showToast('🔄 Memperbarui data dashboard...', 'info');
     sessionStorage.removeItem('srma19_petugas_data');
     await refreshAllData(false);
-    showToast('Data dashboard diperbarui.', 'success');
+    showToast('✅ Data dashboard diperbarui.', 'success');
 }
 
 // ==================== ABSENSI ====================
 function renderAbsensi() {
     document.getElementById('mainContent').innerHTML = `
-        <div class="page-header"><h5>📋 Data Absensi</h5><div class="d-flex gap-2"><button class="btn btn-sm btn-danger rounded-pill" onclick="exportAbsensiPDF()"><i class="fas fa-file-pdf"></i> PDF</button></div></div>
+        <div class="page-header">
+            <h5>📋 Data Absensi</h5>
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-sm btn-danger rounded-pill" onclick="exportAbsensiPDF()">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshAbsensi()">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh
+                </button>
+            </div>
+        </div>
         <div class="filter-bar">
             <input type="text" class="form-control form-control-sm rounded-pill" id="searchAbsensi" placeholder="🔍 Cari..." style="width:150px;" oninput="applyFilterAbsensi()">
             <input type="date" class="form-control form-control-sm rounded-pill" id="fTgl" style="width:140px;" onchange="applyFilterAbsensi()">
             <select class="form-select form-select-sm rounded-pill" id="fSesi" style="width:150px;" onchange="applyFilterAbsensi()"><option value="">Semua Sesi</option></select>
             <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="resetFilterAbsensi()">Reset</button>
-            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshData()" title="Muat ulang data dari server"><i class="fas fa-sync-alt"></i> Refresh</button>
         </div>
         <div class="card-table" id="absensiTable"></div>`;
     populateSesiFilter();
     applyFilterAbsensi();
 }
+
 function populateSesiFilter() {
     const sel = document.getElementById('fSesi');
     if (!sel) return;
     const unique = [...new Set(absensiData.map(a => a.Sesi_Nama).filter(Boolean))];
     sel.innerHTML = '<option value="">Semua Sesi</option>' + unique.map(s => `<option>${s}</option>`).join('');
 }
+
 function applyFilterAbsensi() {
     const q = document.getElementById('searchAbsensi')?.value.toLowerCase().trim() || '';
     const t = document.getElementById('fTgl')?.value || '';
     const s = document.getElementById('fSesi')?.value || '';
     absensiFiltered = absensiData.filter(a =>
         (!q || (a.Nama||'').toLowerCase().includes(q) || (a.Kode||'').toLowerCase().includes(q) || (a.Petugas||'').toLowerCase().includes(q)) &&
-        (!t || a.Tanggal === t) && (!s || a.Sesi_Nama === s)
+        (!t || a.Tanggal === t) &&
+        (!s || a.Sesi_Nama === s)
     );
     renderAbsensiTable();
 }
+
 function renderAbsensiTable() {
     document.getElementById('absensiTable').innerHTML = `
         <div class="p-2 border-bottom small">Total: ${absensiFiltered.length} entri</div>
@@ -331,7 +375,7 @@ function renderAbsensiTable() {
                         <tr>
                             <td>${a.Tanggal||'-'}</td>
                             <td>${a.Jam||'-'}</td>
-                            <td><code>${(a.Kode||'').slice(-4)}</code></td>
+                            <td><code>${String(a.Kode||'').slice(-4)}</code></td>
                             <td>${a.Nama||'-'}</td>
                             <td class="small">${a.Sesi_Nama||'-'}</td>
                             <td><span class="badge ${a.Status==='Hadir'?'bg-success':(a.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${a.Status||'Hadir'}</span></td>
@@ -342,12 +386,22 @@ function renderAbsensiTable() {
             </table>
         </div>`;
 }
+
 function resetFilterAbsensi() {
     document.getElementById('searchAbsensi').value = '';
     document.getElementById('fTgl').value = '';
     document.getElementById('fSesi').value = '';
     applyFilterAbsensi();
 }
+
+async function refreshAbsensi() {
+    showToast('🔄 Memperbarui data absensi...', 'info');
+    sessionStorage.removeItem('srma19_petugas_data');
+    await refreshAllData(false);
+    renderAbsensi();
+    showToast('✅ Data absensi diperbarui.', 'success');
+}
+
 function exportAbsensiPDF() {
     if (!absensiFiltered.length) { showToast('Tidak ada data.', 'warning'); return; }
     const tgl = document.getElementById('fTgl')?.value || 'Semua';
@@ -370,7 +424,7 @@ function exportAbsensiPDF() {
                         <td>${i+1}</td>
                         <td>${a.Tanggal}</td>
                         <td>${a.Jam}</td>
-                        <td>${a.Kode.slice(-4)}</td>
+                        <td>${String(a.Kode).slice(-4)}</td>
                         <td>${a.Nama}</td>
                         <td>${a.Sesi_Nama}</td>
                         <td>${a.Status||'Hadir'}</td>
@@ -388,35 +442,38 @@ function exportAbsensiPDF() {
     }).from(html).save();
 }
 
-async function refreshData() {
-    showToast('Memperbarui data absensi...', 'info');
-    sessionStorage.removeItem('srma19_petugas_data');
-    await refreshAllData(false);
-    renderAbsensi();
-    showToast('Data absensi diperbarui.', 'success');
-}
-
 // ==================== IZIN ====================
 function renderIzin() {
     document.getElementById('mainContent').innerHTML = `
-        <div class="page-header"><h5>📋 Data Izin</h5><button class="btn btn-sm btn-success rounded-pill" onclick="showIzinModal()"><i class="fas fa-plus"></i> Tambah Izin</button></div>
+        <div class="page-header">
+            <h5>📋 Data Izin</h5>
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-sm btn-success rounded-pill" onclick="showIzinModal()">
+                    <i class="fas fa-plus"></i> Tambah
+                </button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshIzin()">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh
+                </button>
+            </div>
+        </div>
         <div class="filter-bar">
             <input type="text" class="form-control form-control-sm rounded-pill" id="searchIzin" placeholder="Cari kode/nama" style="width:160px;" oninput="filterIzin()">
             <input type="date" class="form-control form-control-sm rounded-pill" id="fTglIzin" style="width:140px;" onchange="filterIzin()">
-            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshIzinData()" title="Muat ulang data dari server"><i class="fas fa-sync-alt"></i> Refresh</button>
         </div>
         <div class="card-table" id="izinTable"></div>`;
     filterIzin();
 }
+
 function filterIzin() {
     const q = (document.getElementById('searchIzin')?.value || '').toLowerCase().trim();
     const tgl = document.getElementById('fTglIzin')?.value || '';
     const filtered = izinData.filter(izin =>
-        (!q || (izin.Nama_Peserta || '').toLowerCase().includes(q) || (izin.Kode_Peserta || '').toLowerCase().includes(q)) &&
+        (!q || (izin.Nama_Peserta||'').toLowerCase().includes(q) || (izin.Kode_Peserta||'').toLowerCase().includes(q)) &&
         (!tgl || izin.Tanggal === tgl)
     );
     renderIzinTable(filtered);
 }
+
 function renderIzinTable(data) {
     const container = document.getElementById('izinTable');
     container.innerHTML = `
@@ -429,7 +486,7 @@ function renderIzinTable(data) {
                         const realIdx = izinData.indexOf(iz);
                         return `<tr>
                             <td>${iz.Tanggal}</td>
-                            <td><code>${(iz.Kode_Peserta||'').slice(-4)}</code></td>
+                            <td><code>${String(iz.Kode_Peserta||'').slice(-4)}</code></td>
                             <td>${iz.Nama_Peserta}</td>
                             <td>${iz.Keterangan}</td>
                             <td>${iz.Bukti_Surat ? '<a href="#" onclick="lihatBukti('+realIdx+')"><i class="fas fa-paperclip"></i> Lihat</a>' : '-'}</td>
@@ -444,6 +501,7 @@ function renderIzinTable(data) {
             </table>
         </div>`;
 }
+
 function showIzinModal(index = null) {
     const existing = index !== null ? izinData[index] : null;
     const modalHtml = `
@@ -463,8 +521,10 @@ function showIzinModal(index = null) {
         </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
+
 function editIzin(index) { showIzinModal(index); }
 function closeModal() { document.querySelectorAll('.modal-overlay').forEach(m => m.remove()); }
+
 async function saveIzin(index) {
     const kode = document.getElementById('imKode').value.trim().toUpperCase();
     const nama = document.getElementById('imNama').value.trim();
@@ -484,31 +544,27 @@ async function saveIzin(index) {
     if (res.status === 'ok') { closeModal(); await refreshIzin(); showToast(res.message, 'success'); }
     else showToast(res.message, 'error');
 }
+
 async function hapusIzin(index) {
     if (!confirm('Hapus izin ini?')) return;
     const res = await API.deleteIzin(izinData[index].ID);
     if (res.status === 'ok') { await refreshIzin(); showToast('Izin dihapus.', 'success'); }
     else showToast(res.message, 'error');
 }
+
 function lihatBukti(index) {
     const izin = izinData[index];
     if (!izin?.Bukti_Surat) return;
     const win = window.open('', '_blank');
     win.document.write(`<img src="${izin.Bukti_Surat}" style="max-width:100%; height:auto;">`);
 }
+
 async function refreshIzin() {
-    try {
-        const res = await API.listIzin();
-        if (res.status === 'success') izinData = res.data;
-        setCachedData({ peserta: pesertaData, absensi: absensiData, izin: izinData, jadwal: jadwalData });
-        filterIzin();
-    } catch(e) { showToast('Gagal memuat izin.', 'error'); }
-}
-async function refreshIzinData() {
-    showToast('Memperbarui data izin...', 'info');
+    showToast('🔄 Memperbarui data izin...', 'info');
     sessionStorage.removeItem('srma19_petugas_data');
-    await refreshIzin();
-    showToast('Data izin diperbarui.', 'success');
+    await refreshAllData(false);
+    renderIzin();
+    showToast('✅ Data izin diperbarui.', 'success');
 }
 
 // ==================== SCAN QR ====================
