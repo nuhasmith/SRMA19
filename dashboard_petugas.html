@@ -60,6 +60,8 @@
         .bottom-sheet button:hover, .bottom-sheet a:hover { background: #f5f5f5; }
         @keyframes slideUp { from { transform: translateX(-50%) translateY(100%); } to { transform: translateX(-50%) translateY(0); } }
         @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0 !important; padding: 16px 16px 80px 16px; } .bottom-nav { display: flex; } .absensi-iframe { height: calc(100vh - 130px); } }
+        .table th, .table td { white-space: nowrap; }
+        .table td { vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -286,9 +288,7 @@ function renderDashboard() {
         <div class="page-header">
             <h5>📊 Dashboard Petugas</h5>
             <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshDashboard()">
-                    <i class="fas fa-sync-alt me-1"></i> Refresh
-                </button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshDashboard()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
                 <button class="btn btn-sm btn-danger rounded-pill" onclick="clearCacheAndReload()" title="Hapus cache dan muat ulang data dari server">
                     <i class="fas fa-trash-alt me-1"></i> Clear Cache
                 </button>
@@ -305,8 +305,18 @@ function renderDashboard() {
             <div class="p-3 border-bottom"><h6>Absensi Terbaru</h6></div>
             <div class="table-responsive">
                 <table class="table table-sm table-hover mb-0">
-                    <thead><tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th></tr></thead>
-                    <tbody>${absensiData.slice(0,6).map(r=>`<tr><td>${r.Tanggal||'-'}</td><td>${r.Jam||'-'}</td><td><code>${String(r.Kode||'').slice(-4)}</code></td><td>${r.Nama||'-'}</td><td class="small">${r.Sesi_Nama||'-'}</td><td><span class="badge ${r.Status==='Hadir'?'bg-success':(r.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${r.Status||'Hadir'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="text-center py-2">Belum ada</td></tr>'}</tbody>
+                    <thead><tr><th>No</th><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th></tr></thead>
+                    <tbody>${absensiData.slice(0,6).map((r,i) => `
+                        <tr>
+                            <td>${i+1}</td>
+                            <td>${r.Tanggal||'-'}</td>
+                            <td>${r.Jam||'-'}</td>
+                            <td><code>${String(r.Kode||'').slice(-4)}</code></td>
+                            <td>${r.Nama||'-'}</td>
+                            <td class="small">${r.Sesi_Nama||'-'}</td>
+                            <td><span class="badge ${r.Status==='Hadir'?'bg-success':(r.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${r.Status||'Hadir'}</span></td>
+                        </tr>
+                    `).join('')||'<tr><td colspan="7" class="text-center py-2">Belum ada</td></tr>'}
                 </table>
             </div>
         </div>
@@ -326,12 +336,8 @@ function renderAbsensi() {
         <div class="page-header">
             <h5>📋 Data Absensi</h5>
             <div class="d-flex gap-2 flex-wrap">
-                <button class="btn btn-sm btn-danger rounded-pill" onclick="exportAbsensiPDF()">
-                    <i class="fas fa-file-pdf"></i> PDF
-                </button>
-                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshAbsensi()">
-                    <i class="fas fa-sync-alt me-1"></i> Refresh
-                </button>
+                <button class="btn btn-sm btn-danger rounded-pill" onclick="exportAbsensiPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshAbsensi()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
             </div>
         </div>
         <div class="filter-bar">
@@ -369,10 +375,13 @@ function renderAbsensiTable() {
         <div class="p-2 border-bottom small">Total: ${absensiFiltered.length} entri</div>
         <div class="table-responsive">
             <table class="table table-sm table-hover mb-0">
-                <thead><tr><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr></thead>
+                <thead>
+                    <tr><th>No</th><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr>
+                </thead>
                 <tbody>
-                    ${absensiFiltered.length ? absensiFiltered.map(a => `
+                    ${absensiFiltered.length ? absensiFiltered.map((a, i) => `
                         <tr>
+                            <td>${i+1}</td>
                             <td>${a.Tanggal||'-'}</td>
                             <td>${a.Jam||'-'}</td>
                             <td><code>${String(a.Kode||'').slice(-4)}</code></td>
@@ -381,7 +390,7 @@ function renderAbsensiTable() {
                             <td><span class="badge ${a.Status==='Hadir'?'bg-success':(a.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${a.Status||'Hadir'}</span></td>
                             <td class="small">${a.Petugas||'-'}</td>
                         </tr>
-                    `).join('') : '<tr><td colspan="7" class="text-center py-2">Tidak ada</td></tr>'}
+                    `).join('') : '<tr><td colspan="8" class="text-center py-2">Tidak ada</td></tr>'}
                 </tbody>
             </table>
         </div>`;
@@ -419,7 +428,7 @@ function exportAbsensiPDF() {
         <table border="1" cellpadding="5" style="width:100%;border-collapse:collapse;font-size:11px;">
             <thead><tr><th>No</th><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr></thead>
             <tbody>
-                ${absensiFiltered.map((a,i)=>`
+                ${absensiFiltered.map((a,i) => `
                     <tr>
                         <td>${i+1}</td>
                         <td>${a.Tanggal}</td>
@@ -448,12 +457,8 @@ function renderIzin() {
         <div class="page-header">
             <h5>📋 Data Izin</h5>
             <div class="d-flex gap-2 flex-wrap">
-                <button class="btn btn-sm btn-success rounded-pill" onclick="showIzinModal()">
-                    <i class="fas fa-plus"></i> Tambah
-                </button>
-                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshIzin()">
-                    <i class="fas fa-sync-alt me-1"></i> Refresh
-                </button>
+                <button class="btn btn-sm btn-success rounded-pill" onclick="showIzinModal()"><i class="fas fa-plus"></i> Tambah</button>
+                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshIzin()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
             </div>
         </div>
         <div class="filter-bar">
@@ -480,11 +485,14 @@ function renderIzinTable(data) {
         <div class="p-2 border-bottom small">Total: ${data.length} izin</div>
         <div class="table-responsive">
             <table class="table table-sm table-hover mb-0">
-                <thead><tr><th>Tanggal</th><th>Kode</th><th>Nama</th><th>Keterangan</th><th>Bukti</th><th>Petugas</th><th class="text-center">Aksi</th></tr></thead>
+                <thead>
+                    <tr><th>No</th><th>Tanggal</th><th>Kode</th><th>Nama</th><th>Keterangan</th><th>Bukti</th><th>Petugas</th><th class="text-center">Aksi</th></tr>
+                </thead>
                 <tbody>
                     ${data.map((iz, idx) => {
                         const realIdx = izinData.indexOf(iz);
                         return `<tr>
+                            <td>${idx+1}</td>
                             <td>${iz.Tanggal}</td>
                             <td><code>${String(iz.Kode_Peserta||'').slice(-4)}</code></td>
                             <td>${iz.Nama_Peserta}</td>
@@ -496,7 +504,7 @@ function renderIzinTable(data) {
                                 <button class="btn btn-sm btn-outline-danger p-1" onclick="hapusIzin(${realIdx})"><i class="fas fa-trash-alt"></i></button>
                             </td>
                         </tr>`;
-                    }).join('') || '<tr><td colspan="7" class="text-center py-2">Belum ada data izin</td></tr>'}
+                    }).join('') || '<tr><td colspan="8" class="text-center py-2">Belum ada data izin</td></tr>'}
                 </tbody>
             </table>
         </div>`;
