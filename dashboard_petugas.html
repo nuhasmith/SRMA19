@@ -60,8 +60,7 @@
         .bottom-sheet button:hover, .bottom-sheet a:hover { background: #f5f5f5; }
         @keyframes slideUp { from { transform: translateX(-50%) translateY(100%); } to { transform: translateX(-50%) translateY(0); } }
         @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0 !important; padding: 16px 16px 80px 16px; } .bottom-nav { display: flex; } .absensi-iframe { height: calc(100vh - 130px); } }
-        .table th, .table td { white-space: nowrap; }
-        .table td { vertical-align: middle; }
+        .table th, .table td { white-space: nowrap; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -79,7 +78,6 @@
         <a class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
         <a class="nav-item" data-page="absensi" onclick="navigate('absensi')"><i class="fas fa-clipboard-list"></i> <span>Data Absensi</span></a>
         <a class="nav-item" data-page="izin" onclick="navigate('izin')"><i class="fas fa-file-medical-alt"></i> <span>Data Izin</span></a>
-        <hr class="my-2">
         <a class="nav-item" data-page="absensi_qr" onclick="navigate('absensi_qr')"><i class="fas fa-qrcode"></i> <span>Scan QR</span></a>
         <a class="nav-item" href="profile.html"><i class="fas fa-user-circle"></i> <span>Profil</span></a>
         <a class="nav-item" href="index.html" target="_blank"><i class="fas fa-globe"></i> <span>Website</span></a>
@@ -169,13 +167,6 @@ function getCachedData() {
             localStorage.removeItem(CACHE_KEY);
             return null;
         }
-        // 🔥 Perbaiki data peserta agar Kode selalu string
-        if (data.payload && data.payload.peserta) {
-            data.payload.peserta = data.payload.peserta.map(p => ({
-                ...p,
-                Kode: String(p.Kode || '')
-            }));
-        }
         return data.payload;
     } catch(e) { return null; }
 }
@@ -218,7 +209,6 @@ async function preloadAllData() {
         try {
             const parsed = JSON.parse(sessionData);
             if (parsed.peserta && parsed.absensi && parsed.izin && parsed.jadwal) {
-                parsed.peserta = parsed.peserta.map(p => ({ ...p, Kode: String(p.Kode || '') }));
                 pesertaData = parsed.peserta;
                 absensiData = parsed.absensi;
                 izinData = parsed.izin;
@@ -236,7 +226,6 @@ async function preloadAllData() {
 
     const cached = getCachedData();
     if (cached) {
-        if (cached.peserta) cached.peserta = cached.peserta.map(p => ({ ...p, Kode: String(p.Kode || '') }));
         pesertaData = cached.peserta || [];
         absensiData = cached.absensi || [];
         izinData = cached.izin || [];
@@ -256,9 +245,7 @@ async function refreshAllData(initial = false) {
     try {
         const [a, p, i, j] = await Promise.all([API.listAbsensi(), API.listPeserta(), API.listIzin(), API.getJadwal()]);
         if (a.status === 'success') absensiData = a.data;
-        if (p.status === 'success') {
-            pesertaData = p.data.map(pes => ({ ...pes, Kode: String(pes.Kode || '') }));
-        }
+        if (p.status === 'success') pesertaData = p.data;
         if (i.status === 'success') izinData = i.data;
         if (j.status === 'success') jadwalData = j.data;
         setCachedData({ peserta: pesertaData, absensi: absensiData, izin: izinData, jadwal: jadwalData });
@@ -332,247 +319,12 @@ async function refreshDashboard() {
 
 // ==================== ABSENSI ====================
 function renderAbsensi() {
-    document.getElementById('mainContent').innerHTML = `
-        <div class="page-header">
-            <h5>📋 Data Absensi</h5>
-            <div class="d-flex gap-2 flex-wrap">
-                <button class="btn btn-sm btn-danger rounded-pill" onclick="exportAbsensiPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
-                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshAbsensi()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
-            </div>
-        </div>
-        <div class="filter-bar">
-            <input type="text" class="form-control form-control-sm rounded-pill" id="searchAbsensi" placeholder="🔍 Cari..." style="width:150px;" oninput="applyFilterAbsensi()">
-            <input type="date" class="form-control form-control-sm rounded-pill" id="fTgl" style="width:140px;" onchange="applyFilterAbsensi()">
-            <select class="form-select form-select-sm rounded-pill" id="fSesi" style="width:150px;" onchange="applyFilterAbsensi()"><option value="">Semua Sesi</option></select>
-            <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="resetFilterAbsensi()">Reset</button>
-        </div>
-        <div class="card-table" id="absensiTable"></div>`;
-    populateSesiFilter();
-    applyFilterAbsensi();
-}
-
-function populateSesiFilter() {
-    const sel = document.getElementById('fSesi');
-    if (!sel) return;
-    const unique = [...new Set(absensiData.map(a => a.Sesi_Nama).filter(Boolean))];
-    sel.innerHTML = '<option value="">Semua Sesi</option>' + unique.map(s => `<option>${s}</option>`).join('');
-}
-
-function applyFilterAbsensi() {
-    const q = document.getElementById('searchAbsensi')?.value.toLowerCase().trim() || '';
-    const t = document.getElementById('fTgl')?.value || '';
-    const s = document.getElementById('fSesi')?.value || '';
-    absensiFiltered = absensiData.filter(a =>
-        (!q || (a.Nama||'').toLowerCase().includes(q) || (a.Kode||'').toLowerCase().includes(q) || (a.Petugas||'').toLowerCase().includes(q)) &&
-        (!t || a.Tanggal === t) &&
-        (!s || a.Sesi_Nama === s)
-    );
-    renderAbsensiTable();
-}
-
-function renderAbsensiTable() {
-    document.getElementById('absensiTable').innerHTML = `
-        <div class="p-2 border-bottom small">Total: ${absensiFiltered.length} entri</div>
-        <div class="table-responsive">
-            <table class="table table-sm table-hover mb-0">
-                <thead>
-                    <tr><th>No</th><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr>
-                </thead>
-                <tbody>
-                    ${absensiFiltered.length ? absensiFiltered.map((a, i) => `
-                        <tr>
-                            <td>${i+1}</td>
-                            <td>${a.Tanggal||'-'}</td>
-                            <td>${a.Jam||'-'}</td>
-                            <td><code>${String(a.Kode||'').slice(-4)}</code></td>
-                            <td>${a.Nama||'-'}</td>
-                            <td class="small">${a.Sesi_Nama||'-'}</td>
-                            <td><span class="badge ${a.Status==='Hadir'?'bg-success':(a.Status==='Tidak Berangkat'?'bg-warning':'bg-secondary')}">${a.Status||'Hadir'}</span></td>
-                            <td class="small">${a.Petugas||'-'}</td>
-                        </tr>
-                    `).join('') : '<tr><td colspan="8" class="text-center py-2">Tidak ada</td></tr>'}
-                </tbody>
-            </table>
-        </div>`;
-}
-
-function resetFilterAbsensi() {
-    document.getElementById('searchAbsensi').value = '';
-    document.getElementById('fTgl').value = '';
-    document.getElementById('fSesi').value = '';
-    applyFilterAbsensi();
-}
-
-async function refreshAbsensi() {
-    showToast('🔄 Memperbarui data absensi...', 'info');
-    sessionStorage.removeItem('srma19_petugas_data');
-    await refreshAllData(false);
-    renderAbsensi();
-    showToast('✅ Data absensi diperbarui.', 'success');
-}
-
-function exportAbsensiPDF() {
-    if (!absensiFiltered.length) { showToast('Tidak ada data.', 'warning'); return; }
-    const tgl = document.getElementById('fTgl')?.value || 'Semua';
-    const sesi = document.getElementById('fSesi')?.value || 'Semua';
-    const now = new Date();
-    const tanggalCetak = now.toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' });
-    const html = `
-        <div style="text-align:center;margin-bottom:20px;">
-            <h3>SEKOLAH RAKYAT MENENGAH ATAS 19 BANTUL</h3>
-            <p>Sentra Terpadu Prof. Dr. Soeharso, Sonosewu, Ngestiharjo, Kasihan, Bantul</p>
-            <hr><h4>LAPORAN ABSENSI</h4>
-            <p>Filter: ${tgl} | Sesi: ${sesi}</p>
-            <p>Dicetak: ${tanggalCetak}</p>
-        </div>
-        <table border="1" cellpadding="5" style="width:100%;border-collapse:collapse;font-size:11px;">
-            <thead><tr><th>No</th><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th><th>Petugas</th></tr></thead>
-            <tbody>
-                ${absensiFiltered.map((a,i) => `
-                    <tr>
-                        <td>${i+1}</td>
-                        <td>${a.Tanggal}</td>
-                        <td>${a.Jam}</td>
-                        <td>${String(a.Kode).slice(-4)}</td>
-                        <td>${a.Nama}</td>
-                        <td>${a.Sesi_Nama}</td>
-                        <td>${a.Status||'Hadir'}</td>
-                        <td>${a.Petugas}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>`;
-    html2pdf().set({
-        filename: `Laporan_Absensi_${tgl}_${now.toISOString().slice(0,10)}.pdf`,
-        margin:[10,10,10,10],
-        image:{type:'jpeg',quality:0.98},
-        html2canvas:{scale:2},
-        jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
-    }).from(html).save();
+    document.getElementById('mainContent').innerHTML = `<iframe src="absensi_petugas.html" class="absensi-iframe"></iframe>`;
 }
 
 // ==================== IZIN ====================
 function renderIzin() {
-    document.getElementById('mainContent').innerHTML = `
-        <div class="page-header">
-            <h5>📋 Data Izin</h5>
-            <div class="d-flex gap-2 flex-wrap">
-                <button class="btn btn-sm btn-success rounded-pill" onclick="showIzinModal()"><i class="fas fa-plus"></i> Tambah</button>
-                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="refreshIzin()"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
-            </div>
-        </div>
-        <div class="filter-bar">
-            <input type="text" class="form-control form-control-sm rounded-pill" id="searchIzin" placeholder="Cari kode/nama" style="width:160px;" oninput="filterIzin()">
-            <input type="date" class="form-control form-control-sm rounded-pill" id="fTglIzin" style="width:140px;" onchange="filterIzin()">
-        </div>
-        <div class="card-table" id="izinTable"></div>`;
-    filterIzin();
-}
-
-function filterIzin() {
-    const q = (document.getElementById('searchIzin')?.value || '').toLowerCase().trim();
-    const tgl = document.getElementById('fTglIzin')?.value || '';
-    const filtered = izinData.filter(izin =>
-        (!q || (izin.Nama_Peserta||'').toLowerCase().includes(q) || (izin.Kode_Peserta||'').toLowerCase().includes(q)) &&
-        (!tgl || izin.Tanggal === tgl)
-    );
-    renderIzinTable(filtered);
-}
-
-function renderIzinTable(data) {
-    const container = document.getElementById('izinTable');
-    container.innerHTML = `
-        <div class="p-2 border-bottom small">Total: ${data.length} izin</div>
-        <div class="table-responsive">
-            <table class="table table-sm table-hover mb-0">
-                <thead>
-                    <tr><th>No</th><th>Tanggal</th><th>Kode</th><th>Nama</th><th>Keterangan</th><th>Bukti</th><th>Petugas</th><th class="text-center">Aksi</th></tr>
-                </thead>
-                <tbody>
-                    ${data.map((iz, idx) => {
-                        const realIdx = izinData.indexOf(iz);
-                        return `<tr>
-                            <td>${idx+1}</td>
-                            <td>${iz.Tanggal}</td>
-                            <td><code>${String(iz.Kode_Peserta||'').slice(-4)}</code></td>
-                            <td>${iz.Nama_Peserta}</td>
-                            <td>${iz.Keterangan}</td>
-                            <td>${iz.Bukti_Surat ? '<a href="#" onclick="lihatBukti('+realIdx+')"><i class="fas fa-paperclip"></i> Lihat</a>' : '-'}</td>
-                            <td>${iz.Petugas}</td>
-                            <td class="text-center">
-                                <button class="btn btn-sm btn-outline-primary p-1" onclick="editIzin(${realIdx})"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-outline-danger p-1" onclick="hapusIzin(${realIdx})"><i class="fas fa-trash-alt"></i></button>
-                            </td>
-                        </tr>`;
-                    }).join('') || '<tr><td colspan="8" class="text-center py-2">Belum ada data izin</td></tr>'}
-                </tbody>
-            </table>
-        </div>`;
-}
-
-function showIzinModal(index = null) {
-    const existing = index !== null ? izinData[index] : null;
-    const modalHtml = `
-        <div class="modal-overlay" id="izinModal">
-            <div class="modal-box">
-                <h5 class="fw-bold mb-3">${existing ? 'Edit Izin' : 'Tambah Izin'}</h5>
-                <div class="mb-3"><label>Kode Peserta</label><input type="text" class="form-control" id="imKode" value="${existing?.Kode_Peserta||''}" placeholder="SRMA19-XXX" required></div>
-                <div class="mb-3"><label>Nama Peserta</label><input type="text" class="form-control" id="imNama" value="${existing?.Nama_Peserta||''}" required></div>
-                <div class="mb-3"><label>Tanggal</label><input type="date" class="form-control" id="imTanggal" value="${existing?.Tanggal||''}" required></div>
-                <div class="mb-3"><label>Keterangan</label><input type="text" class="form-control" id="imKeterangan" value="${existing?.Keterangan||''}" placeholder="Sakit, izin, dll." required></div>
-                <div class="mb-3"><label>Bukti Surat (foto/scan, max 49KB)</label><input type="file" accept="image/*" class="form-control" id="imBukti">${existing?.Bukti_Surat ? '<small class="text-muted">Sudah ada bukti sebelumnya. Upload baru untuk mengganti.</small>' : ''}</div>
-                <div class="d-flex gap-2 justify-content-end">
-                    <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
-                    <button class="btn btn-primary" onclick="saveIzin(${index})">Simpan</button>
-                </div>
-            </div>
-        </div>`;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-}
-
-function editIzin(index) { showIzinModal(index); }
-function closeModal() { document.querySelectorAll('.modal-overlay').forEach(m => m.remove()); }
-
-async function saveIzin(index) {
-    const kode = document.getElementById('imKode').value.trim().toUpperCase();
-    const nama = document.getElementById('imNama').value.trim();
-    const tgl = document.getElementById('imTanggal').value;
-    const keterangan = document.getElementById('imKeterangan').value.trim();
-    if (!kode || !nama || !tgl || !keterangan) { showToast('Semua field wajib diisi.', 'error'); return; }
-    let bukti = '';
-    const fileInput = document.getElementById('imBukti');
-    if (fileInput.files && fileInput.files[0]) {
-        if (fileInput.files[0].size > 50000) { showToast('Ukuran file maksimal 50KB.', 'error'); return; }
-        bukti = await new Promise(resolve => { const r = new FileReader(); r.onload = e => resolve(e.target.result); r.readAsDataURL(fileInput.files[0]); });
-    } else if (index !== null && izinData[index]?.Bukti_Surat) { bukti = izinData[index].Bukti_Surat; }
-    const payload = { kode_peserta: kode, nama_peserta: nama, tanggal: tgl, keterangan: keterangan, petugas: currentUser.nama || 'Unknown', bukti_surat: bukti };
-    let res;
-    if (index !== null) { payload.id = izinData[index].ID; res = await API.updateIzin(payload); }
-    else res = await API.addIzin(payload);
-    if (res.status === 'ok') { closeModal(); await refreshIzin(); showToast(res.message, 'success'); }
-    else showToast(res.message, 'error');
-}
-
-async function hapusIzin(index) {
-    if (!confirm('Hapus izin ini?')) return;
-    const res = await API.deleteIzin(izinData[index].ID);
-    if (res.status === 'ok') { await refreshIzin(); showToast('Izin dihapus.', 'success'); }
-    else showToast(res.message, 'error');
-}
-
-function lihatBukti(index) {
-    const izin = izinData[index];
-    if (!izin?.Bukti_Surat) return;
-    const win = window.open('', '_blank');
-    win.document.write(`<img src="${izin.Bukti_Surat}" style="max-width:100%; height:auto;">`);
-}
-
-async function refreshIzin() {
-    showToast('🔄 Memperbarui data izin...', 'info');
-    sessionStorage.removeItem('srma19_petugas_data');
-    await refreshAllData(false);
-    renderIzin();
-    showToast('✅ Data izin diperbarui.', 'success');
+    document.getElementById('mainContent').innerHTML = `<iframe src="izin_petugas.html" class="absensi-iframe"></iframe>`;
 }
 
 // ==================== SCAN QR ====================
