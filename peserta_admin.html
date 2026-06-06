@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Data Peserta - Admin SRMA 19 Bantul</title>
     <link rel="icon" type="image/webp" href="srma.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,37 +12,401 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #f0f2f5; margin: 0; padding: 30px; }
-        .filter-bar { background: #fff; border-radius: 12px; padding: 12px 16px; display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); align-items: center; }
-        .table-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .modal-box { background: #fff; border-radius: 16px; padding: 24px; max-width: 500px; width: 92%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
-        .btn-refresh { background: #0d6efd; color: white; border: none; border-radius: 50px; padding: 6px 16px; font-weight: 600; transition: all 0.2s; }
-        .btn-refresh:hover { background: #0a58ca; transform: translateY(-1px); color: white; }
-        .toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 200px; max-width: 90%; }
-        .toast-custom { padding: 10px 14px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); font-size: 0.85rem; display: flex; align-items: center; gap: 6px; }
-        .table th, .table td { white-space: nowrap; vertical-align: middle; }
-        .barcode-options { background: #fff; border-radius: 12px; padding: 12px 16px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-        .barcode-options label { font-weight: 600; font-size: 0.85rem; color: #475569; cursor: pointer; }
-        .barcode-options input[type="checkbox"] { margin-right: 4px; }
-        .preview-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; overflow-y: auto; padding: 20px; }
-        .preview-modal.show { display: flex; align-items: center; justify-content: center; }
-        .preview-content { background: #fff; border-radius: 16px; padding: 20px; max-width: 90%; max-height: 90%; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-        .preview-content .preview-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px; }
-        .preview-content .preview-header h4 { margin: 0; font-weight: 700; color: #1e293b; }
-        .preview-content .preview-actions { display: flex; gap: 10px; }
-        @media (max-width: 768px) { body { padding: 16px; } }
+        :root {
+            --primary: #0d6efd;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-600: #64748b;
+            --gray-800: #1e293b;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gray-50);
+            margin: 0;
+            padding: 16px;
+            color: var(--gray-800);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container-fluid-custom {
+            max-width: 100%;
+            padding: 0;
+        }
+        .card-modern {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            width: 100%;
+        }
+        .card-modern:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .card-modern.p-0 { padding: 0 !important; }
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+        }
+        .filter-group input,
+        .filter-group select {
+            border-radius: 50px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            border: 1px solid var(--gray-200);
+            background: #fff;
+            transition: border-color 0.2s;
+            min-width: 0;
+            flex: 1 1 auto;
+            max-width: 100%;
+        }
+        .filter-group input:focus,
+        .filter-group select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(13,110,253,0.1);
+        }
+        .filter-group input::placeholder {
+            color: #cbd5e1;
+        }
+        .table-responsive {
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+        .table-modern {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .table-modern thead {
+            background: var(--gray-50);
+        }
+        .table-modern th {
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--gray-200);
+            white-space: nowrap;
+        }
+        .table-modern td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--gray-100);
+            vertical-align: middle;
+        }
+        .table-modern tbody tr {
+            transition: background 0.15s;
+        }
+        .table-modern tbody tr:hover {
+            background: var(--gray-50);
+        }
+        .badge-status {
+            border-radius: 50px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge-status.aktif { background: #d1fae5; color: #065f46; }
+        .badge-status.nonaktif { background: #f1f5f9; color: #475569; }
+        .badge-status.lulus { background: #fef3c7; color: #92400e; }
+        .barcode-panel {
+            background: var(--gray-50);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .barcode-panel .form-check {
+            margin-right: 12px;
+            font-size: 0.85rem;
+        }
+        .barcode-panel input[type="text"] {
+            border-radius: 50px;
+            border: 1px solid var(--gray-200);
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            width: 160px;
+            max-width: 100%;
+        }
+        .barcode-panel select {
+            border-radius: 50px;
+            border: 1px solid var(--gray-200);
+            padding: 4px 12px;
+            font-size: 0.8rem;
+        }
+        .collapsible-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 4px 0;
+            user-select: none;
+            font-weight: 600;
+            color: var(--gray-800);
+            transition: color 0.2s;
+        }
+        .collapsible-header:hover {
+            color: var(--primary);
+        }
+        .collapsible-header .toggle-icon {
+            transition: transform 0.3s ease;
+            font-size: 0.9rem;
+            color: var(--gray-600);
+        }
+        .collapsible-header .toggle-icon.rotated {
+            transform: rotate(90deg);
+        }
+        .collapsible-body {
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.25s ease;
+            max-height: 0;
+            opacity: 0;
+            padding: 0 4px;
+        }
+        .collapsible-body.open {
+            max-height: 600px;
+            opacity: 1;
+            padding: 8px 4px 4px 4px;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px 24px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            animation: slideUp 0.25s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-box .modal-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-box .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--gray-600);
+        }
+        .modal-box label {
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            margin-bottom: 4px;
+        }
+        .modal-box .form-control,
+        .modal-box .form-select {
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 0.9rem;
+            border: 1px solid var(--gray-200);
+        }
+        .modal-box .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(13,110,253,0.1);
+        }
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+            width: 100%;
+            pointer-events: none;
+        }
+        .toast-item {
+            pointer-events: auto;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            transform-origin: top right;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .toast-item.removing {
+            animation: toastOut 0.3s ease forwards;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(40px) scale(0.95); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0) scale(1); }
+            to { opacity: 0; transform: translateX(40px) scale(0.95); }
+        }
+        .toast-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .toast-icon.success { background: #ecfdf5; color: #10b981; }
+        .toast-icon.error { background: #fef2f2; color: #ef4444; }
+        .toast-icon.warning { background: #fffbeb; color: #f59e0b; }
+        .toast-icon.info { background: #eff6ff; color: #3b82f6; }
+        .toast-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .toast-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--gray-800);
+            margin-bottom: 2px;
+        }
+        .toast-message {
+            font-size: 0.82rem;
+            color: var(--gray-600);
+            margin: 0;
+            line-height: 1.4;
+        }
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--gray-300);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px;
+            transition: color 0.2s;
+            flex-shrink: 0;
+        }
+        .toast-close:hover {
+            color: var(--gray-600);
+        }
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: currentColor;
+            border-radius: 0 0 14px 14px;
+            animation: toastProgress 3.5s linear forwards;
+            opacity: 0.25;
+        }
+        .toast-item .toast-progress {
+            display: none;
+        }
+        .toast-item.has-progress .toast-progress {
+            display: block;
+        }
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .preview-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-content {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .preview-content .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--gray-200);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .preview-content .preview-header h4 {
+            font-weight: 700;
+            margin: 0;
+        }
+        .preview-content .preview-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            .filter-group input, .filter-group select { width: 100%; flex: 1 1 100%; }
+            .barcode-panel .row { flex-direction: column; gap: 8px; }
+            .barcode-panel input[type="text"] { width: 100%; }
+            .modal-box { padding: 20px 16px; }
+            .toast-container {
+                top: 12px;
+                right: 12px;
+                left: 12px;
+                max-width: none;
+            }
+            .table-modern { font-size: 0.75rem; }
+            .table-modern th, .table-modern td { padding: 6px 8px; }
+        }
+        @media (min-width: 769px) and (max-width: 1200px) {
+            body { padding: 20px; }
+            .filter-group input, .filter-group select { flex: 1 1 120px; }
+        }
     </style>
 </head>
 <body>
-<div id="mainContent">
+
+<div id="mainContent" class="container-fluid-custom">
     <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
 </div>
+
+<div class="toast-container" id="toastContainer"></div>
 
 <script src="api.js"></script>
 <script src="auth.js"></script>
 <script>
-    // ==================== AUTH ====================
     if (!Auth.requireAuth('login.html')) throw new Error('Silakan login.');
     const currentUser = Auth.getCurrentUser();
     if (currentUser.role !== 'admin') {
@@ -60,23 +424,57 @@
     let waliAsuhList = [];
     let qrImagesCache = {};
 
-    // ==================== TOAST ====================
-    function showToast(msg, type = 'info') {
-        const colors = {
-            success: ['#d1fae5','#10b981','#065f46','fa-check-circle'],
-            error: ['#fee2e2','#ef4444','#991b1b','fa-times-circle'],
-            warning: ['#fef3c7','#f59e0b','#92400e','fa-exclamation-triangle'],
-            info: ['#dbeafe','#3b82f6','#1e40af','fa-info-circle']
+    function showToast(message, type = 'info', title = '') {
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-times-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
         };
-        const [bg, border, text, icon] = colors[type] || colors.info;
-        const el = document.createElement('div');
-        el.className = 'toast-container';
-        el.innerHTML = `<div style="background:${bg};border-left:4px solid ${border};color:${text};"><i class="fas ${icon} me-1"></i>${msg}</div>`;
-        document.body.appendChild(el);
-        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+        const titles = {
+            success: 'Berhasil',
+            error: 'Gagal',
+            warning: 'Peringatan',
+            info: 'Informasi'
+        };
+        const finalTitle = title || titles[type] || 'Informasi';
+        const icon = icons[type] || icons.info;
+
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast-item has-progress`;
+        toast.innerHTML = `
+            <div class="toast-icon ${type}">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">${finalTitle}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-item').remove()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="toast-progress" style="color:${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#3b82f6'};"></div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.classList.add('removing');
+                setTimeout(() => {
+                    if (toast.parentNode) toast.remove();
+                }, 300);
+            }
+        }, 3800);
+        toast.addEventListener('click', function(e) {
+            if (!e.target.closest('.toast-close')) {
+                this.classList.add('removing');
+                setTimeout(() => {
+                    if (this.parentNode) this.remove();
+                }, 300);
+            }
+        });
     }
 
-    // ==================== LOAD WALI ASUH ====================
     async function loadWaliAsuhList() {
         try {
             const res = await API.listWaliAsuh();
@@ -84,9 +482,8 @@
         } catch(e) { console.error('Gagal load wali asuh:', e); }
     }
 
-    // ==================== REFRESH DATA ====================
     async function refreshPeserta(silent = false) {
-        if (!silent) showToast('🔄 Memperbarui data peserta...', 'info');
+        if (!silent) showToast('Memperbarui data peserta...', 'info', 'Memuat');
         try {
             const res = await API.listPeserta();
             if (res.status === 'success') {
@@ -95,16 +492,15 @@
                 cached.peserta = pesertaData;
                 setCachedData(cached);
                 applyFilter();
-                if (!silent) showToast(`✅ Data peserta diperbarui (${pesertaData.length} entri)`, 'success');
+                if (!silent) showToast(`Data peserta diperbarui (${pesertaData.length} entri)`, 'success', 'Selesai');
             } else {
-                if (!silent) showToast('❌ Gagal memuat data: ' + (res.message || 'Unknown error'), 'error');
+                if (!silent) showToast(res.message || 'Gagal memuat data', 'error', 'Gagal');
             }
         } catch (e) {
-            if (!silent) showToast('❌ Gagal terhubung ke server.', 'error');
+            if (!silent) showToast('Gagal terhubung ke server', 'error', 'Koneksi');
         }
     }
 
-    // ==================== FILTER ====================
     function applyFilter() {
         const q = (document.getElementById('searchPeserta')?.value || '').toLowerCase().trim();
         const status = document.getElementById('filterStatus')?.value || '';
@@ -124,7 +520,8 @@
         }
         renderTable();
         updateDeleteButton();
-        document.getElementById('infoCount').textContent = `Menampilkan ${pesertaFiltered.length} dari ${pesertaData.length} entri`;
+        const info = document.getElementById('infoCount');
+        if (info) info.textContent = `Menampilkan ${pesertaFiltered.length} dari ${pesertaData.length} entri`;
     }
 
     function resetFilter() {
@@ -136,40 +533,41 @@
         applyFilter();
     }
 
-    // ==================== RENDER TABLE ====================
     function renderTable() {
         const allChecked = pesertaFiltered.length > 0 && pesertaFiltered.every(p => selectedKode.has(String(p.Kode)));
         let rows = '';
         pesertaFiltered.forEach((p, i) => {
             const idx = pesertaData.indexOf(p);
             const kodeStr = String(p.Kode || '');
-            const statusBadge = (p.Keterangan||'Aktif') === 'Aktif' ? 'bg-success' : (p.Keterangan||'Aktif') === 'Nonaktif' ? 'bg-secondary' : 'bg-warning';
+            const statusClass = (p.Keterangan||'Aktif').toLowerCase();
+            const statusLabel = (p.Keterangan||'Aktif');
             rows += `<tr>
                 <td>${i+1}</td>
                 <td><input type="checkbox" ${selectedKode.has(kodeStr)?'checked':''} onchange="toggleSelect('${kodeStr}', this.checked)"></td>
                 <td><strong>${p.Nama||'-'}</strong></td>
-                <td><code>${kodeStr.slice(-4)}</code></td>
+                <td><code style="background:var(--gray-100);padding:2px 8px;border-radius:4px;font-size:0.8rem;">${kodeStr.slice(-4)}</code></td>
                 <td>${p.Jenis_Kelamin||p.jk||'-'}</td>
                 <td>${p.Agama||'-'}</td>
                 <td>${p.Rombel||'-'}</td>
-                <td><span class="badge ${statusBadge}">${p.Keterangan||'Aktif'}</span></td>
+                <td><span class="badge-status ${statusClass}">${statusLabel}</span></td>
                 <td>${p.Angkatan||'-'}</td>
                 <td>${p.Wali_Asuh_1||'-'}</td>
                 <td>${p.Wali_Asuh_2||'-'}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary p-1" onclick="showPesertaModal(${idx})"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-outline-warning p-1" onclick="togglePesertaStatus(${idx})"><i class="fas fa-toggle-on"></i></button>
-                    <button class="btn btn-sm btn-outline-danger p-1" onclick="deletePesertaSingle(${idx})"><i class="fas fa-trash-alt"></i></button>
+                <td class="text-center" style="white-space:nowrap;">
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1" onclick="showPesertaModal(${idx})" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-warning rounded-pill px-2 py-1" onclick="togglePesertaStatus(${idx})" title="Toggle Status"><i class="fas fa-toggle-on"></i></button>
+                    <button class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" onclick="deletePesertaSingle(${idx})" title="Hapus"><i class="fas fa-trash-alt"></i></button>
                 </td>
             </tr>`;
         });
-        if (!rows) rows = '<tr><td colspan="12" class="text-center py-3 text-muted">Tidak ada data peserta</td></tr>';
+        if (!rows) rows = '<tr><td colspan="12" class="text-center py-4 text-muted">Tidak ada data peserta</td></tr>';
+
         document.getElementById('pesertaTableContainer').innerHTML = `
             <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
+                <table class="table-modern table-hover">
+                    <thead>
                         <tr>
-                            <th style="width:30px;">No</th>
+                            <th style="width:40px;">No</th>
                             <th style="width:30px;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAll(this.checked)"></th>
                             <th>Nama</th>
                             <th>Kode</th>
@@ -188,20 +586,17 @@
             </div>`;
     }
 
-    // ==================== SELECTION ====================
     function toggleSelectAll(checked) {
         if (checked) pesertaFiltered.forEach(p => selectedKode.add(String(p.Kode)));
         else selectedKode.clear();
         renderTable();
         updateDeleteButton();
     }
-
     function toggleSelect(kode, checked) {
         if (checked) selectedKode.add(kode);
         else selectedKode.delete(kode);
         updateDeleteButton();
     }
-
     function updateDeleteButton() {
         const btn = document.getElementById('btnDeleteSelected');
         const cnt = document.getElementById('selectedCount');
@@ -209,48 +604,61 @@
         if (cnt) cnt.textContent = selectedKode.size;
     }
 
-    // ==================== CRUD MODAL ====================
     function showPesertaModal(index = null) {
         const existing = index !== null && index >= 0 ? pesertaData[index] : null;
         const title = existing ? '✏️ Edit Peserta' : '➕ Tambah Peserta';
         const agamaOptions = ['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu','Lainnya'];
         const waliOptions = waliAsuhList.map(w => `<option value="${w.Nama}">${w.Nama} (${w.Nomor_HP||'-'})</option>`).join('');
+
+        let wali1Val = existing?.Wali_Asuh_1 || '';
+        let wali2Val = existing?.Wali_Asuh_2 || '';
+
         const modalHtml = `
             <div class="modal-overlay" id="pesertaModal">
                 <div class="modal-box">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0">${title}</h5>
-                        <button class="btn-close" onclick="closeModal()"></button>
+                    <div class="modal-title">
+                        <span>${title}</span>
+                        <button class="btn-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Kode Peserta <span class="text-danger">*</span></label>
+                        <label>Kode Peserta <span class="text-danger">*</span></label>
                         <input class="form-control" id="pmKode" value="${existing?.Kode||''}" ${existing?'disabled':''} placeholder="SRMA19-XXX">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
-                        <input class="form-control" id="pmNama" value="${existing?.Nama||''}" placeholder="Nama lengkap peserta">
+                        <label>Nama Lengkap <span class="text-danger">*</span></label>
+                        <input class="form-control" id="pmNama" value="${existing?.Nama||''}" placeholder="Nama lengkap">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label>Jenis Kelamin</label>
+                            <select class="form-select" id="pmJK">
+                                <option value="Laki-laki" ${existing?.Jenis_Kelamin==='Laki-laki'?'selected':''}>Laki-laki</option>
+                                <option value="Perempuan" ${existing?.Jenis_Kelamin==='Perempuan'?'selected':''}>Perempuan</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label>Agama</label>
+                            <select class="form-select" id="pmAgama">
+                                ${agamaOptions.map(a => `<option ${existing?.Agama===a?'selected':''}>${a}</option>`).join('')}
+                            </select>
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Jenis Kelamin</label>
-                        <select class="form-select" id="pmJK">
-                            <option value="Laki-laki" ${existing?.Jenis_Kelamin==='Laki-laki'?'selected':''}>Laki-laki</option>
-                            <option value="Perempuan" ${existing?.Jenis_Kelamin==='Perempuan'?'selected':''}>Perempuan</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Agama</label>
-                        <select class="form-select" id="pmAgama">${agamaOptions.map(a => `<option ${existing?.Agama===a?'selected':''}>${a}</option>`).join('')}</select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Asal</label>
+                        <label>Asal</label>
                         <input class="form-control" id="pmAsal" value="${existing?.Asal||''}" placeholder="Asal daerah">
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Rombel</label>
-                        <input class="form-control" id="pmRombel" value="${existing?.Rombel||''}" placeholder="Rombongan belajar">
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label>Rombel</label>
+                            <input class="form-control" id="pmRombel" value="${existing?.Rombel||''}" placeholder="Rombel">
+                        </div>
+                        <div class="col-6">
+                            <label>Angkatan</label>
+                            <input class="form-control" id="pmAngkatan" value="${existing?.Angkatan||''}" placeholder="Tahun">
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Keterangan (Status)</label>
+                        <label>Keterangan (Status)</label>
                         <select class="form-select" id="pmKeterangan">
                             <option value="Aktif" ${(existing?.Keterangan||'Aktif')==='Aktif'?'selected':''}>Aktif</option>
                             <option value="Nonaktif" ${existing?.Keterangan==='Nonaktif'?'selected':''}>Nonaktif</option>
@@ -258,42 +666,42 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Angkatan</label>
-                        <input class="form-control" id="pmAngkatan" value="${existing?.Angkatan||''}" placeholder="Tahun angkatan">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Wali Asuh 1</label>
+                        <label>Wali Asuh 1</label>
                         <select class="form-select" id="pmWali1">
                             <option value="">-- Pilih Wali Asuh --</option>
                             ${waliOptions}
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Wali Asuh 2</label>
+                        <label>Wali Asuh 2</label>
                         <select class="form-select" id="pmWali2">
                             <option value="">-- Pilih Wali Asuh --</option>
                             ${waliOptions}
                         </select>
                     </div>
                     <div class="d-flex gap-2 justify-content-end mt-3">
-                        <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
-                        <button class="btn btn-primary" onclick="savePeserta(${index})"><i class="fas fa-save me-1"></i> Simpan</button>
+                        <button class="btn btn-secondary rounded-pill px-4" onclick="closeModal()">Batal</button>
+                        <button class="btn btn-primary rounded-pill px-4" onclick="savePeserta(${index})">
+                            <i class="fas fa-save me-1"></i> Simpan
+                        </button>
                     </div>
                 </div>
             </div>`;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         if (existing) {
-            document.getElementById('pmWali1').value = existing.Wali_Asuh_1 || '';
-            document.getElementById('pmWali2').value = existing.Wali_Asuh_2 || '';
+            document.getElementById('pmWali1').value = wali1Val;
+            document.getElementById('pmWali2').value = wali2Val;
         }
     }
 
-    function closeModal() { document.querySelectorAll('.modal-overlay').forEach(m => m.remove()); }
+    function closeModal() {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+    }
 
     async function savePeserta(index) {
         const kode = document.getElementById('pmKode').value.trim();
         const nama = document.getElementById('pmNama').value.trim();
-        if (!kode || !nama) { showToast('Kode dan Nama wajib diisi.', 'error'); return; }
+        if (!kode || !nama) { showToast('Kode dan Nama wajib diisi.', 'error', 'Validasi'); return; }
         const data = {
             kode: kode.toUpperCase(),
             nama: nama,
@@ -316,19 +724,18 @@
             if (res.status === 'ok') {
                 closeModal();
                 await refreshPeserta(true);
-                showToast(res.message, 'success');
+                showToast(res.message, 'success', 'Tersimpan');
             } else {
-                showToast(res.message, 'error');
+                showToast(res.message, 'error', 'Gagal');
             }
         } catch (e) {
-            showToast('Gagal menyimpan data.', 'error');
+            showToast('Gagal menyimpan data', 'error', 'Koneksi');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-save me-1"></i> Simpan';
         }
     }
 
-    // ==================== STATUS & DELETE ====================
     async function togglePesertaStatus(index) {
         const p = pesertaData[index];
         if (!p) return;
@@ -337,9 +744,9 @@
         const res = await API.updatePeserta({ kode: p.Kode, keterangan: newStatus });
         if (res.status === 'ok') {
             await refreshPeserta(true);
-            showToast(`✅ Status ${p.Nama} diubah menjadi ${newStatus}`, 'success');
+            showToast(`Status ${p.Nama} diubah menjadi ${newStatus}`, 'success', 'Berhasil');
         } else {
-            showToast(res.message, 'error');
+            showToast(res.message, 'error', 'Gagal');
         }
     }
 
@@ -350,9 +757,9 @@
         const res = await API.deletePeserta(p.Kode);
         if (res.status === 'ok') {
             await refreshPeserta(true);
-            showToast('✅ Peserta dihapus.', 'success');
+            showToast('Peserta dihapus', 'success', 'Berhasil');
         } else {
-            showToast(res.message, 'error');
+            showToast(res.message, 'error', 'Gagal');
         }
     }
 
@@ -366,13 +773,12 @@
         }
         selectedKode.clear();
         await refreshPeserta(true);
-        showToast(`✅ ${deleted} peserta dihapus.`, 'success');
+        showToast(`${deleted} peserta dihapus`, 'success', 'Selesai');
     }
 
-    // ==================== EKSPOR CSV ====================
     function exportCSV() {
         const filtered = pesertaFiltered.length ? pesertaFiltered : pesertaData;
-        if (!filtered.length) { showToast('Tidak ada data.', 'warning'); return; }
+        if (!filtered.length) { showToast('Tidak ada data untuk diekspor', 'warning', 'Peringatan'); return; }
         const rows = [['Kode','Nama','JK','Agama','Asal','Rombel','Keterangan','Angkatan','Wali Asuh 1','Wali Asuh 2']];
         filtered.forEach(p => rows.push([
             String(p.Kode), p.Nama, p.Jenis_Kelamin||p.jk||'', p.Agama||'', p.Asal||'',
@@ -382,13 +788,12 @@
         const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `peserta_${new Date().toISOString().slice(0,10)}.csv`; a.click();
-        showToast('✅ CSV berhasil diunduh.', 'success');
+        showToast('CSV berhasil diunduh', 'success', 'Ekspor');
     }
 
-    // ==================== EKSPOR PDF (ROBUST) ====================
     function exportPesertaPDF() {
         const filtered = pesertaFiltered.length ? pesertaFiltered : pesertaData;
-        if (!filtered.length) { showToast('Tidak ada data.', 'warning'); return; }
+        if (!filtered.length) { showToast('Tidak ada data untuk diekspor', 'warning', 'Peringatan'); return; }
         const now = new Date();
         const tanggalCetak = now.toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' });
         
@@ -456,6 +861,8 @@
         tempDiv.innerHTML = html;
         document.body.appendChild(tempDiv);
 
+        showToast('Menyiapkan PDF...', 'info', 'Memproses');
+
         setTimeout(() => {
             html2pdf()
                 .set({
@@ -475,51 +882,49 @@
                 .save()
                 .then(() => {
                     document.body.removeChild(tempDiv);
-                    showToast('✅ PDF berhasil diunduh.', 'success');
+                    showToast('PDF berhasil diunduh', 'success', 'Selesai');
                 })
                 .catch((err) => {
                     document.body.removeChild(tempDiv);
-                    showToast('❌ Gagal mengunduh: ' + err.message, 'error');
+                    showToast('Gagal mengunduh: ' + err.message, 'error', 'Gagal');
                     console.error('PDF Error:', err);
                 });
         }, 500);
     }
 
-    // ==================== IMPOR CSV ====================
     async function importCSV(input) {
         const file = input.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = async function(e) {
             const lines = e.target.result.split('\n').filter(l=>l.trim());
-            if (lines.length < 2) { showToast('File CSV kosong atau tidak valid.', 'error'); return; }
+            if (lines.length < 2) { showToast('File CSV kosong atau tidak valid', 'error', 'Validasi'); return; }
             const rows = lines.slice(1).map(l=>l.split(',').map(c=>c.trim().replace(/^"(.*)"$/,'$1')));
+            showToast('Memproses impor...', 'info', 'Impor');
             const res = await API.importPeserta(JSON.stringify(rows));
             if (res.status === 'ok') {
                 await refreshPeserta(true);
-                showToast(`✅ Impor selesai. ${res.added||0} baru, ${res.updated||0} diperbarui.`, 'success');
+                showToast(`Impor selesai. ${res.added||0} baru, ${res.updated||0} diperbarui.`, 'success', 'Selesai');
             } else {
-                showToast(res.message, 'error');
+                showToast(res.message, 'error', 'Gagal');
             }
         };
         reader.readAsText(file);
         input.value = '';
     }
 
-    // ==================== ARSIP LULUS ====================
     async function arsipLulus() {
         if (!confirm('Pindahkan semua peserta dengan status "Lulus" ke arsip alumni?')) return;
-        showToast('Memproses...', 'info');
+        showToast('Memproses arsip...', 'info', 'Arsip');
         const res = await API.arsipLulus();
         if (res.status === 'ok') {
             await refreshPeserta(true);
-            showToast(res.message, 'success');
+            showToast(res.message, 'success', 'Selesai');
         } else {
-            showToast(res.message, 'error');
+            showToast(res.message, 'error', 'Gagal');
         }
     }
 
-    // ==================== GENERATE QR IMAGE ====================
     function generateQRImage(text, size) {
         return new Promise((resolve) => {
             const cacheKey = text + '_' + size;
@@ -527,7 +932,6 @@
                 resolve(qrImagesCache[cacheKey]);
                 return;
             }
-
             const container = document.createElement('div');
             container.style.cssText = `
                 position: fixed;
@@ -539,7 +943,6 @@
                 z-index: 9999;
             `;
             document.body.appendChild(container);
-
             const qr = new QRCode(container, {
                 text: text,
                 width: size,
@@ -548,7 +951,6 @@
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
             });
-
             setTimeout(() => {
                 const canvas = container.querySelector('canvas');
                 if (canvas) {
@@ -564,7 +966,6 @@
         });
     }
 
-    // ==================== PREVIEW BARCODE ====================
     let previewData = null;
     let isGenerating = false;
 
@@ -580,7 +981,7 @@
         }
 
         if (targetPeserta.length === 0) {
-            showToast('Tidak ada peserta yang dipilih.', 'warning');
+            showToast('Tidak ada peserta yang dipilih', 'warning', 'Peringatan');
             isGenerating = false;
             return;
         }
@@ -606,7 +1007,7 @@
 
         const qrSize = Math.floor(cardWidth * 0.55);
 
-        showToast('🔄 Menyiapkan preview kartu...', 'info');
+        showToast('Menyiapkan preview kartu...', 'info', 'Memproses');
 
         const oldPreview = document.getElementById('barcodePreviewModal');
         if (oldPreview) oldPreview.remove();
@@ -623,44 +1024,71 @@
             pointer-events: none;
             z-index: -9999;
             overflow: auto;
-            background: #f0f2f5;
+            background: #ffffff;
         `;
         document.body.appendChild(container);
 
-        let htmlContent = `<div style="padding:${cardMargin}px;font-family:'Inter',Arial,sans-serif;background:#f0f2f5;"><div style="display:flex;flex-wrap:wrap;gap:${cardMargin}px;justify-content:center;">`;
+        // ─── LAYOUT: 5 KARTU PER BARIS, 2 BARIS PER HALAMAN (LANDSCAPE) ───
+        const cardsPerPage = 10;
+        const totalCards = targetPeserta.length;
+        const totalPages = Math.ceil(totalCards / cardsPerPage);
+        let allPagesHtml = '';
 
-        const qrPromises = targetPeserta.map(async (p) => {
-            const qrData = (p.Kode ? String(p.Kode).trim() : 'SRMA19-000');
-            return await generateQRImage(qrData, qrSize);
-        });
-        const qrImages = await Promise.all(qrPromises);
+        for (let page = 0; page < totalPages; page++) {
+            const startIdx = page * cardsPerPage;
+            const endIdx = Math.min(startIdx + cardsPerPage, totalCards);
+            const pagePeserta = targetPeserta.slice(startIdx, endIdx);
+            const isLastPage = (page === totalPages - 1);
 
-        for (let i = 0; i < targetPeserta.length; i++) {
-            const p = targetPeserta[i];
-            let infoHtml = '';
-            if (showNama) infoHtml += `<div style="font-size:${Math.floor(cardHeight/22)}px;font-weight:700;color:#1e293b;margin-top:${Math.floor(cardHeight/30)}px;">${p.Nama || '-'}</div>`;
-            if (showKode) infoHtml += `<div style="font-size:${Math.floor(cardHeight/28)}px;color:#64748b;margin-top:${Math.floor(cardHeight/40)}px;">Kode: <span style="font-weight:600;color:#0d6efd;">${p.Kode || ''}</span></div>`;
-            if (showWali1 && p.Wali_Asuh_1) infoHtml += `<div style="font-size:${Math.floor(cardHeight/28)}px;color:#64748b;margin-top:${Math.floor(cardHeight/40)}px;">Wali 1: ${p.Wali_Asuh_1}</div>`;
-            if (showWali2 && p.Wali_Asuh_2) infoHtml += `<div style="font-size:${Math.floor(cardHeight/28)}px;color:#64748b;margin-top:${Math.floor(cardHeight/40)}px;">Wali 2: ${p.Wali_Asuh_2}</div>`;
-            if (showPublisher) infoHtml += `<div style="font-size:${Math.floor(cardHeight/35)}px;color:#94a3b8;margin-top:${Math.floor(cardHeight/20)}px;border-top:1px solid #e2e8f0;padding-top:${Math.floor(cardHeight/25)}px;">${publisherText}</div>`;
+            // Bangun baris (row) dengan 5 kartu per baris
+            let rowsHtml = '';
+            let currentRow = [];
+            for (let i = 0; i < pagePeserta.length; i++) {
+                currentRow.push(pagePeserta[i]);
+                if (currentRow.length === 5 || i === pagePeserta.length - 1) {
+                    // Generate QR untuk kartu di baris ini
+                    const rowPromises = currentRow.map(async (p) => {
+                        const qrData = (p.Kode ? String(p.Kode).trim() : 'SRMA19-000');
+                        return await generateQRImage(qrData, qrSize);
+                    });
+                    const rowQrImages = await Promise.all(rowPromises);
 
-            const cardHtml = `
-                <div style="border:1px solid #e2e8f0;border-radius:12px;padding:${Math.floor(cardHeight/15)}px;width:${cardWidth}px;min-height:${cardHeight}px;text-align:center;background:#ffffff;box-shadow:0 4px 12px rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:space-between;">
-                    <div>
-                        <div style="background:linear-gradient(135deg, #0d6efd 0%, #1e40af 100%);border-radius:8px;padding:${Math.floor(cardHeight/30)}px;margin-bottom:${Math.floor(cardHeight/20)}px;">
-                            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
-                                <span style="color:#fff;font-size:${Math.floor(cardHeight/25)}px;font-weight:600;letter-spacing:1px;">SRMA 19 BANTUL</span>
-                            </div>
-                        </div>
-                        <img src="${qrImages[i]}" style="width:${qrSize}px;height:${qrSize}px;display:inline-block;background:#fff;padding:${Math.floor(cardHeight/30)}px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);" />
-                        ${infoHtml}
-                    </div>
-                    <div style="margin-top:${Math.floor(cardHeight/25)}px;font-size:${Math.floor(cardHeight/45)}px;color:#cbd5e1;letter-spacing:0.5px;">✧ www.srma19bantul.sch.id ✧</div>
-                </div>`;
-            htmlContent += cardHtml;
+                    let rowHtml = `<div style="display:flex;flex-direction:row;flex-wrap:nowrap;gap:${cardMargin}px;justify-content:center;margin-bottom:${cardMargin}px;">`;
+                    for (let j = 0; j < currentRow.length; j++) {
+                        const p = currentRow[j];
+                        let infoHtml = '';
+                        if (showNama) infoHtml += `<div style="font-size:${Math.floor(cardHeight/22)}px;font-weight:700;color:#1e293b;margin-top:${Math.floor(cardHeight/30)}px;">${p.Nama || '-'}</div>`;
+                        if (showKode) infoHtml += `<div style="font-size:${Math.floor(cardHeight/28)}px;color:#64748b;margin-top:${Math.floor(cardHeight/40)}px;">Kode: <span style="font-weight:600;color:#0d6efd;">${p.Kode || ''}</span></div>`;
+                        if (showWali1 && p.Wali_Asuh_1) infoHtml += `<div style="font-size:${Math.floor(cardHeight/28)}px;color:#64748b;margin-top:${Math.floor(cardHeight/40)}px;">Wali 1: ${p.Wali_Asuh_1}</div>`;
+                        if (showWali2 && p.Wali_Asuh_2) infoHtml += `<div style="font-size:${Math.floor(cardHeight/28)}px;color:#64748b;margin-top:${Math.floor(cardHeight/40)}px;">Wali 2: ${p.Wali_Asuh_2}</div>`;
+                        if (showPublisher) infoHtml += `<div style="font-size:${Math.floor(cardHeight/35)}px;color:#94a3b8;margin-top:${Math.floor(cardHeight/20)}px;border-top:1px solid #e2e8f0;padding-top:${Math.floor(cardHeight/25)}px;">${publisherText}</div>`;
+
+                        const cardHtml = `
+                            <div style="border:2px solid #94a3b8;border-radius:12px;padding:${Math.floor(cardHeight/15)}px;width:${cardWidth}px;min-height:${cardHeight}px;text-align:center;background:#ffffff;box-shadow:0 4px 12px rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:space-between;">
+                                <div>
+                                    <div style="background:linear-gradient(135deg, #0d6efd 0%, #1e40af 100%);border-radius:8px;padding:${Math.floor(cardHeight/30)}px;margin-bottom:${Math.floor(cardHeight/20)}px;">
+                                        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                                            <span style="color:#fff;font-size:${Math.floor(cardHeight/25)}px;font-weight:600;letter-spacing:1px;">SRMA 19 BANTUL</span>
+                                        </div>
+                                    </div>
+                                    <img src="${rowQrImages[j]}" style="width:${qrSize}px;height:${qrSize}px;display:inline-block;background:#fff;padding:${Math.floor(cardHeight/30)}px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);" />
+                                    ${infoHtml}
+                                </div>
+                                <div style="margin-top:${Math.floor(cardHeight/25)}px;font-size:${Math.floor(cardHeight/45)}px;color:#cbd5e1;letter-spacing:0.5px;">✧ www.srma19bantul.sch.id ✧</div>
+                            </div>`;
+                        rowHtml += cardHtml;
+                    }
+                    rowHtml += `</div>`;
+                    rowsHtml += rowHtml;
+                    currentRow = [];
+                }
+            }
+
+            const pageHtml = `<div style="page-break-after:${isLastPage ? 'auto' : 'always'};padding:${cardMargin}px;font-family:'Inter',Arial,sans-serif;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:center;">${rowsHtml}</div>`;
+            allPagesHtml += pageHtml;
         }
-        htmlContent += `</div></div>`;
-        container.innerHTML = htmlContent;
+
+        container.innerHTML = allPagesHtml;
 
         previewData = {
             targetPeserta: targetPeserta,
@@ -670,26 +1098,22 @@
             showWali2: showWali2,
             showPublisher: showPublisher,
             publisherText: publisherText,
-            cardWidth: cardWidth,
-            cardHeight: cardHeight,
-            cardMargin: cardMargin,
             paperSize: paperSize,
-            qrSize: qrSize,
             pdfFormat: pdfFormat,
             pdfOrientation: pdfOrientation,
-            qrImages: qrImages,
-            container: container
+            container: container,
+            isMultiple: totalCards > 1
         };
 
         const previewHtml = `
             <div class="preview-modal show" id="barcodePreviewModal">
                 <div class="preview-content">
                     <div class="preview-header">
-                        <h4>👁️ Preview Kartu Murid (${targetPeserta.length} peserta)</h4>
+                        <h4>👁️ Preview Kartu Murid (${totalCards} peserta — ${totalPages} halaman)</h4>
                         <div class="preview-actions">
-                            <button class="btn btn-sm btn-success" onclick="downloadBarcode()"><i class="fas fa-download me-1"></i> Download PDF</button>
-                            <button class="btn btn-sm btn-primary" onclick="exportJPG()"><i class="fas fa-image me-1"></i> Export JPG</button>
-                            <button class="btn btn-sm btn-secondary" onclick="closePreview()"><i class="fas fa-times"></i> Tutup</button>
+                            <button class="btn btn-sm btn-success rounded-pill" onclick="downloadBarcode()"><i class="fas fa-download me-1"></i> Download PDF</button>
+                            <button class="btn btn-sm btn-primary rounded-pill" onclick="exportJPG()"><i class="fas fa-image me-1"></i> Export JPG</button>
+                            <button class="btn btn-sm btn-secondary rounded-pill" onclick="closePreview()"><i class="fas fa-times"></i> Tutup</button>
                         </div>
                     </div>
                     <div id="previewBody">${container.innerHTML}</div>
@@ -698,7 +1122,7 @@
         document.body.insertAdjacentHTML('beforeend', previewHtml);
 
         document.body.removeChild(container);
-        showToast('✅ Preview siap. Periksa kartu, lalu klik Download.', 'success');
+        showToast('Preview siap. Periksa kartu, lalu klik Download.', 'success', 'Selesai');
         isGenerating = false;
     }
 
@@ -708,26 +1132,25 @@
         previewData = null;
     }
 
-    // ==================== DOWNLOAD BARCODE (PDF) ====================
     async function downloadBarcode() {
         if (!previewData) {
-            showToast('Tidak ada data preview.', 'error');
+            showToast('Tidak ada data preview', 'error', 'Gagal');
             return;
         }
 
         const previewBody = document.getElementById('previewBody');
         if (!previewBody) {
-            showToast('Preview tidak ditemukan. Refresh dan coba lagi.', 'error');
+            showToast('Preview tidak ditemukan. Refresh dan coba lagi.', 'error', 'Gagal');
             return;
         }
 
         const previewContainer = previewBody.firstElementChild;
         if (!previewContainer) {
-            showToast('Elemen preview tidak ditemukan.', 'error');
+            showToast('Elemen preview tidak ditemukan.', 'error', 'Gagal');
             return;
         }
 
-        showToast('🔄 Mengunduh PDF dari preview...', 'info');
+        showToast('Mengunduh PDF dari preview...', 'info', 'Memproses');
 
         const originalStyle = {
             opacity: previewContainer.style.opacity,
@@ -775,7 +1198,7 @@
                         useCORS: true,
                         allowTaint: true,
                         logging: true,
-                        backgroundColor: '#f0f2f5',
+                        backgroundColor: '#ffffff',
                         width: previewContainer.scrollWidth,
                         height: previewContainer.scrollHeight
                     },
@@ -785,169 +1208,252 @@
                 .save();
 
             closePreview();
-            showToast('✅ PDF berhasil diunduh!', 'success');
+            showToast('PDF berhasil diunduh!', 'success', 'Selesai');
         } catch (e) {
-            showToast('❌ Gagal mengunduh PDF: ' + e.message, 'error');
+            showToast('Gagal mengunduh PDF: ' + e.message, 'error', 'Gagal');
             console.error('PDF Error:', e);
         } finally {
             Object.assign(previewContainer.style, originalStyle);
         }
     }
 
-    // ==================== EXPORT JPG ====================
     async function exportJPG() {
         if (!previewData) {
-            showToast('Tidak ada data preview.', 'error');
+            showToast('Tidak ada data preview', 'error', 'Gagal');
             return;
         }
 
         const previewBody = document.getElementById('previewBody');
         if (!previewBody) {
-            showToast('Preview tidak ditemukan. Refresh dan coba lagi.', 'error');
+            showToast('Preview tidak ditemukan. Refresh dan coba lagi.', 'error', 'Gagal');
             return;
         }
 
         const previewContainer = previewBody.firstElementChild;
         if (!previewContainer) {
-            showToast('Elemen preview tidak ditemukan.', 'error');
+            showToast('Elemen preview tidak ditemukan.', 'error', 'Gagal');
             return;
         }
 
-        showToast('🔄 Mengekspor JPG...', 'info');
+        const isMultiple = previewData.targetPeserta.length > 1;
+        showToast('Mengekspor JPG...', 'info', 'Memproses');
 
-        const originalStyle = {
-            opacity: previewContainer.style.opacity,
-            zIndex: previewContainer.style.zIndex,
-            pointerEvents: previewContainer.style.pointerEvents,
-            position: previewContainer.style.position,
-            top: previewContainer.style.top,
-            left: previewContainer.style.left,
-            width: previewContainer.style.width,
-            height: previewContainer.style.height,
-            display: previewContainer.style.display,
-            visibility: previewContainer.style.visibility,
-            overflow: previewContainer.style.overflow
-        };
-
-        previewContainer.style.opacity = '1';
-        previewContainer.style.zIndex = '9999';
-        previewContainer.style.pointerEvents = 'none';
-        previewContainer.style.position = 'fixed';
-        previewContainer.style.top = '0';
-        previewContainer.style.left = '0';
-        previewContainer.style.width = '100%';
-        previewContainer.style.height = 'auto';
-        previewContainer.style.display = 'block';
-        previewContainer.style.visibility = 'visible';
-        previewContainer.style.overflow = 'visible';
-
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const namaSiswa = previewData.targetPeserta.length === 1 
+            ? previewData.targetPeserta[0].Nama.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '') 
+            : 'multiple';
 
         try {
-            const canvas = await html2canvas(previewContainer, {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#f0f2f5',
-                logging: false,
-                width: previewContainer.scrollWidth,
-                height: previewContainer.scrollHeight
-            });
+            if (!isMultiple) {
+                const cardEl = previewContainer.querySelector('[style*="border:2px solid"]')
+                            || previewContainer.querySelector('div > div > div');
 
-            const namaSiswa = previewData.targetPeserta.length === 1 
-                ? previewData.targetPeserta[0].Nama.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '') 
-                : 'multiple';
+                const targetEl = cardEl || previewContainer;
 
-            const link = document.createElement('a');
-            link.download = `kartu_murid_${namaSiswa}_${new Date().toISOString().slice(0,10)}.jpg`;
-            link.href = canvas.toDataURL('image/jpeg', 0.95);
-            link.click();
+                const canvas = await html2canvas(targetEl, {
+                    scale: 3,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
 
-            showToast('✅ JPG berhasil diunduh!', 'success');
+                const link = document.createElement('a');
+                link.download = `kartu_murid_${namaSiswa}_${new Date().toISOString().slice(0,10)}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+
+            } else {
+                const originalStyle = {
+                    opacity: previewContainer.style.opacity,
+                    zIndex: previewContainer.style.zIndex,
+                    pointerEvents: previewContainer.style.pointerEvents,
+                    position: previewContainer.style.position,
+                    top: previewContainer.style.top,
+                    left: previewContainer.style.left,
+                    width: previewContainer.style.width,
+                    height: previewContainer.style.height,
+                    display: previewContainer.style.display,
+                    visibility: previewContainer.style.visibility,
+                    overflow: previewContainer.style.overflow
+                };
+
+                const a4WidthPx = 1123;
+
+                previewContainer.style.opacity = '1';
+                previewContainer.style.zIndex = '9999';
+                previewContainer.style.pointerEvents = 'none';
+                previewContainer.style.position = 'fixed';
+                previewContainer.style.top = '0';
+                previewContainer.style.left = '0';
+                previewContainer.style.width = a4WidthPx + 'px';
+                previewContainer.style.height = 'auto';
+                previewContainer.style.display = 'block';
+                previewContainer.style.visibility = 'visible';
+                previewContainer.style.overflow = 'visible';
+
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                const canvas = await html2canvas(previewContainer, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    width: a4WidthPx,
+                    height: previewContainer.scrollHeight
+                });
+
+                Object.assign(previewContainer.style, originalStyle);
+
+                const link = document.createElement('a');
+                link.download = `kartu_murid_${namaSiswa}_${new Date().toISOString().slice(0,10)}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+            }
+
+            showToast('JPG berhasil diunduh!', 'success', 'Selesai');
         } catch (e) {
-            showToast('❌ Gagal mengekspor JPG: ' + e.message, 'error');
+            showToast('Gagal mengekspor JPG: ' + e.message, 'error', 'Gagal');
             console.error('JPG Export Error:', e);
-        } finally {
-            Object.assign(previewContainer.style, originalStyle);
         }
     }
 
-    // ==================== RENDER MAIN ====================
+    function toggleCollapse(headerId, bodyId, iconId) {
+        const body = document.getElementById(bodyId);
+        const icon = document.getElementById(iconId);
+        if (!body || !icon) return;
+        const isOpen = body.classList.contains('open');
+        if (isOpen) {
+            body.classList.remove('open');
+            icon.classList.remove('rotated');
+        } else {
+            body.classList.add('open');
+            icon.classList.add('rotated');
+        }
+    }
+
     function renderMain() {
         const rombelList = [...new Set(pesertaData.map(p => p.Rombel).filter(Boolean))];
         const angkatanList = [...new Set(pesertaData.map(p => p.Angkatan).filter(Boolean))];
         const agamaList = [...new Set(pesertaData.map(p => p.Agama).filter(Boolean))];
+
         document.getElementById('mainContent').innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <h3 class="mb-0">👥 Data Peserta <span class="badge bg-secondary rounded-pill">${pesertaData.length}</span></h3>
+                <h4 class="fw-bold mb-0"><i class="fas fa-users me-2" style="color:var(--primary);"></i>Data Peserta <span class="badge bg-secondary rounded-pill">${pesertaData.length}</span></h4>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button class="btn btn-sm btn-success rounded-pill" onclick="showPesertaModal(null)"><i class="fas fa-plus"></i> Tambah</button>
-                    <button class="btn btn-sm btn-outline-success rounded-pill" onclick="document.getElementById('importCSV').click()"><i class="fas fa-upload"></i> Impor</button>
+                    <button class="btn btn-sm btn-success rounded-pill" onclick="showPesertaModal(null)"><i class="fas fa-plus me-1"></i> Tambah</button>
+                    <button class="btn btn-sm btn-outline-success rounded-pill" onclick="document.getElementById('importCSV').click()"><i class="fas fa-upload me-1"></i> Impor</button>
                     <input type="file" id="importCSV" accept=".csv" style="display:none" onchange="importCSV(this)">
-                    <button class="btn btn-sm btn-primary rounded-pill" onclick="exportCSV()"><i class="fas fa-download"></i> CSV</button>
-                    <button class="btn btn-sm btn-danger rounded-pill" onclick="exportPesertaPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="btn btn-sm btn-primary rounded-pill" onclick="exportCSV()"><i class="fas fa-download me-1"></i> CSV</button>
+                    <button class="btn btn-sm btn-danger rounded-pill" onclick="exportPesertaPDF()"><i class="fas fa-file-pdf me-1"></i> PDF</button>
                     <button class="btn btn-sm btn-outline-danger rounded-pill" id="btnDeleteSelected" onclick="deleteSelectedPeserta()" disabled><i class="fas fa-trash-alt me-1"></i> Hapus (<span id="selectedCount">0</span>)</button>
-                    <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="arsipLulus()"><i class="fas fa-archive"></i> Arsip Lulus</button>
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="arsipLulus()"><i class="fas fa-archive me-1"></i> Arsip Lulus</button>
                     <button class="btn btn-sm btn-refresh rounded-pill" onclick="refreshPeserta(false)"><i class="fas fa-sync-alt me-1"></i> Refresh</button>
                 </div>
             </div>
-            <div class="filter-bar">
-                <input type="text" class="form-control form-control-sm" id="searchPeserta" placeholder="🔍 Cari..." style="width:150px" oninput="applyFilter()">
-                <select class="form-select form-select-sm" id="filterStatus" style="width:120px" onchange="applyFilter()">
-                    <option value="">Status</option>
-                    <option>Aktif</option>
-                    <option>Nonaktif</option>
-                    <option>Lulus</option>
-                </select>
-                <select class="form-select form-select-sm" id="filterRombel" style="width:130px" onchange="applyFilter()">
-                    <option value="">Rombel</option>
-                    ${rombelList.map(r => `<option>${r}</option>`).join('')}
-                </select>
-                <select class="form-select form-select-sm" id="filterAngkatan" style="width:130px" onchange="applyFilter()">
-                    <option value="">Angkatan</option>
-                    ${angkatanList.map(a => `<option>${a}</option>`).join('')}
-                </select>
-                <select class="form-select form-select-sm" id="filterAgama" style="width:120px" onchange="applyFilter()">
-                    <option value="">Agama</option>
-                    ${agamaList.map(a => `<option>${a}</option>`).join('')}
-                </select>
-                <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="resetFilter()">Reset</button>
-                <span class="small text-muted ms-2" id="infoCount">Menampilkan ${pesertaFiltered.length} dari ${pesertaData.length} entri</span>
+
+            <!-- FILTER (collapsible) -->
+            <div class="card-modern">
+                <div class="collapsible-header" onclick="toggleCollapse('filterHeader','filterBody','filterIcon')">
+                    <span><i class="fas fa-filter me-2" style="color:var(--primary);"></i>Filter & Pencarian</span>
+                    <span class="toggle-icon" id="filterIcon"><i class="fas fa-chevron-right"></i></span>
+                </div>
+                <div class="collapsible-body" id="filterBody">
+                    <div class="filter-group">
+                        <input type="text" id="searchPeserta" placeholder="🔍 Cari nama / kode" style="flex:1;min-width:150px;" oninput="applyFilter()">
+                        <select id="filterStatus" onchange="applyFilter()">
+                            <option value="">Status</option>
+                            <option>Aktif</option>
+                            <option>Nonaktif</option>
+                            <option>Lulus</option>
+                        </select>
+                        <select id="filterRombel" onchange="applyFilter()">
+                            <option value="">Rombel</option>
+                            ${rombelList.map(r => `<option>${r}</option>`).join('')}
+                        </select>
+                        <select id="filterAngkatan" onchange="applyFilter()">
+                            <option value="">Angkatan</option>
+                            ${angkatanList.map(a => `<option>${a}</option>`).join('')}
+                        </select>
+                        <select id="filterAgama" onchange="applyFilter()">
+                            <option value="">Agama</option>
+                            ${agamaList.map(a => `<option>${a}</option>`).join('')}
+                        </select>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="resetFilter()">Reset</button>
+                        <span class="small text-muted ms-2" id="infoCount">Menampilkan ${pesertaFiltered.length} dari ${pesertaData.length} entri</span>
+                    </div>
+                </div>
             </div>
-            <div class="barcode-options">
-                <span class="fw-bold me-2">🎯 Opsi Barcode:</span>
-                <label><input type="checkbox" id="barcodeShowNama" checked> Nama</label>
-                <label><input type="checkbox" id="barcodeShowKode" checked> Kode</label>
-                <label><input type="checkbox" id="barcodeShowWali1" checked> Wali Asuh 1</label>
-                <label><input type="checkbox" id="barcodeShowWali2" checked> Wali Asuh 2</label>
-                <label><input type="checkbox" id="barcodeShowPublisher" checked> Diterbitkan oleh</label>
-                <input type="text" id="barcodePublisherText" value="Diterbitkan oleh SRMA 19 Bantul" placeholder="Teks penerbit" style="width:200px;font-size:0.8rem;padding:2px 8px;border:1px solid #ccc;border-radius:4px;">
-                <br>
-                <span class="fw-bold me-2">📄 Ukuran Kertas:</span>
-                <select id="paperSizeSelect" style="font-size:0.8rem;padding:2px 8px;border:1px solid #ccc;border-radius:4px;">
-                    <option value="b3">B3 (353×500 mm)</option>
-                    <option value="a4">A4 (210×297 mm)</option>
-                    <option value="a5">A5 (148×210 mm)</option>
-                    <option value="f4">F4 (210×330 mm)</option>
-                    <option value="letter">Letter (215×279 mm)</option>
-                </select>
-                <button class="btn btn-sm btn-info rounded-pill" onclick="previewBarcode()"><i class="fas fa-eye me-1"></i> Preview & Download</button>
+
+            <!-- BARCODE (collapsible) -->
+            <div class="card-modern barcode-panel">
+                <div class="collapsible-header" onclick="toggleCollapse('barcodeHeader','barcodeBody','barcodeIcon')">
+                    <span><i class="fas fa-qrcode me-2" style="color:var(--primary);"></i>Opsi Kartu QR</span>
+                    <span class="toggle-icon" id="barcodeIcon"><i class="fas fa-chevron-right"></i></span>
+                </div>
+                <div class="collapsible-body" id="barcodeBody">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <label class="mb-0" style="font-weight:600;font-size:0.85rem;">Tampilkan:</label>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="checkbox" id="barcodeShowNama" checked>
+                                    <label class="form-check-label" for="barcodeShowNama">Nama</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="checkbox" id="barcodeShowKode" checked>
+                                    <label class="form-check-label" for="barcodeShowKode">Kode</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="checkbox" id="barcodeShowWali1" checked>
+                                    <label class="form-check-label" for="barcodeShowWali1">Wali 1</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="checkbox" id="barcodeShowWali2" checked>
+                                    <label class="form-check-label" for="barcodeShowWali2">Wali 2</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input" type="checkbox" id="barcodeShowPublisher" checked>
+                                    <label class="form-check-label" for="barcodeShowPublisher">Penerbit</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <label class="mb-0" style="font-weight:600;font-size:0.85rem;">Teks:</label>
+                                <input type="text" id="barcodePublisherText" value="Diterbitkan oleh SRMA 19 Bantul" style="width:160px;">
+                                <label class="mb-0" style="font-weight:600;font-size:0.85rem;">Kertas:</label>
+                                <select id="paperSizeSelect">
+                                    <option value="b3">B3</option>
+                                    <option value="a4" selected>A4</option>
+                                    <option value="a5">A5</option>
+                                    <option value="f4">F4</option>
+                                    <option value="letter">Letter</option>
+                                </select>
+                                <button class="btn btn-sm btn-info rounded-pill" onclick="previewBarcode()"><i class="fas fa-eye me-1"></i> Preview & Download</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="table-card" id="pesertaTableContainer"></div>`;
+
+            <!-- TABLE -->
+            <div class="card-modern p-0" style="padding:0 !important;">
+                <div id="pesertaTableContainer"></div>
+            </div>
+        `;
         applyFilter();
         updateDeleteButton();
     }
 
-    // ==================== DETEKSI IFRAME ====================
     if (window.self !== window.top) {
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.querySelector('.sidebar');
             if (sidebar) sidebar.style.display = 'none';
-            document.body.style.padding = '30px';
+            document.body.style.padding = '16px';
         });
     }
 
-    // ==================== INISIALISASI ====================
     (async () => {
         await loadWaliAsuhList();
         const cached = getCachedData();

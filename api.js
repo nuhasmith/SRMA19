@@ -1,11 +1,11 @@
 // ============================================
 // api.js - Modul Komunikasi Google Apps Script
-// SRMA 19 Bantul | Versi 12.0 (Status Kehadiran, Puasa, Pelanggaran, Kesehatan, Jadwal Sholat Otomatis)
+// SRMA 19 Bantul | Versi 15.0 (Lengkap: Semua Menu)
 // ============================================
 
 const API = (() => {
   // ⚠️ GANTI dengan URL Web App Google Apps Script Anda
-  const BASE_URL = 'https://script.google.com/macros/s/AKfycbz5Y4x_jofSVpcQ9nT0Uep3rUSA7fJCRFUD1PybG_0HQkitoeGd-xkPgIWem3ZuQDeR/exec';
+  const BASE_URL = 'https://script.google.com/macros/s/AKfycbzzndGZ7yH2YN8_thEFO9eCaGl-_stuzMozaBSHjpFbr3e87OcG8Suu8Csgxw7wujr-/exec';
 
   /**
    * Request handler untuk GET (query string)
@@ -90,7 +90,7 @@ const API = (() => {
       pelanggaranKeterangan = '', 
       kondisiKesehatan = 'Sehat', 
       keteranganKesehatan = '',
-      status = 'Hadir' // 🔥 tambahan status kehadiran
+      status = 'Hadir'
     ) =>
       request('record', { 
         code, 
@@ -104,7 +104,7 @@ const API = (() => {
         pelanggaran_keterangan: pelanggaranKeterangan,
         kondisi_kesehatan: kondisiKesehatan,
         keterangan_kesehatan: keteranganKesehatan,
-        status // 🔥 dikirim ke backend
+        status
       }),
 
     // listAbsensi dengan pagination (page, limit)
@@ -150,6 +150,12 @@ const API = (() => {
 
     // Log Login
     listLoginLog: (limit = 500) => request('list_login_log', { limit }),
+
+    // Wali Asuh (CRUD lengkap)
+    listWaliAsuh: () => request('list_wali_asuh'),
+    addWaliAsuh: (data) => request('add_wali_asuh', data),
+    updateWaliAsuh: (data) => request('update_wali_asuh', data),
+    deleteWaliAsuh: (id) => request('delete_wali_asuh', { id }),
 
     // Setup otomatis
     setup: () => request('setup')
