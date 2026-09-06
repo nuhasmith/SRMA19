@@ -2,58 +2,255 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Petugas - SRMA 19 Bantul</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Masuk - SRMA 19 Bantul</title>
     <link rel="icon" type="image/webp" href="srma.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #0d6efd; --primary-dark: #0a58ca; }
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(160deg, #0b1e3d 0%, #0d2b5e 25%, #0f3a7a 50%, #0a1e42 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; margin: 0; }
-        .login-wrapper { width: 100%; max-width: 420px; }
-        .login-card { background: #ffffff; border-radius: 24px; padding: 40px 32px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3); animation: fadeInUp 0.5s ease-out; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
-        .login-header { text-align: center; margin-bottom: 32px; }
-        .login-header .brand {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 72px; height: 72px; border-radius: 20px; overflow: hidden;
-            margin-bottom: 16px; box-shadow: 0 8px 24px rgba(13, 110, 253, 0.25);
+        :root {
+            --primary: #0d6efd;
+            --primary-dark: #0a58ca;
+            --tg-blue: #2e8bc0;
+            --tg-blue-dark: #256a94;
         }
-        .login-header .brand img { width: 100%; height: 100%; object-fit: cover; }
-        .login-header h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
-        .login-header p { color: #64748b; font-size: 0.9rem; margin: 0; }
-        .form-label { font-weight: 600; font-size: 0.85rem; color: #334155; margin-bottom: 6px; }
-        .form-control { border-radius: 12px; padding: 12px 16px; font-size: 0.95rem; border: 1px solid #e2e8f0; transition: border-color 0.2s, box-shadow 0.2s; }
-        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15); }
-        .input-group .form-control { border-radius: 0 12px 12px 0 !important; }
-        .input-group-text { border-radius: 12px 0 0 12px !important; background: #fff; border-right: none; padding: 0 14px; }
-        .input-group-text.toggle-password { border-radius: 0 12px 12px 0 !important; border-left: none; cursor: pointer; background: #fff; user-select: none; }
-        .btn-login { background: var(--primary); color: #fff; border: none; border-radius: 12px; padding: 13px; font-weight: 700; font-size: 1rem; width: 100%; box-shadow: 0 6px 20px rgba(13, 110, 253, 0.35); transition: background 0.2s, transform 0.1s; }
-        .btn-login:hover { background: var(--primary-dark); transform: translateY(-1px); }
-        .btn-login:active { transform: translateY(0); }
-        .btn-login:disabled { opacity: 0.65; pointer-events: none; }
-        .form-footer { text-align: center; margin-top: 24px; }
-        .form-footer a { color: var(--primary); text-decoration: none; font-weight: 500; font-size: 0.9rem; }
-        .form-footer a:hover { text-decoration: underline; }
-        .alert { border-radius: 12px; font-size: 0.85rem; padding: 12px 16px; }
-        .demo-info { background: #f8fafc; border-radius: 12px; padding: 14px; font-size: 0.8rem; color: #64748b; text-align: center; margin-top: 20px; border: 1px dashed #cbd5e1; }
-        .demo-info strong { color: #1e293b; }
-        .link-lupa-pin { font-size: 0.85rem; color: var(--primary); cursor: pointer; text-decoration: underline; }
-        .link-lupa-pin:hover { color: var(--primary-dark); }
-        .preload-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 9999; display: none; align-items: center; justify-content: center; color: white; font-size: 1.2rem; }
-        .preload-overlay.show { display: flex; }
-        @media (max-width: 480px) { .login-card { padding: 28px 20px; } .login-header h1 { font-size: 1.3rem; } }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(160deg, #0b1e3d 0%, #0d2b5e 25%, #0f3a7a 50%, #0a1e42 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 40px 32px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-header .brand {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 24px rgba(46, 139, 192, 0.3);
+        }
+
+        .login-header .brand img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .login-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .login-header p {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            border: 1px solid #e2e8f0;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--tg-blue);
+            box-shadow: 0 0 0 3px rgba(46, 139, 192, 0.15);
+        }
+
+        .input-group .form-control {
+            border-radius: 0 12px 12px 0 !important;
+        }
+
+        .input-group-text {
+            border-radius: 12px 0 0 12px !important;
+            background: #fff;
+            border-right: none;
+            padding: 0 14px;
+        }
+
+        .input-group-text.toggle-password {
+            border-radius: 0 12px 12px 0 !important;
+            border-left: none;
+            cursor: pointer;
+            background: #fff;
+            user-select: none;
+        }
+
+        .btn-login {
+            background: var(--tg-blue);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 13px;
+            font-weight: 700;
+            font-size: 1rem;
+            width: 100%;
+            box-shadow: 0 6px 20px rgba(46, 139, 192, 0.35);
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn-login:hover {
+            background: var(--tg-blue-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.65;
+            pointer-events: none;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .form-footer a {
+            color: var(--tg-blue);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            border-radius: 12px;
+            font-size: 0.85rem;
+            padding: 12px 16px;
+        }
+
+        .link-lupa-pin {
+            font-size: 0.85rem;
+            color: var(--tg-blue);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .link-lupa-pin:hover {
+            color: var(--tg-blue-dark);
+        }
+
+        .back-home {
+            display: inline-block;
+            margin-top: 16px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .back-home:hover {
+            color: var(--tg-blue);
+        }
+
+        .copyright {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8rem;
+            margin-top: 20px;
+        }
+
+        /* ===== CAPTCHA STYLE ===== */
+        .captcha-question {
+            background: #f8f9fa;
+            font-weight: 800;
+            font-size: 1.2rem;
+            text-align: center;
+            border-radius: 12px 0 0 12px !important;
+            user-select: none;
+            letter-spacing: 2px;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .captcha-question::selection {
+            background: none;
+            color: inherit;
+        }
+        #captchaInput {
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        /* Modal */
+        .modal-content {
+            border-radius: 16px;
+            border: none;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 28px 20px;
+            }
+            .login-header h1 {
+                font-size: 1.3rem;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="preload-overlay" id="preloadOverlay">
-    <div class="text-center">
-        <div class="spinner-border text-light mb-3" role="status"></div>
-        <div>Menyiapkan data...</div>
-        <div class="small opacity-75 mt-2" id="preloadStatus"></div>
-    </div>
-</div>
 
 <div class="login-wrapper">
     <div class="login-card">
@@ -61,7 +258,7 @@
             <div class="brand">
                 <img src="srma.webp" alt="SRMA 19 Bantul">
             </div>
-            <h1>Login Petugas</h1>
+            <h1>Masuk</h1>
             <p>SRMA 19 Bantul</p>
         </div>
 
@@ -77,14 +274,28 @@
             </div>
 
             <div class="mb-4">
-                <label for="pin" class="form-label">PIN</label>
+                <label for="password" class="form-label">Password</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
-                    <input type="password" class="form-control" id="pin" placeholder="Masukkan PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*" required>
-                    <span class="input-group-text toggle-password" id="togglePin" title="Tampilkan PIN">
+                    <!-- DIUBAH: maxlength 64, tanpa inputmode numeric, tanpa pattern -->
+                    <input type="password" class="form-control" id="password" placeholder="Masukkan password" maxlength="64" required>
+                    <span class="input-group-text toggle-password" id="togglePassword" title="Tampilkan password">
                         <i class="far fa-eye"></i>
                     </span>
                 </div>
+            </div>
+
+            <!-- CAPTCHA FIELD -->
+            <div class="mb-4">
+                <label class="form-label"><i class="fas fa-shield-alt me-1"></i> Keamanan Tambahan (Captcha)</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-calculator text-muted"></i></span>
+                    <span class="form-control captcha-question" id="captchaQuestion">...</span>
+                    <button type="button" class="btn btn-outline-secondary" id="btnRefreshCaptcha" onclick="refreshCaptcha()" title="Muat ulang captcha">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <input type="text" class="form-control form-control-sm mt-2" id="captchaInput" placeholder="Masukkan hasil hitungan di atas" maxlength="5" required>
             </div>
 
             <button type="submit" class="btn btn-login" id="btnLogin">
@@ -93,168 +304,245 @@
         </form>
 
         <div class="text-center mt-3">
-            <span class="link-lupa-pin" onclick="showResetModal()"><i class="fas fa-question-circle me-1"></i>Lupa PIN?</span>
-        </div>
-
-        <div class="demo-info">
-            <i class="fas fa-info-circle me-1"></i>
-            <strong>Akun Demo:</strong><br>
-            Admin: <code>admin</code> / <code>123456</code> &nbsp;|&nbsp;
-            Petugas: <code>petugas1</code> / <code>654321</code>
+            <span class="link-lupa-pin" onclick="showResetModal()"><i class="fas fa-question-circle me-1"></i>Lupa Password?</span>
         </div>
 
         <div class="form-footer">
             <a href="index.html"><i class="fas fa-arrow-left me-1"></i>Kembali ke Beranda</a>
         </div>
     </div>
-    <p class="text-center text-white opacity-50 mt-3" style="font-size:0.8rem;">&copy; 2025 SRMA 19 Bantul</p>
+    <p class="copyright">&copy; 2026 SRMA 19 Bantul</p>
 </div>
 
-<!-- Modal Reset PIN -->
-<div class="modal fade" id="resetPinModal" tabindex="-1" aria-hidden="true">
+<!-- Modal Reset Password -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 rounded-4">
             <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold">Reset PIN</h5>
+                <h5 class="modal-title fw-bold">Reset Password</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted small">Masukkan username Anda. PIN akan direset ke <strong>123456</strong>.</p>
+                <p class="text-muted small">Masukkan username Anda. Password akan direset ke <strong>123456</strong>.</p>
                 <input type="text" class="form-control" id="resetUsername" placeholder="Username" required>
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary" id="resetBtn" onclick="resetPin()">
-                    <i class="fas fa-sync-alt me-1"></i>Reset PIN
+                <button type="button" class="btn btn-primary" id="resetBtn" onclick="resetPassword()">
+                    <i class="fas fa-sync-alt me-1"></i>Reset Password
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<script src="api.js"></script>
-<script src="auth.js"></script>
+<!-- ===== SCRIPTS ===== -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/auth.js"></script>
+
 <script>
-    // Jika sudah login, langsung redirect ke dashboard sesuai role
-    if (Auth.isLoggedIn()) {
-        const user = Auth.getCurrentUser();
-        window.location.replace(user.role === 'admin' ? 'dashboard_admin.html' : 'dashboard_petugas.html');
+    // SafeStorage Fallback (jika belum dimuat oleh auth.js)
+    if (typeof window.SafeStorage === 'undefined') {
+        window.SafeStorage = (() => {
+            const mem = { local: {}, session: {} };
+            const isAvailable = (t) => { try { const s = window[t]; s.setItem('__t','1'); s.removeItem('__t'); return true; } catch(e){ return false; } };
+            return {
+                getItem: (k, t='local') => { if (isAvailable(t === 'session' ? 'sessionStorage' : 'localStorage')) return window[t === 'session' ? 'sessionStorage' : 'localStorage'].getItem(k); return mem[t][k] || null; },
+                setItem: (k, v, t='local') => { if (isAvailable(t === 'session' ? 'sessionStorage' : 'localStorage')) return window[t === 'session' ? 'sessionStorage' : 'localStorage'].setItem(k, v); mem[t][k] = v; },
+                removeItem: (k, t='local') => { if (isAvailable(t === 'session' ? 'sessionStorage' : 'localStorage')) return window[t === 'session' ? 'sessionStorage' : 'localStorage'].removeItem(k); delete mem[t][k]; }
+            };
+        })();
     }
 
+    // ============================================================
+    //  REDIRECT JIKA SUDAH LOGIN
+    // ============================================================
+    if (Auth.isLoggedIn()) {
+        // Jika sudah login, pastikan tidak masuk mode publik
+        SafeStorage.removeItem('srma19_public_view', 'session');
+        SafeStorage.setItem('srma19_active_menu', 'dashboard', 'local');
+        window.location.replace('index.html');
+    }
+
+    // ============================================================
+    //  DOM REFS
+    // ============================================================
     const loginForm = document.getElementById('loginForm');
     const alertContainer = document.getElementById('alertContainer');
     const btnLogin = document.getElementById('btnLogin');
     const usernameInput = document.getElementById('username');
-    const pinInput = document.getElementById('pin');
-    const togglePin = document.getElementById('togglePin');
-    const preloadOverlay = document.getElementById('preloadOverlay');
-    const preloadStatus = document.getElementById('preloadStatus');
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('togglePassword');
+    const captchaInput = document.getElementById('captchaInput');
 
-    window.addEventListener('load', () => usernameInput.focus());
+    // ============================================================
+    //  CAPTCHA LOGIC
+    // ============================================================
+    let captchaAnswer = 0;
 
-    togglePin.addEventListener('click', () => {
-        const isPassword = pinInput.type === 'password';
-        pinInput.type = isPassword ? 'text' : 'password';
-        togglePin.innerHTML = isPassword ? '<i class="far fa-eye-slash"></i>' : '<i class="far fa-eye"></i>';
-        togglePin.title = isPassword ? 'Sembunyikan PIN' : 'Tampilkan PIN';
-        pinInput.focus();
+    function generateCaptcha() {
+        const num1 = Math.floor(Math.random() * 20) + 1;
+        const num2 = Math.floor(Math.random() * 10) + 1;
+        const ops = ['+', '-', '*'];
+        const op = ops[Math.floor(Math.random() * ops.length)];
+        let answer = 0;
+        if (op === '+') answer = num1 + num2;
+        else if (op === '-') answer = num1 - num2;
+        else answer = num1 * num2;
+        captchaAnswer = answer;
+        document.getElementById('captchaQuestion').textContent = `${num1} ${op} ${num2} = ?`;
+        captchaInput.value = '';
+        captchaInput.classList.remove('is-invalid');
+    }
+
+    function refreshCaptcha() {
+        generateCaptcha();
+    }
+
+    function validateCaptcha() {
+        const userAnswer = parseInt(captchaInput.value, 10);
+        if (isNaN(userAnswer) || userAnswer !== captchaAnswer) {
+            captchaInput.value = '';
+            captchaInput.classList.add('is-invalid');
+            captchaInput.focus();
+            refreshCaptcha();
+            return false;
+        }
+        captchaInput.classList.remove('is-invalid');
+        return true;
+    }
+
+    // Generate captcha saat load
+    window.addEventListener('load', () => {
+        generateCaptcha();
+        usernameInput.focus();
     });
 
+    // ============================================================
+    //  TOGGLE PASSWORD VISIBILITY
+    // ============================================================
+    togglePassword.addEventListener('click', () => {
+        const isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+        togglePassword.innerHTML = isPassword ? '<i class="far fa-eye-slash"></i>' : '<i class="far fa-eye"></i>';
+        togglePassword.title = isPassword ? 'Sembunyikan password' : 'Tampilkan password';
+        passwordInput.focus();
+    });
+
+    // ============================================================
+    //  SHOW ALERT
+    // ============================================================
     function showAlert(message, type = 'danger') {
         alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
     }
 
-    // 🔥 Preload data & redirect (menggunakan sessionStorage untuk dashboard instant)
-    async function preloadAndRedirect(role) {
-        preloadOverlay.classList.add('show');
-        preloadStatus.textContent = 'Mengambil data...';
-        const cacheKey = role === 'admin' ? 'srma19_admin_data' : 'srma19_petugas_data';
-        try {
-            const [pesertaRes, absensiRes, jadwalRes, petugasRes, izinRes] = await Promise.all([
-                API.listPeserta(),
-                API.listAbsensi('', '', 1, 100),
-                API.getJadwal(),
-                API.listPetugas(),
-                API.listIzin()
-            ]);
-            const data = {
-                peserta: pesertaRes.status === 'success' ? pesertaRes.data : [],
-                absensi: absensiRes.status === 'success' ? absensiRes.data : [],
-                jadwal: jadwalRes.status === 'success' ? jadwalRes.data : [],
-                petugas: petugasRes.status === 'success' ? petugasRes.data : [],
-                izin: izinRes.status === 'success' ? izinRes.data : [],
-                timestamp: Date.now()
-            };
-            // Simpan di sessionStorage agar dashboard langsung pakai
-            sessionStorage.setItem(cacheKey, JSON.stringify(data));
-            preloadStatus.textContent = 'Data siap, mengalihkan...';
-            setTimeout(() => {
-                window.location.href = role === 'admin' ? 'dashboard_admin.html' : 'dashboard_petugas.html';
-            }, 600);
-        } catch (e) {
-            console.error('Preload gagal:', e);
-            // Tetap redirect, dashboard akan fetch sendiri jika sessionStorage kosong
-            window.location.href = role === 'admin' ? 'dashboard_admin.html' : 'dashboard_petugas.html';
-        }
-    }
-
+    // ============================================================
+    //  LOGIN SUBMIT (Dengan Validasi Captcha)
+    // ============================================================
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         alertContainer.innerHTML = '';
 
-        const username = usernameInput.value.trim();
-        const pin = pinInput.value.trim();
+        // Validasi Captcha
+        if (!validateCaptcha()) {
+            showAlert('❌ Jawaban Captcha salah. Silakan hitung ulang.', 'warning');
+            return;
+        }
 
-        if (!username) { showAlert('Username wajib diisi.', 'warning'); usernameInput.focus(); return; }
-        if (!pin) { showAlert('PIN wajib diisi.', 'warning'); pinInput.focus(); return; }
-        if (pin.length < 4) { showAlert('PIN minimal 4 karakter.', 'warning'); pinInput.focus(); return; }
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (!username) {
+            showAlert('Username wajib diisi.', 'warning');
+            usernameInput.focus();
+            return;
+        }
+
+        if (!password) {
+            showAlert('Password wajib diisi.', 'warning');
+            passwordInput.focus();
+            return;
+        }
+
+        if (password.length < 4) {
+            showAlert('Password minimal 4 karakter.', 'warning');
+            passwordInput.focus();
+            return;
+        }
 
         btnLogin.disabled = true;
         btnLogin.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memeriksa...';
 
         try {
-            const result = await Auth.login(username, pin);
+            const result = await Auth.login(username, password);
             if (result.success) {
-                const user = result.user;
-                showAlert('✅ Login berhasil! Menyiapkan data...', 'success');
-                await preloadAndRedirect(user.role);
+                showAlert('✅ Login berhasil! Mengalihkan...', 'success');
+                
+                // PENTING: Bersihkan mode publik & set menu aktif ke dashboard
+                if (typeof SafeStorage !== 'undefined') {
+                    SafeStorage.removeItem('srma19_public_view', 'session');
+                    SafeStorage.setItem('srma19_active_menu', 'dashboard', 'local');
+                } else {
+                    sessionStorage.removeItem('srma19_public_view');
+                    localStorage.setItem('srma19_active_menu', 'dashboard');
+                }
+
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 500);
             } else {
-                showAlert('❌ ' + (result.message || 'Username atau PIN salah.'), 'danger');
+                showAlert('❌ ' + (result.message || 'Username atau password salah.'), 'danger');
                 btnLogin.disabled = false;
                 btnLogin.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Masuk';
-                pinInput.value = '';
-                pinInput.focus();
+                passwordInput.value = '';
+                passwordInput.focus();
+                refreshCaptcha(); // Refresh captcha jika login gagal
             }
         } catch (error) {
-            showAlert('⚠️ Gagal terhubung ke server.', 'danger');
+            showAlert('⚠️ Gagal terhubung ke server. Periksa koneksi internet.', 'danger');
             btnLogin.disabled = false;
             btnLogin.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Masuk';
+            refreshCaptcha();
         }
     });
 
+    // ============================================================
+    //  RESET PASSWORD MODAL
+    // ============================================================
     function showResetModal() {
-        const modal = new bootstrap.Modal(document.getElementById('resetPinModal'));
+        const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
         modal.show();
     }
 
-    async function resetPin() {
+    async function resetPassword() {
         const username = document.getElementById('resetUsername').value.trim();
-        if (!username) { alert('Username wajib diisi!'); return; }
+        if (!username) {
+            alert('Username wajib diisi!');
+            return;
+        }
+
         const resetBtn = document.getElementById('resetBtn');
         resetBtn.disabled = true;
         resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Memproses...';
+
         try {
             const res = await API.resetPin(username);
             if (res.status === 'ok') {
                 alert('✅ ' + res.message);
-                bootstrap.Modal.getInstance(document.getElementById('resetPinModal')).hide();
+                bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
                 document.getElementById('resetUsername').value = '';
-            } else alert('❌ ' + res.message);
-        } catch (e) { alert('⚠️ Gagal terhubung ke server.'); }
+            } else {
+                alert('❌ ' + res.message);
+            }
+        } catch (e) {
+            alert('⚠️ Gagal terhubung ke server.');
+        }
+
         resetBtn.disabled = false;
-        resetBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Reset PIN';
+        resetBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Reset Password';
     }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

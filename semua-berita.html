@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Semua Berita - SRMA 19 Bantul">
+    <title>Semua Berita - SRMA 19 Bantul</title>
+    <link rel="icon" type="image/webp" href="srma.webp">
+    
+    <!-- Bootstrap 5.3.2 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6.5.1 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- CSS Publik -->
+    <link rel="stylesheet" href="assets/css/public.css">
+    
+    <style>
+        /* Kustom untuk halaman ini */
+        .page-header {
+            margin-top: 100px;
+            padding: 60px 0;
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: #fff;
+        }
+        .page-header h1 {
+            font-weight: 800;
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+        }
+        .page-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            box-shadow: var(--card-shadow);
+        }
+        .berita-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            height: 100%;
+        }
+        .berita-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(13,110,253,0.15);
+        }
+        .berita-card img {
+            height: 200px;
+            object-fit: cover;
+            border-radius: var(--radius) var(--radius) 0 0;
+            width: 100%;
+        }
+        .berita-card .card-body {
+            padding: 1.5rem;
+        }
+        .berita-card .news-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-clamp: 2;
+            overflow: hidden;
+        }
+        .berita-card .news-excerpt {
+            font-size: 0.9rem;
+            color: #64748b;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            line-clamp: 3;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .berita-card .read-more {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+        .berita-card .read-more i {
+            transition: transform 0.3s;
+        }
+        .berita-card:hover .read-more i {
+            transform: translateX(3px);
+        }
+        .empty-message {
+            text-align: center;
+            padding: 50px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar (tanpa link "Semua Berita") -->
+<nav class="navbar navbar-expand-lg fixed-top" id="navbar">
+    <div class="container">
+        <a class="navbar-brand" href="index.html">
+            <img src="srma.webp" alt="SRMA 19"> SRMA 19
+        </a>
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="index.html#top">Beranda</a></li>
+                <li class="nav-item"><a class="nav-link" href="index.html#tentang">Tentang</a></li>
+                <li class="nav-item"><a class="nav-link" href="index.html#fasilitas">Fasilitas</a></li>
+                <li class="nav-item"><a class="nav-link" href="index.html#jadwal">Jadwal</a></li>
+                <li class="nav-item"><a class="nav-link active" href="index.html#berita">Berita</a></li>
+                <li class="nav-item"><a class="nav-link" href="index.html#galeri">Galeri</a></li>
+                <li class="nav-item"><a class="nav-link" href="index.html#lokasi">Lokasi</a></li>
+            </ul>
+            <div id="navbarUserArea"></div>
+        </div>
+    </div>
+</nav>
+
+<!-- Bottom Nav Mobile -->
+<div class="bottom-nav" id="bottomNav">
+    <a class="bottom-nav-item" href="index.html#top"><i class="fas fa-home"></i><span>Beranda</span></a>
+    <a class="bottom-nav-item" href="index.html#tentang"><i class="fas fa-info-circle"></i><span>Tentang</span></a>
+    <a class="bottom-nav-item" href="index.html#fasilitas"><i class="fas fa-building"></i><span>Fasilitas</span></a>
+    <a class="bottom-nav-item" href="index.html#jadwal"><i class="fas fa-clock"></i><span>Jadwal</span></a>
+    <a class="bottom-nav-item" href="login.html"><i class="fas fa-user-lock"></i><span>Petugas</span></a>
+</div>
+
+<!-- Header -->
+<div class="page-header">
+    <div class="container text-center">
+        <h1><i class="fas fa-newspaper me-2"></i>Semua Berita</h1>
+        <p>Kumpulan berita dan informasi terbaru dari SRMA 19 Bantul.</p>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="container mt-4">
+    <div class="filter-section">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Cari berita...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filterKategori">
+                    <option value="">Semua Kategori</option>
+                    <option value="Umum">Umum</option>
+                    <option value="Pengumuman">Pengumuman</option>
+                    <option value="Kegiatan">Kegiatan</option>
+                    <option value="Prestasi">Prestasi</option>
+                </select>
+            </div>
+            <div class="col-md-3 text-md-end">
+                <button class="btn btn-outline-primary rounded-pill px-4" onclick="resetFilter()">
+                    <i class="fas fa-redo me-1"></i>Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid Berita -->
+    <div class="row g-4" id="beritaGrid">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary"></div>
+            <p class="text-muted mt-2">Memuat berita...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer mt-5">
+    <div class="container">
+        <div class="text-center small opacity-75">
+            <p class="mb-0">&copy; 2026 SRMA 19 Bantul</p>
+        </div>
+    </div>
+</footer>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/auth.js"></script>
+
+<script>
+    // ============================================================
+    //  STATE
+    // ============================================================
+    let allBerita = [];
+    let filteredBerita = [];
+
+    // ============================================================
+    //  NAVBAR USER AREA
+    // ============================================================
+    function updateNavbarUser() {
+        const container = document.getElementById('navbarUserArea');
+        if (!container) return;
+        const user = Auth.getCurrentUser();
+        if (user && user.username) {
+            let dashboardUrl = 'index.html';
+            let roleLabel = user.role;
+            if (user.role === 'admin') dashboardUrl = 'index.html';
+            else if (user.role === 'petugas') dashboardUrl = 'index.html';
+            container.innerHTML = `
+                <div class="dropdown">
+                    <button class="btn btn-nav-cta dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-1"></i>${user.nama} <span class="badge bg-light text-dark ms-1">${roleLabel}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="${dashboardUrl}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>`;
+        } else {
+            container.innerHTML = `<a href="login.html" class="btn btn-nav-cta"><i class="fas fa-user-lock me-2"></i>Area Petugas</a>`;
+        }
+    }
+
+    function handleLogout() {
+        if (confirm('Logout?')) {
+            Auth.logout();
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        }
+    }
+
+    // ============================================================
+    //  LOAD BERITA
+    // ============================================================
+    async function loadBerita() {
+        const grid = document.getElementById('beritaGrid');
+        try {
+            const res = await API.listBerita('Publish', 0);
+            if (res.status === 'success' && res.data.length > 0) {
+                allBerita = res.data;
+                applyFilter();
+            } else {
+                grid.innerHTML = '<div class="col-12 empty-message">Belum ada berita dipublikasikan.</div>';
+            }
+        } catch (e) {
+            console.error('Error loading berita:', e);
+            grid.innerHTML = '<div class="col-12 empty-message">Gagal memuat berita. Periksa koneksi internet.</div>';
+        }
+    }
+
+    // ============================================================
+    //  RENDER BERITA (dengan filter)
+    // ============================================================
+    function applyFilter() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+        const kategori = document.getElementById('filterKategori').value;
+        
+        filteredBerita = allBerita.filter(b => {
+            // Filter kategori
+            if (kategori && (b.Kategori || 'Umum') !== kategori) return false;
+            // Filter pencarian judul
+            if (searchTerm && !(b.Judul || '').toLowerCase().includes(searchTerm)) return false;
+            return true;
+        });
+        
+        renderBerita();
+    }
+
+    function renderBerita() {
+        const grid = document.getElementById('beritaGrid');
+        if (filteredBerita.length === 0) {
+            grid.innerHTML = '<div class="col-12 empty-message">Tidak ada berita yang sesuai.</div>';
+            return;
+        }
+        
+        let html = '';
+        filteredBerita.forEach(b => {
+            let imgSrc = 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+            if (b.Gambar && (b.Gambar.startsWith('data:image') || b.Gambar.startsWith('http'))) {
+                imgSrc = b.Gambar;
+            }
+            const excerpt = (b.Isi || '').replace(/<[^>]*>/g, '').substring(0, 100);
+            const date = new Date(b.Tanggal_Publikasi || b.Tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            
+            html += `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-custom berita-card" onclick="window.location.href='detail.html?id=${b.ID}'">
+                        <img src="${imgSrc}" alt="${b.Judul}" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/64748b?text=No';">
+                        <div class="card-body">
+                            <div class="small text-muted mb-2"><i class="far fa-calendar-alt me-1"></i>${date}</div>
+                            <h5 class="news-title">${b.Judul}</h5>
+                            <p class="news-excerpt">${excerpt}...</p>
+                            <span class="read-more">Baca Selengkapnya <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        grid.innerHTML = html;
+    }
+
+    // ============================================================
+    //  EVENT LISTENERS & INISIALISASI
+    // ============================================================
+    function resetFilter() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('filterKategori').value = '';
+        applyFilter();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateNavbarUser();
+        
+        // Event listeners untuk pencarian dan filter
+        document.getElementById('searchInput').addEventListener('input', applyFilter);
+        document.getElementById('filterKategori').addEventListener('change', applyFilter);
+        
+        // Muat berita
+        loadBerita();
+        
+        // Smooth scroll untuk navbar
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+    });
+</script>
+
+</body>
+</html>
