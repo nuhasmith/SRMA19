@@ -1,7 +1,8 @@
 // ============================================================
-//  APP.JS – Router SPA untuk Semua Role (FINAL ULTRA FIX v15.0)
+//  APP.JS – Router SPA untuk Semua Role (FINAL ULTRA FIX v16.0)
 //  SRMA 19 Bantul
-//  Fitur: Login Redirect, Footer Navigation, Mobile Navbar, Carousel
+//  Fitur: Navbar Mobile (Hamburger + Masuk), Footer Info Kontak,
+//         Carousel, Mode Publik, Dashboard, Anti Error
 // ============================================================
 
 (function() {
@@ -31,7 +32,7 @@
     let currentGalleryIndex = 0;
 
     // ============================================================
-    //  INIT – Utama
+    //  INIT
     // ============================================================
     function init() {
         currentUser = Auth.getCurrentUser();
@@ -218,7 +219,7 @@
     }
 
     // ============================================================
-    //  HALAMAN PUBLIK (Dengan Footer Navigation & Mobile)
+    //  HALAMAN PUBLIK (Dengan Footer Info Kontak/Akun & Navbar Mobile)
     // ============================================================
     async function showPublicPage() {
         currentPage = 'public';
@@ -242,26 +243,34 @@
         const isLoggedIn = !!currentUser;
         const isAdminOrPetugas = currentUser && (currentUser.role === 'admin' || currentUser.role === 'petugas');
 
-        let sections = `
+        // ===== NAVBAR =====
+        let navbar = `
             <nav class="navbar navbar-expand-lg fixed-top" id="navbar">
                 <div class="container">
                     <a class="navbar-brand" href="index.html"><img src="srma.webp" alt="SRMA 19"> SRMA 19</a>
+                    
+                    <!-- Area Mobile: Tombol Masuk/User + Hamburger -->
                     <div class="d-flex align-items-center gap-2">
-                        ${isLoggedIn ? `
-                            <div class="dropdown d-lg-none">
-                                <button class="btn btn-nav-cta dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-user-circle me-1"></i>${currentUser.nama.split(' ')[0]}
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="#" onclick="App.goToDashboard()"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="App.logout()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                                </ul>
-                            </div>
-                        ` : `
-                            <a href="login.html" class="btn btn-nav-cta d-lg-none"><i class="fas fa-sign-in-alt me-2"></i>Masuk</a>
-                        `}
-                        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"><span class="navbar-toggler-icon"></span></button>
+                        <div id="mobileUserArea" class="d-lg-none">
+                            ${isLoggedIn ? `
+                                <div class="dropdown">
+                                    <button class="btn btn-nav-cta dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-user-circle me-1"></i>${currentUser.nama.split(' ')[0]}
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="#" onclick="App.goToDashboard()"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="App.logout()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                                    </ul>
+                                </div>
+                            ` : `
+                                <a href="login.html" class="btn btn-nav-cta btn-sm"><i class="fas fa-sign-in-alt me-2"></i>Masuk</a>
+                            `}
+                        </div>
+                        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
                     </div>
+
                     <div class="collapse navbar-collapse" id="navMenu">
                         <ul class="navbar-nav mx-auto">
                             ${showTentang ? '<li class="nav-item"><a class="nav-link" href="#tentang">Tentang</a></li>' : ''}
@@ -288,8 +297,10 @@
                         </div>
                     </div>
                 </div>
-            </nav>
+            </nav>`;
 
+        // ===== HERO =====
+        let hero = `
             <section class="hero-section" id="top">
                 <div class="container text-center">
                     <div class="hero-badge"><i class="far fa-calendar-check me-2"></i>Beroperasi Juli 2025</div>
@@ -298,9 +309,11 @@
                     <a href="#tentang" class="btn btn-hero-primary">Pelajari Lebih</a>
                     <a href="#lokasi" class="btn btn-hero-outline">Lihat Lokasi</a>
                 </div>
-            </section>
-        `;
+            </section>`;
 
+        let sections = navbar + hero;
+
+        // ===== STATISTIK =====
         if (showStatistik) {
             sections += `
                 <div class="container position-relative" style="margin-top:-60px;">
@@ -312,10 +325,10 @@
                             <div class="col-6 col-lg-3"><div class="stat-number" id="statPutri">0</div><div class="stat-label">Putri</div></div>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
         }
 
+        // ===== TENTANG =====
         if (showTentang) {
             sections += `
                 <section id="tentang" class="py-6 bg-white">
@@ -326,10 +339,10 @@
                             <div class="col-lg-6"><div class="card-custom p-4"><h4 class="fw-bold mb-3">Latar Belakang</h4><p>Beroperasi mulai Juli 2025 dengan sistem berasrama penuh.</p></div></div>
                         </div>
                     </div>
-                </section>
-            `;
+                </section>`;
         }
 
+        // ===== FASILITAS =====
         if (showFasilitas) {
             sections += `
                 <section id="fasilitas" class="py-6 bg-gradient-light">
@@ -344,10 +357,10 @@
                             <div class="col-md-6 col-lg-4"><div class="card-custom p-4 text-center"><div class="card-icon-wrap teal mx-auto"><i class="fas fa-shield-alt"></i></div><h5 class="fw-bold text-dark">Keamanan 24 Jam</h5><p class="mb-0 small">Sistem keamanan terpadu.</p></div></div>
                         </div>
                     </div>
-                </section>
-            `;
+                </section>`;
         }
 
+        // ===== JADWAL =====
         if (showJadwal) {
             sections += `
                 <section id="jadwal" class="py-6 bg-white">
@@ -355,10 +368,10 @@
                         <div class="text-center mb-5"><span class="section-label">Jadwal Harian</span><h2 class="section-title">Kegiatan Terstruktur</h2><p class="section-subtitle">Rutinitas harian yang membentuk kedisiplinan, karakter, dan kebersamaan.</p></div>
                         <div id="jadwalContainer"><div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="text-muted mt-2">Memuat jadwal...</p></div></div>
                     </div>
-                </section>
-            `;
+                </section>`;
         }
 
+        // ===== BERITA =====
         if (showBerita) {
             sections += `
                 <section id="berita" class="py-6 bg-gradient-light">
@@ -371,10 +384,10 @@
                         </div>
                         <div class="text-center mt-4"><button class="btn btn-outline-primary rounded-pill px-5" onclick="App.showAllBerita()"><i class="fas fa-list me-2"></i>Lihat Semua Berita</button></div>
                     </div>
-                </section>
-            `;
+                </section>`;
         }
 
+        // ===== GALERI =====
         if (showGaleri) {
             sections += `
                 <section id="galeri" class="py-6 bg-white">
@@ -387,10 +400,10 @@
                         </div>
                         <div class="text-center mt-4"><button class="btn btn-outline-primary rounded-pill px-5" onclick="App.showAllGaleri()"><i class="fas fa-images me-2"></i>Lihat Semua Galeri</button></div>
                     </div>
-                </section>
-            `;
+                </section>`;
         }
 
+        // ===== LOKASI =====
         sections += `
             <section id="lokasi" class="py-6 bg-gradient-light">
                 <div class="container py-5">
@@ -407,9 +420,10 @@
                         <div class="col-lg-7"><div class="map-wrapper"><iframe src="https://maps.google.com/maps?q=-7.80694,110.34333&z=16&output=embed" allowfullscreen loading="lazy"></iframe></div></div>
                     </div>
                 </div>
-            </section>
+            </section>`;
 
-            <!-- ===== FOOTER DENGAN NAVIGASI (FIX WARNA AKSES) ===== -->
+        // ===== FOOTER (Info Kontak untuk Guest, Info Akun untuk Login) =====
+        let footer = `
             <footer class="footer">
                 <div class="container">
                     <div class="row g-4">
@@ -430,13 +444,21 @@
                             </ul>
                         </div>
                         <div class="col-md-4">
-                            <h5 class="footer-title">Akses</h5>
+                            <h5 class="footer-title">${isLoggedIn ? 'Akun Saya' : 'Hubungi Kami'}</h5>
                             <div class="d-grid gap-2">
                                 ${isLoggedIn ? `
+                                    <div class="text-white small mb-2">
+                                        <strong>Halo, ${currentUser.nama}!</strong><br>
+                                        <span class="opacity-75">Anda login sebagai <span class="badge bg-light text-dark">${currentUser.role}</span></span>
+                                    </div>
                                     <button class="btn btn-outline-light btn-sm fw-semibold" onclick="App.goToDashboard()"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</button>
                                     <button class="btn btn-outline-danger btn-sm fw-semibold" onclick="App.logout()"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
                                 ` : `
-                                    <a href="login.html" class="btn btn-outline-light btn-sm fw-semibold text-decoration-none"><i class="fas fa-sign-in-alt me-2"></i>Masuk</a>
+                                    <div class="text-white small">
+                                        <p class="mb-2"><i class="fas fa-map-marker-alt me-2"></i>Sentra Terpadu Prof. Dr. Soeharso</p>
+                                        <p class="mb-2"><i class="fas fa-phone me-2"></i>(0274) 123-456</p>
+                                        <p class="mb-2"><i class="fas fa-envelope me-2"></i>info@srma19.sch.id</p>
+                                    </div>
                                 `}
                             </div>
                         </div>
@@ -444,24 +466,24 @@
                     <hr class="border-secondary opacity-10 my-4">
                     <div class="text-center small opacity-75"><p class="mb-0">&copy; 2026 SRMA 19 Bantul</p></div>
                 </div>
-            </footer>
+            </footer>`;
 
+        // ===== TOMBOL SCROLL & LIGHTBOX =====
+        let extras = `
             <button id="btnScrollTop" class="btn-scroll-top" onclick="App.scrollToTop()" title="Kembali ke atas"><i class="fas fa-chevron-up"></i></button>
-
             <div id="galleryLightbox" class="gallery-lightbox" style="display:none;">
                 <button class="lightbox-close" onclick="App.closeGalleryLightbox()">&times;</button>
                 <button class="lightbox-prev" onclick="App.prevGalleryImage()">&#10094;</button>
                 <img id="lightboxImage" src="" alt="Galeri">
                 <button class="lightbox-next" onclick="App.nextGalleryImage()">&#10095;</button>
             </div>
+            <div class="toast-container" id="toastContainer"></div>`;
 
-            <div class="toast-container" id="toastContainer"></div>
-        `;
-        return sections;
+        return sections + footer + extras;
     }
 
     // ============================================================
-    //  BOTTOM NAV MOBILE (PENTING: Label Masuk/Akun)
+    //  BOTTOM NAV MOBILE
     // ============================================================
     function renderBottomNavMobile() {
         const bottomNav = document.getElementById('bottomNav');
