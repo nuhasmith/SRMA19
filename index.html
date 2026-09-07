@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="SRMA 19 Bantul - Sistem Manajemen Terpadu Sekolah Rakyat">
+    <meta name="description" content="SRMA 19 Bantul - Sekolah Rakyat Menengah Atas, pendidikan gratis berkualitas.">
     <title>SRMA 19 Bantul - Sistem Manajemen</title>
     <link rel="icon" type="image/webp" href="srma.webp">
     
@@ -14,159 +14,909 @@
     <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Quill Editor CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.6/dist/quill.snow.css" rel="stylesheet">
-    
-    <!-- Custom CSS -->
+    <!-- CSS Publik -->
     <link rel="stylesheet" href="assets/css/public.css">
-    <link rel="stylesheet" href="assets/css/app.css">
-
-    <!-- Animasi Elegant Tambahan (Cepat & Smooth) -->
+    
     <style>
-        body {
-            overflow-x: hidden;
+        /* ===== GAYA DASAR ===== */
+        .hero-section { background: linear-gradient(160deg, #0b1e3d 0%, #0a1e42 40%, #050b14 100%); }
+        .section-padding { padding: 80px 0; }
+        .stat-section {
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+            margin-top: -60px;
+            position: relative;
+            z-index: 10;
         }
-        section, .hero-section, .stat-section, .card-custom {
-            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
-        }
-        section:nth-of-type(1) { animation-delay: 0.1s; }
-        section:nth-of-type(2) { animation-delay: 0.15s; }
-        section:nth-of-type(3) { animation-delay: 0.2s; }
-        section:nth-of-type(4) { animation-delay: 0.25s; }
-        section:nth-of-type(5) { animation-delay: 0.3s; }
         .card-custom {
+            border-radius: 24px;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .card-custom:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(13,110,253,0.15); }
+        .footer { background: #0f172a; color: rgba(255,255,255,0.7); padding: 60px 0 20px; }
+        .footer a { color: rgba(255,255,255,0.7); text-decoration: none; }
+        .footer a:hover { color: #fff; }
+        
+        /* ===== DROPDOWN NAVBAR ===== */
+        .navbar .dropdown-menu {
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+        }
+        .navbar .dropdown-item {
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .navbar .dropdown-item:hover { background: #f8fafc; }
+        .navbar .dropdown-item i { width: 20px; text-align: center; margin-right: 8px; }
+        
+        /* ===== SKELETON & PLACEHOLDER ===== */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f2f5 25%, #e0e3e7 50%, #f0f2f5 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .berita-skeleton, .galeri-skeleton, .video-skeleton { height: 220px; }
+        
+        /* ===== LIGHTBOX ===== */
+        .gallery-lightbox {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .gallery-lightbox.show { display: flex; }
+        .gallery-lightbox img {
+            max-width: 90vw;
+            max-height: 80vh;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .gallery-lightbox .lightbox-title { color: #fff; margin-top: 15px; font-size: 1.2rem; text-align: center; }
+        .gallery-lightbox .lightbox-close {
+            position: absolute; top: 20px; right: 30px;
+            background: none; border: none; color: #fff; font-size: 2rem; cursor: pointer; z-index: 10001;
+            transition: transform 0.3s;
+        }
+        .gallery-lightbox .lightbox-close:hover { transform: scale(1.2); }
+        .gallery-lightbox .lightbox-prev, .gallery-lightbox .lightbox-next {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2); border: none; color: #fff;
+            font-size: 2rem; padding: 15px; cursor: pointer; border-radius: 50%; transition: background 0.3s;
+        }
+        .gallery-lightbox .lightbox-prev:hover, .gallery-lightbox .lightbox-next:hover { background: rgba(255, 255, 255, 0.4); }
+        .gallery-lightbox .lightbox-prev { left: 20px; }
+        .gallery-lightbox .lightbox-next { right: 20px; }
+
+        /* ===== BAGIAN LOKASI ===== */
+        #lokasi .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        .card-custom:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(13, 110, 253, 0.15);
-        }
-        .navbar.scrolled {
-            animation: slideDown 0.3s ease;
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideDown {
-            from { top: -100px; }
-            to { top: 0; }
-        }
+        #lokasi .card:hover { transform: translateY(-5px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+        #lokasi .btn-primary { background: #0d6efd; border: none; padding: 10px 20px; font-weight: 600; }
+        #lokasi .btn-primary:hover { background: #0a58ca; }
+        #lokasi .map-wrapper { min-height: 400px; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; }
+        #lokasi .map-wrapper iframe { display: block; width: 100%; height: 100%; min-height: 400px; }
     </style>
 </head>
 <body>
-    <!-- Root container untuk SPA -->
-    <div id="root"></div>
 
-    <!-- ============================================================
-         CORE LIBRARIES
-         ============================================================ -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.6/dist/quill.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<!-- ============================================================
+     NAVBAR (Publik)
+     ============================================================ -->
+<nav class="navbar navbar-expand-lg fixed-top" id="navbar">
+    <div class="container">
+        <a class="navbar-brand" href="#top">
+            <img src="srma.webp" alt="SRMA 19"> SRMA 19
+        </a>
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                <li class="nav-item" id="nav-beranda"><a class="nav-link active" href="#top">Beranda</a></li>
+                <li class="nav-item" id="nav-tentang" style="display:none;"><a class="nav-link" href="#tentang">Tentang</a></li>
+                <li class="nav-item" id="nav-fasilitas" style="display:none;"><a class="nav-link" href="#fasilitas">Fasilitas</a></li>
+                <li class="nav-item" id="nav-jadwal" style="display:none;"><a class="nav-link" href="#jadwal">Jadwal</a></li>
+                <li class="nav-item" id="nav-berita" style="display:none;"><a class="nav-link" href="#berita">Berita</a></li>
+                <li class="nav-item" id="nav-galeri" style="display:none;"><a class="nav-link" href="#galeri">Galeri</a></li>
+                <li class="nav-item" id="nav-video" style="display:none;"><a class="nav-link" href="#video">Video</a></li>
+                <li class="nav-item" id="nav-lokasi"><a class="nav-link" href="#lokasi">Lokasi</a></li>
+            </ul>
+            <div id="navbarUserArea"></div>
+        </div>
+    </div>
+</nav>
 
-    <!-- ============================================================
-         SAFE STORAGE FALLBACK (Mengatasi Tracking Prevention)
-         ============================================================ -->
-    <script>
-        (function() {
-            if (window.SafeStorage) return;
-            const memoryStore = {};
-            const isStorageAvailable = (type) => {
-                try {
-                    const storage = window[type];
-                    const x = '__storage_test__';
-                    storage.setItem(x, x);
-                    storage.removeItem(x);
-                    return true;
-                } catch (e) {
-                    return false;
+<!-- ============================================================
+     HERO SECTION
+     ============================================================ -->
+<section class="hero-section" id="top">
+    <div class="container">
+        <div class="hero-badge"><i class="fas fa-graduation-cap me-2"></i>Sekolah Rakyat Menengah Atas</div>
+        <h1>Membangun Generasi <span class="highlight">Cerdas & Berakhlak</span></h1>
+        <p class="hero-subtitle">SRMA 19 Bantul adalah sekolah gratis dengan fasilitas lengkap, asrama, dan program unggulan untuk masa depan yang lebih baik.</p>
+        <div class="hero-buttons">
+            <a href="#tentang" class="btn btn-hero-primary">Pelajari Lebih <i class="fas fa-arrow-right ms-1"></i></a>
+            <a href="#lokasi" class="btn btn-hero-outline">Lihat Lokasi</a>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     STATISTIK
+     ============================================================ -->
+<section id="section-statistik">
+    <div class="container">
+        <div class="stat-section">
+            <div class="row text-center">
+                <div class="col-6 col-md-3">
+                    <div class="stat-number" id="statTotalPeserta">0</div>
+                    <div class="stat-label">Total Peserta</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-number" id="statRombel">0</div>
+                    <div class="stat-label">Rombongan Belajar</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-number" id="statPutra">0</div>
+                    <div class="stat-label">Putra</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-number" id="statPutri">0</div>
+                    <div class="stat-label">Putri</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     TENTANG (Customizable)
+     ============================================================ -->
+<section class="section-padding bg-white" id="tentang" style="display:none;">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <div class="section-label">Tentang Kami</div>
+                <h2 class="section-title" id="tentangJudul">Sekolah Rakyat 19 Bantul</h2>
+                <p class="section-subtitle" id="tentangDeskripsi">Sekolah menengah atas gratis yang berfokus pada pembentukan karakter, akademik, dan keterampilan hidup.</p>
+                <div class="d-flex flex-wrap gap-3 mt-4">
+                    <div class="d-flex align-items-center"><i class="fas fa-check-circle text-success me-2"></i>Gratis Biaya Pendidikan</div>
+                    <div class="d-flex align-items-center"><i class="fas fa-check-circle text-success me-2"></i>Asrama Nyaman</div>
+                    <div class="d-flex align-items-center"><i class="fas fa-check-circle text-success me-2"></i>Program Unggulan</div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img id="tentangGambar" src="https://placehold.co/600x400/0d6efd/ffffff?text=Gambar+Sekolah" class="img-fluid rounded-4 shadow" alt="Sekolah">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     FASILITAS
+     ============================================================ -->
+<section class="section-padding bg-light" id="fasilitas" style="display:none;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-label">Fasilitas</div>
+            <h2 class="section-title">Sarana & Prasarana Lengkap</h2>
+            <p class="section-subtitle">Semua kebutuhan belajar dan tinggal disediakan dengan standar terbaik.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4 col-lg-3">
+                <div class="card-custom p-4 text-center">
+                    <div class="card-icon-wrap blue mx-auto"><i class="fas fa-bed"></i></div>
+                    <h5 class="fw-bold mt-3">Asrama</h5>
+                    <p class="text-muted small">Kamar nyaman dengan fasilitas lengkap.</p>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <div class="card-custom p-4 text-center">
+                    <div class="card-icon-wrap green mx-auto"><i class="fas fa-book-open"></i></div>
+                    <h5 class="fw-bold mt-3">Perpustakaan</h5>
+                    <p class="text-muted small">Koleksi buku dan digital library.</p>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <div class="card-custom p-4 text-center">
+                    <div class="card-icon-wrap orange mx-auto"><i class="fas fa-utensils"></i></div>
+                    <h5 class="fw-bold mt-3">Kantin Sehat</h5>
+                    <p class="text-muted small">Menu bergizi seimbang setiap hari.</p>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <div class="card-custom p-4 text-center">
+                    <div class="card-icon-wrap purple mx-auto"><i class="fas fa-futbol"></i></div>
+                    <h5 class="fw-bold mt-3">Lapangan Olahraga</h5>
+                    <p class="text-muted small">Fasilitas olahraga lengkap.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     JADWAL
+     ============================================================ -->
+<section class="section-padding bg-white" id="jadwal" style="display:none;">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-label">Jadwal Kegiatan</div>
+            <h2 class="section-title">Rutinitas Harian</h2>
+            <p class="section-subtitle">Jadwal kegiatan harian untuk semua agama.</p>
+        </div>
+        <div id="jadwalContainer" class="timeline-wrapper">
+            <div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="text-muted mt-2">Memuat jadwal...</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     BERITA
+     ============================================================ -->
+<section class="section-padding bg-light" id="berita" style="display:none;">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <div class="section-label">Berita Terbaru</div>
+                <h2 class="section-title">Informasi & Kegiatan</h2>
+            </div>
+            <a href="semua-berita.html" class="btn btn-outline-primary rounded-pill">Lihat Semua <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="row g-4" id="beritaGrid"></div>
+    </div>
+</section>
+
+<!-- ============================================================
+     GALERI FOTO (Tanpa Ikon Zoom)
+     ============================================================ -->
+<section class="section-padding bg-white" id="galeri" style="display:none;">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <div class="section-label">Galeri</div>
+                <h2 class="section-title">Momen Berharga</h2>
+            </div>
+            <a href="galeri.html" class="btn btn-outline-primary rounded-pill">Lihat Semua <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="row g-4" id="galeriGrid"></div>
+    </div>
+</section>
+
+<!-- ============================================================
+     GALERI VIDEO (YouTube)
+     ============================================================ -->
+<section class="section-padding bg-light" id="video" style="display:none;">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <div class="section-label">Video</div>
+                <h2 class="section-title">Video Kegiatan</h2>
+            </div>
+            <a href="galeri.html" class="btn btn-outline-primary rounded-pill">Lihat Semua <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="row g-4" id="videoGrid"></div>
+    </div>
+</section>
+
+<!-- ============================================================
+     LOKASI (Customizable - Dengan Marker)
+     ============================================================ -->
+<section class="section-padding bg-light" id="lokasi">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-label">Lokasi</div>
+            <h2 class="section-title">Temukan Kami</h2>
+            <p class="section-subtitle" id="lokasiDeskripsi">Berada di kawasan strategis Sentra Terpadu Prof. Dr. Soeharso.</p>
+        </div>
+        
+        <div class="row align-items-stretch">
+            <!-- Kolom Kiri: Kartu Alamat -->
+            <div class="col-lg-4 mb-4 mb-lg-0">
+                <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+                    <div class="card-body p-4 d-flex flex-column justify-content-center">
+                        <h5 class="fw-bold mb-3"><i class="fas fa-map-marker-alt me-2 text-danger"></i>Alamat Lengkap</h5>
+                        <p class="text-muted mb-4" id="lokasiAlamat">
+                            Sentra Terpadu Prof. Dr. Soeharso<br>
+                            Sonosewu, Ngestiharjo<br>
+                            Kec. Kasihan, Kab. Bantul, DIY
+                        </p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Sentra+Terpadu+Prof.+Dr.+Soeharso" target="_blank" rel="noopener" class="btn btn-primary rounded-pill">
+                            <i class="fas fa-map-marked-alt me-2"></i>Buka di Google Maps
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan: Peta Google Maps -->
+            <div class="col-lg-8">
+                <div class="map-wrapper h-100" style="min-height: 400px; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
+                    <iframe id="lokasiMaps" 
+                            src="https://maps.google.com/maps?q=-7.80694,110.34333&z=16&output=embed" 
+                            width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="footer">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-5">
+                <h5 class="footer-title">SRMA 19 Bantul</h5>
+                <p class="small opacity-75">Sekolah Rakyat Menengah Atas 19 Bantul, program percontohan Kementerian PU. Pendidikan gratis untuk semua.</p>
+            </div>
+            <div class="col-md-3">
+                <h5 class="footer-title">Menu</h5>
+                <ul class="list-unstyled small opacity-75">
+                    <li><a href="#top">Beranda</a></li>
+                    <li id="footer-tentang" style="display:none;"><a href="#tentang">Tentang</a></li>
+                    <li id="footer-fasilitas" style="display:none;"><a href="#fasilitas">Fasilitas</a></li>
+                    <li id="footer-jadwal" style="display:none;"><a href="#jadwal">Jadwal</a></li>
+                    <li id="footer-berita" style="display:none;"><a href="#berita">Berita</a></li>
+                    <li id="footer-galeri" style="display:none;"><a href="#galeri">Galeri</a></li>
+                    <li id="footer-video" style="display:none;"><a href="#video">Video</a></li>
+                    <li><a href="#lokasi">Lokasi</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h5 class="footer-title">Akses Petugas</h5>
+                <ul class="list-unstyled small opacity-75">
+                    <li><a href="login.html"><i class="fas fa-lock me-2"></i>Masuk</a></li>
+                    <li><a href="dashboard.html"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                </ul>
+            </div>
+        </div>
+        <hr class="border-secondary opacity-10 my-4">
+        <div class="text-center small opacity-75">
+            <p class="mb-0">&copy; 2026 SRMA 19 Bantul</p>
+        </div>
+    </div>
+</footer>
+
+<!-- Lightbox untuk Galeri Foto -->
+<div id="galleryLightbox" class="gallery-lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <button class="lightbox-prev" onclick="prevLightbox()">&#10094;</button>
+    <img id="lightboxImage" src="" alt="Preview">
+    <button class="lightbox-next" onclick="nextLightbox()">&#10095;</button>
+    <div id="lightboxTitle" class="lightbox-title"></div>
+</div>
+
+<!-- ============================================================
+     SCRIPTS + OPTIMASI CACHE + SCROLLSPY + LIGHTBOX
+     ============================================================ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/auth.js"></script>
+
+<script>
+    // ============================================================
+    //  SAFE STORAGE FALLBACK
+    // ============================================================
+    (function() {
+        if (window.SafeStorage) return;
+        const mem = {};
+        window.SafeStorage = {
+            getItem: (k) => mem[k] || null,
+            setItem: (k, v) => mem[k] = v,
+            removeItem: (k) => delete mem[k]
+        };
+    })();
+
+    // ============================================================
+    //  SESSION CACHE
+    // ============================================================
+    const CACHE_TTL = 10 * 60 * 1000;
+    const sessionCache = {
+        get(key) {
+            try {
+                const raw = sessionStorage.getItem('srma19_' + key);
+                if (!raw) return null;
+                const obj = JSON.parse(raw);
+                if (Date.now() - obj.timestamp > CACHE_TTL) {
+                    sessionStorage.removeItem('srma19_' + key);
+                    return null;
                 }
-            };
-            const getStorage = (type) => {
-                if (isStorageAvailable(type)) return window[type];
-                return null;
-            };
-            window.SafeStorage = {
-                getItem: (key, type = 'local') => {
-                    const storage = getStorage(type === 'session' ? 'sessionStorage' : 'localStorage');
-                    if (storage) return storage.getItem(key);
-                    return memoryStore[type + '_' + key] || null;
-                },
-                setItem: (key, value, type = 'local') => {
-                    const storage = getStorage(type === 'session' ? 'sessionStorage' : 'localStorage');
-                    if (storage) return storage.setItem(key, value);
-                    memoryStore[type + '_' + key] = value;
-                },
-                removeItem: (key, type = 'local') => {
-                    const storage = getStorage(type === 'session' ? 'sessionStorage' : 'localStorage');
-                    if (storage) return storage.removeItem(key);
-                    delete memoryStore[type + '_' + key];
-                }
-            };
-        })();
-    </script>
+                return obj.data;
+            } catch (e) { return null; }
+        },
+        set(key, data) {
+            try {
+                sessionStorage.setItem('srma19_' + key, JSON.stringify({ timestamp: Date.now(), data: data }));
+            } catch (e) {}
+        }
+    };
 
-    <!-- ============================================================
-         CORE MODULES (WAJIB)
-         ============================================================ -->
-    <script src="assets/js/api.js" defer></script>
-    <script src="assets/js/auth.js" defer></script>
-    <script src="assets/js/common.js" defer></script>
-    <script src="assets/js/main.js" defer></script>
+    // ============================================================
+    //  NAVBAR DINAMIS
+    // ============================================================
+    function updateNavbar() {
+        const navbarUserArea = document.getElementById('navbarUserArea');
+        if (!navbarUserArea) return;
+        if (Auth.isLoggedIn()) {
+            const user = Auth.getCurrentUser();
+            const role = user.role || 'petugas';
+            const nama = user.nama || user.username || 'User';
+            const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+            navbarUserArea.innerHTML = `
+                <div class="dropdown">
+                    <button class="btn btn-nav-cta dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1"></i> ${nama} <span class="badge bg-light text-dark ms-1">${roleLabel}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a class="dropdown-item" href="dashboard.html?page=scanqr"><i class="fas fa-qrcode"></i> QR Scanner</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="logoutPublic()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </div>`;
+        } else {
+            navbarUserArea.innerHTML = `<a href="login.html" class="btn btn-nav-cta"><i class="fas fa-sign-in-alt me-2"></i>Masuk</a>`;
+        }
+    }
+    function logoutPublic() {
+        if (confirm('Logout?')) {
+            Auth.logout();
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        }
+    }
 
-    <!-- ============================================================
-         ADMIN MODULES
-         ============================================================ -->
-    <script src="assets/js/modules/admin/dashboard.js" defer></script>
-    <script src="assets/js/modules/admin/peserta.js" defer></script>
-    <script src="assets/js/modules/admin/absensi.js" defer></script>
-    <script src="assets/js/modules/admin/izin.js" defer></script>
-    <script src="assets/js/modules/admin/jadwal.js" defer></script>
-    <script src="assets/js/modules/admin/petugas.js" defer></script>
-    <script src="assets/js/modules/admin/wali_asuh.js" defer></script>
-    <script src="assets/js/modules/admin/alumni.js" defer></script>
-    <script src="assets/js/modules/admin/laporan.js" defer></script>
-    <script src="assets/js/modules/admin/berita.js" defer></script>
-    <script src="assets/js/modules/admin/absensi_qr.js" defer></script>
-    <script src="assets/js/modules/admin/galeri_admin.js" defer></script>
-    <script src="assets/js/modules/admin/pengaturan_website.js" defer></script>
-    <script src="assets/js/modules/admin/statistik.js" defer></script>
-    <script src="assets/js/modules/admin/schedule_override.js" defer></script>
+    // ============================================================
+    //  TERAPKAN SETTINGS + KONTEN
+    // ============================================================
+    function applySettings(settings) {
+        const mapping = [
+            { section: 'tentang', nav: 'nav-tentang', footer: 'footer-tentang', key: 'show_tentang' },
+            { section: 'fasilitas', nav: 'nav-fasilitas', footer: 'footer-fasilitas', key: 'show_fasilitas' },
+            { section: 'jadwal', nav: 'nav-jadwal', footer: 'footer-jadwal', key: 'show_jadwal' },
+            { section: 'berita', nav: 'nav-berita', footer: 'footer-berita', key: 'show_berita' },
+            { section: 'galeri', nav: 'nav-galeri', footer: 'footer-galeri', key: 'show_video' },
+            { section: 'video', nav: 'nav-video', footer: 'footer-video', key: 'show_video' },
+            { section: 'section-statistik', nav: null, footer: null, key: 'show_statistik' }
+        ];
+        mapping.forEach(item => {
+            const val = settings[item.key] === 'false' ? false : true;
+            const el = document.getElementById(item.section);
+            if (el) el.style.display = val ? '' : 'none';
+            if (item.nav) {
+                const navEl = document.getElementById(item.nav);
+                if (navEl) navEl.style.display = val ? '' : 'none';
+            }
+            if (item.footer) {
+                const footerEl = document.getElementById(item.footer);
+                if (footerEl) footerEl.style.display = val ? '' : 'none';
+            }
+        });
 
-    <!-- ============================================================
-         PETUGAS MODULES
-         ============================================================ -->
-    <script src="assets/js/modules/petugas/common_petugas.js" defer></script>
-    <script src="assets/js/modules/petugas/dashboard_petugas.js" defer></script>
-    <script src="assets/js/modules/petugas/absensi_petugas.js" defer></script>
-    <script src="assets/js/modules/petugas/izin_petugas.js" defer></script>
-    <script src="assets/js/modules/petugas/jadwal_petugas.js" defer></script>
-    <script src="assets/js/modules/petugas/wali_asuh_petugas.js" defer></script>
-    <script src="assets/js/modules/petugas/alumni_petugas.js" defer></script>
-    <script src="assets/js/modules/petugas/laporan_petugas.js" defer></script>
-    <script src="assets/js/modules/petugas/scanqr_petugas.js" defer></script>
+        // Konten Tentang & Lokasi
+        if (settings['tentang_judul']) document.getElementById('tentangJudul').textContent = settings['tentang_judul'];
+        if (settings['tentang_deskripsi']) document.getElementById('tentangDeskripsi').textContent = settings['tentang_deskripsi'];
+        if (settings['tentang_gambar']) document.getElementById('tentangGambar').src = settings['tentang_gambar'];
+        if (settings['lokasi_alamat']) document.getElementById('lokasiAlamat').innerHTML = settings['lokasi_alamat'];
+        if (settings['lokasi_deskripsi']) document.getElementById('lokasiDeskripsi').textContent = settings['lokasi_deskripsi'];
+        
+        // URL Peta default yang menampilkan marker
+        const defaultMapUrl = 'https://maps.google.com/maps?q=-7.80694,110.34333&z=16&output=embed';
+        const mapUrl = settings['lokasi_maps'] || defaultMapUrl;
+        const mapFrame = document.getElementById('lokasiMaps');
+        if (mapFrame) mapFrame.src = mapUrl;
 
-    <!-- ============================================================
-         HUMAS MODULES
-         ============================================================ -->
-    <script src="assets/js/modules/humas/dashboard_humas.js" defer></script>
-    <script src="assets/js/modules/humas/berita_humas.js" defer></script>
-    <script src="assets/js/modules/humas/galeri_humas.js" defer></script>
+        // Panggil scrollspy setelah pengaturan
+        updateActiveNavbar();
+    }
 
-    <!-- ============================================================
-         PROFIL MODULE (FINAL)
-         ============================================================ -->
-    <script src="assets/js/modules/profil.js" defer></script>
+    // ============================================================
+    //  FUNGSI RENDER
+    // ============================================================
+    function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
 
-    <!-- ============================================================
-         ROUTER SPA & BOOTSTRAP
-         ============================================================ -->
-    <script src="assets/js/app.js" defer></script>
-    <script src="assets/js/index.js" defer></script>
+    function renderBerita(berita) {
+        const grid = document.getElementById('beritaGrid');
+        if (!grid) return;
+        if (!berita.length) {
+            grid.innerHTML = '<div class="col-12 text-center text-muted py-5">Belum ada berita dipublikasikan.</div>';
+            return;
+        }
+        let html = '';
+        berita.forEach(b => {
+            let imgSrc = 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+            if (b.Gambar && (b.Gambar.startsWith('data:image') || b.Gambar.startsWith('http'))) {
+                imgSrc = b.Gambar;
+            }
+            const date = b.Tanggal ? new Date(b.Tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+            html += `
+                <div class="col-md-4">
+                    <div class="card-custom h-100" onclick="window.location.href='detail.html?id=${b.ID}'">
+                        <img src="${imgSrc}" class="card-img-top" style="height:200px;object-fit:cover;" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/64748b?text=No';">
+                        <div class="card-body p-4">
+                            <small class="text-muted"><i class="far fa-calendar-alt me-1"></i>${date}</small>
+                            <h5 class="fw-bold mt-2 mb-2">${b.Judul}</h5>
+                            <p class="text-muted small">${(b.Isi||'').replace(/<[^>]*>/g,'').substring(0,80)}...</p>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        grid.innerHTML = html;
+    }
+
+    function renderGaleri(galeri) {
+        const grid = document.getElementById('galeriGrid');
+        if (!grid) return;
+        if (!galeri.length) {
+            grid.innerHTML = '<div class="col-12 text-center text-muted py-5">Belum ada galeri dipublikasikan.</div>';
+            return;
+        }
+        let html = '';
+        lightboxImages = []; // Reset array lightbox
+        galeri.forEach((g, index) => {
+            let imgSrc = 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+            if (g.Gambar && (g.Gambar.startsWith('data:image') || g.Gambar.startsWith('http'))) {
+                imgSrc = g.Gambar;
+            }
+            // Simpan ke array lightbox
+            lightboxImages.push({ src: imgSrc, title: g.Judul || 'Galeri' });
+
+            html += `
+                <div class="col-md-4">
+                    <div class="card-custom h-100">
+                        <div class="position-relative" onclick="openLightbox(${index})" style="cursor:pointer;">
+                            <img src="${imgSrc}" class="card-img-top" style="height:200px;object-fit:cover;" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/64748b?text=No';">
+                        </div>
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold mb-0">${g.Judul}</h6>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        grid.innerHTML = html;
+    }
+
+    function renderVideo(videos) {
+        const grid = document.getElementById('videoGrid');
+        if (!grid) return;
+        if (!videos.length) {
+            grid.innerHTML = '<div class="col-12 text-center text-muted py-5">Belum ada video dipublikasikan.</div>';
+            return;
+        }
+        let html = '';
+        videos.forEach(v => {
+            const videoId = getYouTubeId(v.Link_Video);
+            const thumb = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Video';
+            html += `
+                <div class="col-md-4">
+                    <div class="card-custom h-100">
+                        <div class="position-relative" onclick="playVideo('${videoId}')" style="cursor:pointer;">
+                            <img src="${thumb}" class="card-img-top" style="height:200px;object-fit:cover;" alt="${v.Judul}" loading="lazy">
+                            <div class="play-overlay"><i class="fas fa-play-circle fa-3x text-white"></i></div>
+                        </div>
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold mb-0">${v.Judul}</h6>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        grid.innerHTML = html;
+    }
+
+    function renderJadwal(jadwal) {
+        const container = document.getElementById('jadwalContainer');
+        if (!container) return;
+        if (!jadwal.length) {
+            container.innerHTML = '<div class="text-center text-muted py-5">Belum ada jadwal tersedia.</div>';
+            return;
+        }
+        const grouped = {};
+        jadwal.forEach(j => {
+            const agama = j.agama || 'Islam';
+            if (!grouped[agama]) grouped[agama] = [];
+            grouped[agama].push(j);
+        });
+        let html = '';
+        for (const [agama, items] of Object.entries(grouped)) {
+            html += `<div class="mb-4"><h5 class="fw-bold"><i class="fas fa-users me-2" style="color:#0d6efd;"></i>${agama}</h5>`;
+            items.forEach(j => {
+                html += `
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-time">${j.mulai}</div>
+                        <div class="timeline-content"><span class="activity-card activity-islam">${j.nama}</span></div>
+                    </div>`;
+            });
+            html += '</div>';
+        }
+        container.innerHTML = html;
+    }
+
+    function updateStats(peserta) {
+        const total = peserta.length || 0;
+        const rombel = new Set(peserta.map(p => p.Rombel).filter(Boolean)).size;
+        let putra = 0, putri = 0;
+        peserta.forEach(p => {
+            const jk = String(p.Jenis_Kelamin || p.jk || p.gender || '').toLowerCase().trim();
+            if (['l', 'laki-laki', 'laki', 'male', 'putra', 'pria', 'lk'].includes(jk)) putra++;
+            else if (['p', 'perempuan', 'female', 'putri', 'wanita', 'pr'].includes(jk)) putri++;
+        });
+        setText('statTotalPeserta', total);
+        setText('statRombel', rombel);
+        setText('statPutra', putra);
+        setText('statPutri', putri);
+    }
+
+    // ============================================================
+    //  HELPERS YOUTUBE
+    // ============================================================
+    function getYouTubeId(url) {
+        if (!url) return null;
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/
+        ];
+        for (let pattern of patterns) {
+            const match = url.match(pattern);
+            if (match) return match[1];
+        }
+        return null;
+    }
+
+    function playVideo(videoId) {
+        if (!videoId) return;
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-box" style="max-width:800px;background:#000;padding:0;overflow:hidden;position:relative;">
+                <button class="btn-close btn-close-white position-absolute top-0 end-0 m-2" onclick="this.closest('.modal-overlay').remove()"></button>
+                <iframe width="100%" height="450" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen allow="autoplay"></iframe>
+            </div>`;
+        document.body.appendChild(modal);
+    }
+
+    // ============================================================
+    //  LIGHTBOX FOTO
+    // ============================================================
+    let currentLightboxIndex = 0;
+    let lightboxImages = [];
+
+    function openLightbox(index) {
+        currentLightboxIndex = index;
+        updateLightbox();
+        document.getElementById('galleryLightbox').classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        document.getElementById('galleryLightbox').classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    function updateLightbox() {
+        const img = document.getElementById('lightboxImage');
+        const title = document.getElementById('lightboxTitle');
+        if (lightboxImages.length === 0) return;
+        img.src = lightboxImages[currentLightboxIndex].src;
+        img.alt = lightboxImages[currentLightboxIndex].title;
+        title.textContent = lightboxImages[currentLightboxIndex].title;
+    }
+
+    function prevLightbox() {
+        currentLightboxIndex = (currentLightboxIndex - 1 + lightboxImages.length) % lightboxImages.length;
+        updateLightbox();
+    }
+
+    function nextLightbox() {
+        currentLightboxIndex = (currentLightboxIndex + 1) % lightboxImages.length;
+        updateLightbox();
+    }
+
+    // Tutup lightbox dengan klik di background
+    document.getElementById('galleryLightbox').addEventListener('click', function(e) {
+        if (e.target === this) closeLightbox();
+    });
+
+    // Tombol keyboard (Esc, panah kiri/kanan)
+    document.addEventListener('keydown', function(e) {
+        if (document.getElementById('galleryLightbox').classList.contains('show')) {
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') prevLightbox();
+            if (e.key === 'ArrowRight') nextLightbox();
+        }
+    });
+
+    // ============================================================
+    //  SCROLLSPY – Navbar Active Mengikuti Scroll
+    // ============================================================
+    function updateActiveNavbar() {
+        const sections = [
+            { id: 'top', navId: 'nav-beranda' },
+            { id: 'tentang', navId: 'nav-tentang' },
+            { id: 'fasilitas', navId: 'nav-fasilitas' },
+            { id: 'jadwal', navId: 'nav-jadwal' },
+            { id: 'berita', navId: 'nav-berita' },
+            { id: 'galeri', navId: 'nav-galeri' },
+            { id: 'video', navId: 'nav-video' },
+            { id: 'lokasi', navId: 'nav-lokasi' }
+        ];
+
+        const scrollY = window.scrollY;
+        const navbarHeight = 120; // offset untuk navbar fixed
+        let currentSectionId = '';
+
+        // Cari section yang sedang terlihat
+        for (const section of sections) {
+            const el = document.getElementById(section.id);
+            if (!el) continue;
+            if (el.style.display === 'none') continue;
+
+            const rect = el.getBoundingClientRect();
+            const top = rect.top + window.scrollY;
+            const bottom = top + rect.height;
+
+            if (scrollY + navbarHeight >= top && scrollY + navbarHeight < bottom) {
+                currentSectionId = section.id;
+                break;
+            }
+        }
+
+        // Fallback jika berada di antara section (misal di statistik)
+        if (!currentSectionId) {
+            const hero = document.getElementById('top');
+            if (hero && scrollY < hero.offsetHeight + 50) {
+                currentSectionId = 'top';
+            } else {
+                // Ambil section terakhir yang sudah dilewati
+                let closest = '';
+                let minDistance = Infinity;
+                sections.forEach(section => {
+                    const el = document.getElementById(section.id);
+                    if (!el || el.style.display === 'none') return;
+                    const top = el.getBoundingClientRect().top + window.scrollY;
+                    if (top <= scrollY + navbarHeight) {
+                        const distance = scrollY + navbarHeight - top;
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closest = section.id;
+                        }
+                    }
+                });
+                currentSectionId = closest || 'top';
+            }
+        }
+
+        // Update class active pada navbar
+        const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === currentSectionId) {
+                link.classList.add('active');
+            }
+        });
+    }
+
+    // ============================================================
+    //  EVENT LISTENER SCROLL & RESIZE
+    // ============================================================
+    window.addEventListener('scroll', updateActiveNavbar);
+    window.addEventListener('load', updateActiveNavbar); // pastikan setelah konten dimuat
+    window.addEventListener('resize', updateActiveNavbar); // update saat resize
+
+    // ============================================================
+    //  LOAD DATA UTAMA
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', async function () {
+        updateNavbar();
+        updateActiveNavbar(); // inisialisasi pertama
+
+        const cachedSettings = sessionCache.get('settings');
+        if (cachedSettings) applySettings(cachedSettings);
+        else applySettings({});
+
+        const cachedStats = sessionCache.get('peserta');
+        if (cachedStats) updateStats(cachedStats);
+
+        const cachedJadwal = sessionCache.get('jadwal');
+        if (cachedJadwal) renderJadwal(cachedJadwal);
+        else document.getElementById('jadwalContainer').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="text-muted mt-2">Memuat jadwal...</p></div>';
+
+        const cachedBerita = sessionCache.get('berita');
+        if (cachedBerita) renderBerita(cachedBerita);
+        else {
+            let skeletonHTML = '';
+            for (let i = 0; i < 3; i++) {
+                skeletonHTML += '<div class="col-md-4"><div class="card-custom h-100"><div class="skeleton berita-skeleton"></div><div class="p-3"><div class="skeleton mb-2" style="height:20px;"></div><div class="skeleton" style="height:15px;"></div></div></div></div>';
+            }
+            document.getElementById('beritaGrid').innerHTML = skeletonHTML;
+        }
+
+        const cachedGaleri = sessionCache.get('galeri');
+        if (cachedGaleri) {
+            const fotoGaleri = cachedGaleri.filter(g => !g.Link_Video || !g.Link_Video.trim());
+            const videoGaleri = cachedGaleri.filter(g => g.Link_Video && g.Link_Video.trim());
+            renderGaleri(fotoGaleri);
+            renderVideo(videoGaleri);
+        } else {
+            let skeletonGaleri = '';
+            for (let i = 0; i < 3; i++) {
+                skeletonGaleri += '<div class="col-md-4"><div class="card-custom h-100"><div class="skeleton galeri-skeleton"></div><div class="p-3"><div class="skeleton" style="height:20px;"></div></div></div></div>';
+            }
+            document.getElementById('galeriGrid').innerHTML = skeletonGaleri;
+            document.getElementById('videoGrid').innerHTML = skeletonGaleri;
+        }
+
+        API.incrementHit('').catch(()=>{});
+
+        try {
+            const [settingsRes, pesertaRes, jadwalRes, beritaRes, galeriRes] = await Promise.all([
+                API.getSettings(),
+                API.listPeserta(),
+                API.getJadwal(),
+                API.listBerita('Publish', 3),
+                API.listGaleri('Publish', 6)
+            ]);
+
+            if (settingsRes.status === 'success') {
+                applySettings(settingsRes.data);
+                sessionCache.set('settings', settingsRes.data);
+            }
+            if (pesertaRes.status === 'success') {
+                updateStats(pesertaRes.data);
+                sessionCache.set('peserta', pesertaRes.data);
+            }
+            if (jadwalRes.status === 'success') {
+                renderJadwal(jadwalRes.data);
+                sessionCache.set('jadwal', jadwalRes.data);
+            }
+            if (beritaRes.status === 'success') {
+                renderBerita(beritaRes.data);
+                sessionCache.set('berita', beritaRes.data);
+            }
+            if (galeriRes.status === 'success') {
+                const allGaleri = galeriRes.data;
+                const fotoGaleri = allGaleri.filter(g => !g.Link_Video || !g.Link_Video.trim());
+                const videoGaleri = allGaleri.filter(g => g.Link_Video && g.Link_Video.trim());
+                renderGaleri(fotoGaleri);
+                renderVideo(videoGaleri);
+                sessionCache.set('galeri', allGaleri);
+            }
+        } catch (e) {
+            console.error('Gagal fetch data:', e);
+            if (!cachedBerita) document.getElementById('beritaGrid').innerHTML = '<div class="col-12 text-center text-muted py-5">Gagal memuat berita.</div>';
+            if (!cachedGaleri) {
+                document.getElementById('galeriGrid').innerHTML = '<div class="col-12 text-center text-muted py-5">Gagal memuat galeri.</div>';
+                document.getElementById('videoGrid').innerHTML = '<div class="col-12 text-center text-muted py-5">Gagal memuat video.</div>';
+            }
+            if (!cachedJadwal) document.getElementById('jadwalContainer').innerHTML = '<div class="text-center text-muted py-5">Gagal memuat jadwal.</div>';
+        }
+    });
+</script>
 </body>
 </html>
