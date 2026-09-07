@@ -72,7 +72,20 @@
         }
         .berita-skeleton, .galeri-skeleton, .video-skeleton { height: 220px; }
         
-        /* ===== LIGHTBOX ===== */
+        /* ===== PLAY OVERLAY (untuk video) ===== */
+        .play-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.4);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .play-overlay:hover, .card-custom:hover .play-overlay { opacity: 1; }
+
+        /* ===== LIGHTBOX FOTO ===== */
         .gallery-lightbox {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -355,8 +368,9 @@
             <!-- Kolom Kanan: Peta Google Maps -->
             <div class="col-lg-8">
                 <div class="map-wrapper h-100" style="min-height: 400px; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
+                    <!-- URL embed dengan marker (menggunakan nama tempat) -->
                     <iframe id="lokasiMaps" 
-                            src="https://maps.google.com/maps?q=-7.80694,110.34333&z=16&output=embed" 
+                            src="https://maps.google.com/maps?q=Sentra%20Terpadu%20Prof.%20Dr.%20Soeharso&t=&z=15&ie=UTF8&iwloc=&output=embed" 
                             width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                 </div>
             </div>
@@ -526,8 +540,8 @@
         if (settings['lokasi_alamat']) document.getElementById('lokasiAlamat').innerHTML = settings['lokasi_alamat'];
         if (settings['lokasi_deskripsi']) document.getElementById('lokasiDeskripsi').textContent = settings['lokasi_deskripsi'];
         
-        // URL Peta default yang menampilkan marker
-        const defaultMapUrl = 'https://maps.google.com/maps?q=-7.80694,110.34333&z=16&output=embed';
+        // URL Peta default yang menampilkan marker (nama tempat)
+        const defaultMapUrl = 'https://maps.google.com/maps?q=Sentra%20Terpadu%20Prof.%20Dr.%20Soeharso&t=&z=15&ie=UTF8&iwloc=&output=embed';
         const mapUrl = settings['lokasi_maps'] || defaultMapUrl;
         const mapFrame = document.getElementById('lokasiMaps');
         if (mapFrame) mapFrame.src = mapUrl;
@@ -770,7 +784,6 @@
         const navbarHeight = 120; // offset untuk navbar fixed
         let currentSectionId = '';
 
-        // Cari section yang sedang terlihat
         for (const section of sections) {
             const el = document.getElementById(section.id);
             if (!el) continue;
@@ -786,13 +799,11 @@
             }
         }
 
-        // Fallback jika berada di antara section (misal di statistik)
         if (!currentSectionId) {
             const hero = document.getElementById('top');
             if (hero && scrollY < hero.offsetHeight + 50) {
                 currentSectionId = 'top';
             } else {
-                // Ambil section terakhir yang sudah dilewati
                 let closest = '';
                 let minDistance = Infinity;
                 sections.forEach(section => {
@@ -811,7 +822,6 @@
             }
         }
 
-        // Update class active pada navbar
         const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
         navLinks.forEach(link => {
             link.classList.remove('active');
@@ -826,15 +836,15 @@
     //  EVENT LISTENER SCROLL & RESIZE
     // ============================================================
     window.addEventListener('scroll', updateActiveNavbar);
-    window.addEventListener('load', updateActiveNavbar); // pastikan setelah konten dimuat
-    window.addEventListener('resize', updateActiveNavbar); // update saat resize
+    window.addEventListener('load', updateActiveNavbar);
+    window.addEventListener('resize', updateActiveNavbar);
 
     // ============================================================
     //  LOAD DATA UTAMA
     // ============================================================
     document.addEventListener('DOMContentLoaded', async function () {
         updateNavbar();
-        updateActiveNavbar(); // inisialisasi pertama
+        updateActiveNavbar();
 
         const cachedSettings = sessionCache.get('settings');
         if (cachedSettings) applySettings(cachedSettings);
