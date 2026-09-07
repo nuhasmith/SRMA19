@@ -1,7 +1,7 @@
 // ============================================================
 //  API.JS – Lapisan Komunikasi dengan Backend (Google Apps Script)
 //  SRMA 19 Bantul
-//  Versi: 4.0.0 - FULL FIX, Auto Stringify, Robust, All Endpoints
+//  Versi: 5.0.0 – FINAL FULL FIX (Anti Error, Auto Stringify, All Endpoints)
 // ============================================================
 
 (function() {
@@ -46,7 +46,7 @@
 
     // --- KONSTANTA ---
     // ⚠️ PASTIKAN URL INI ADALAH URL DEPLOY TERBARU DARI GOOGLE APPS SCRIPT
-    const BASE_URL = 'https://script.google.com/macros/s/AKfycbym_n6vTfe13xD-eO5D776zcrExZAhzYLvzdsLSWCPJifrzperOpWSaofg2XjfzT1yO/exec';
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycby_UyW6_lH8C992GJJBy5yfB4tO6fgHSQeKQxWdTqwE88MA2twT8n_XsyveL8-CcXh-/exec';
     const TOKEN_KEY = 'srma19_auth_token';
     const TIMEOUT_NORMAL = 20000; // 20 detik
     const TIMEOUT_UPLOAD = 120000; // 120 detik (Upload gambar)
@@ -277,5 +277,5 @@
     // Ekspos SafeStorage agar modul lain bisa menggunakannya
     window.SafeStorage = SafeStorage;
 
-    console.log('✅ API layer loaded (v4.0.0 - Full Fix, Auto Stringify, All Endpoints)');
+    console.log('✅ API layer loaded (v5.0.0 - Final Full Fix, Auto Stringify, All Endpoints)');
 })();

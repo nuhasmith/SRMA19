@@ -1,7 +1,10 @@
 // ============================================================
-//  APP.JS – Router SPA untuk Semua Role (FINAL v42.0)
-//  Fitur: Bottom Navbar 4+1, Bottom Sheet "Lainnya",
-//         QR Slider Toggle & Auto-Hide, Global Functions Fix
+//  APP.JS – Router SPA untuk Semua Role (FINAL v43.0)
+//  Fitur: 
+//   - Mode Publik Default (Link Utama Langsung ke Beranda)
+//   - Dashboard Khusus Role (Admin/Petugas/Humas) via ?dashboard=1
+//   - Bottom Navbar 4+1, Bottom Sheet, QR Slider
+//   - Anti Error, Safe DOM, Cache & Preload
 // ============================================================
 
 (function() {
@@ -25,19 +28,27 @@
     const TTL = 10 * 60 * 1000;
 
     let currentUser = null;
-    let currentPage = 'dashboard';
+    let currentPage = 'public';
 
     // ============================================================
     //  INIT
     // ============================================================
     function init() {
         currentUser = Auth.getCurrentUser();
-        const publicMode = SafeStorage.getItem(PUBLIC_VIEW_KEY, 'session') === 'true';
-        if (currentUser && !publicMode) {
+
+        // Cek apakah pengguna secara eksplisit meminta dashboard
+        const urlParams = new URLSearchParams(window.location.search);
+        const wantsDashboard = urlParams.get('dashboard') === '1' || window.location.hash === '#dashboard';
+
+        if (wantsDashboard && currentUser) {
+            // Jika pengguna login dan meminta dashboard, tampilkan dashboard
+            SafeStorage.removeItem(PUBLIC_VIEW_KEY, 'session');
             renderShell(currentUser.role);
             const page = SafeStorage.getItem(MENU_KEY, 'local') || 'dashboard';
             navigate(page);
         } else {
+            // SELALU tampilkan halaman publik sebagai default
+            SafeStorage.setItem(PUBLIC_VIEW_KEY, 'true', 'session');
             showPublicPage();
         }
         window.addEventListener('scroll', handleGlobalScroll);
@@ -128,7 +139,7 @@
     }
 
     // ============================================================
-    //  RENDER SHELL
+    //  RENDER SHELL (Dashboard)
     // ============================================================
     function renderShell(role) {
         document.body.innerHTML = `
@@ -250,7 +261,7 @@
     }
 
     // ============================================================
-    //  MENU & NAVIGASI
+    //  MENU & NAVIGASI (Dashboard)
     // ============================================================
     function getMenus(role) {
         const commonMenus = [
@@ -377,23 +388,260 @@
     }
 
     // ============================================================
-    //  HALAMAN PUBLIK (Sederhana)
+    //  HALAMAN PUBLIK (Default saat pertama kali masuk)
     // ============================================================
     async function showPublicPage() {
         currentPage = 'public';
         SafeStorage.setItem(PUBLIC_VIEW_KEY, 'true', 'session');
-        document.body.innerHTML = '<div class="text-center py-5">Memuat halaman publik...</div>';
+
+        // Render kerangka halaman publik yang lengkap
+        document.body.innerHTML = `
+            <nav class="navbar navbar-expand-lg fixed-top" id="navbar">
+                <div class="container">
+                    <a class="navbar-brand" href="index.html">
+                        <img src="srma.webp" alt="SRMA 19"> SRMA 19
+                    </a>
+                    <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navMenu">
+                        <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                            <li class="nav-item"><a class="nav-link" href="#beranda">Beranda</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#tentang">Tentang</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#jadwal">Jadwal</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#berita">Berita</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#galeri">Galeri</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#lokasi">Lokasi</a></li>
+                        </ul>
+                        <div id="navbarUserArea"></div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Bottom Nav Mobile -->
+            <div class="bottom-nav" id="bottomNavMobile">
+                <a class="bottom-nav-item" href="#beranda"><i class="fas fa-home"></i><span>Beranda</span></a>
+                <a class="bottom-nav-item" href="#tentang"><i class="fas fa-info-circle"></i><span>Tentang</span></a>
+                <a class="bottom-nav-item" href="#jadwal"><i class="fas fa-clock"></i><span>Jadwal</span></a>
+                <a class="bottom-nav-item" href="#berita"><i class="fas fa-newspaper"></i><span>Berita</span></a>
+                <a class="bottom-nav-item" href="login.html"><i class="fas fa-user-lock"></i><span>Petugas</span></a>
+            </div>
+
+            <!-- Hero -->
+            <header class="hero-section" id="beranda">
+                <div class="container text-center">
+                    <div class="hero-badge">Sekolah Rakyat Unggulan</div>
+                    <h1>SRMA 19 Bantul</h1>
+                    <p class="hero-subtitle">Mencetak generasi cerdas, mandiri, dan berakhlak mulia.</p>
+                    <div class="hero-buttons">
+                        <a href="#berita" class="btn-hero-primary">Lihat Berita</a>
+                        <a href="#lokasi" class="btn-hero-outline">Lokasi Kami</a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Statistik -->
+            <section class="stat-section">
+                <div class="container">
+                    <div class="row text-center">
+                        <div class="col-6 col-md-3"><div class="stat-number" id="statPeserta">0</div><div class="stat-label">Peserta</div></div>
+                        <div class="col-6 col-md-3"><div class="stat-number" id="statBerita">0</div><div class="stat-label">Berita</div></div>
+                        <div class="col-6 col-md-3"><div class="stat-number" id="statGaleri">0</div><div class="stat-label">Galeri</div></div>
+                        <div class="col-6 col-md-3"><div class="stat-number" id="statKunjungan">0</div><div class="stat-label">Kunjungan</div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tentang -->
+            <section class="py-6" id="tentang">
+                <div class="container">
+                    <h2 class="section-title text-center">Tentang Kami</h2>
+                    <p class="section-subtitle text-center">SRMA 19 Bantul adalah sekolah rakyat yang berkomitmen memberikan pendidikan berkualitas bagi seluruh anak Indonesia.</p>
+                </div>
+            </section>
+
+            <!-- Jadwal -->
+            <section class="py-6 bg-light" id="jadwal">
+                <div class="container">
+                    <h2 class="section-title text-center">Jadwal Kegiatan</h2>
+                    <div class="timeline-wrapper" id="publicJadwalContainer">
+                        <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Berita -->
+            <section class="py-6" id="berita">
+                <div class="container">
+                    <h2 class="section-title text-center">Berita Terbaru</h2>
+                    <div class="row g-4" id="publicBeritaContainer">
+                        <div class="col-12 text-center"><div class="spinner-border text-primary"></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Galeri -->
+            <section class="py-6 bg-light" id="galeri">
+                <div class="container">
+                    <h2 class="section-title text-center">Galeri</h2>
+                    <div class="row g-4" id="publicGaleriContainer">
+                        <div class="col-12 text-center"><div class="spinner-border text-primary"></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Lokasi -->
+            <section class="py-6" id="lokasi">
+                <div class="container">
+                    <h2 class="section-title text-center">Lokasi Kami</h2>
+                    <div class="map-wrapper">
+                        <iframe src="https://maps.google.com/maps?q=-7.80694,110.34333&z=15&output=embed" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="container text-center">
+                    <p>&copy; 2026 SRMA 19 Bantul</p>
+                </div>
+            </footer>
+        `;
+
+        // Load data publik dari API
+        try {
+            const [pesertaRes, beritaRes, galeriRes, hitsRes, jadwalRes] = await Promise.all([
+                API.listPeserta(),
+                API.listBerita('Publish', 3),
+                API.listGaleri('Publish', 6),
+                API.getHits(),
+                API.getJadwal()
+            ]);
+
+            // Update statistik
+            document.getElementById('statPeserta').textContent = (pesertaRes.data || []).length;
+            document.getElementById('statBerita').textContent = (beritaRes.data || []).length;
+            document.getElementById('statGaleri').textContent = (galeriRes.data || []).length;
+            document.getElementById('statKunjungan').textContent = hitsRes.total || 0;
+
+            // Render Berita
+            const beritaHtml = (beritaRes.data || []).map(b => {
+                const imgSrc = (b.Gambar && b.Gambar.startsWith('http')) ? b.Gambar : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+                const excerpt = (b.Isi || '').replace(/<[^>]*>/g, '').substring(0, 100);
+                return `
+                    <div class="col-md-4">
+                        <div class="card-custom berita-card">
+                            <img src="${imgSrc}" class="card-img-top" alt="${b.Judul}" style="height:180px;object-fit:cover;">
+                            <div class="card-body">
+                                <h5 class="news-title">${b.Judul}</h5>
+                                <p class="news-excerpt">${excerpt}...</p>
+                                <a href="detail.html?id=${b.ID}" class="read-more">Baca Selengkapnya <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+            document.getElementById('publicBeritaContainer').innerHTML = beritaHtml || '<p class="text-muted text-center">Belum ada berita dipublikasikan.</p>';
+
+            // Render Galeri
+            const galeriHtml = (galeriRes.data || []).map(g => {
+                const imgSrc = (g.Gambar && g.Gambar.startsWith('http')) ? g.Gambar : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+                return `
+                    <div class="col-md-4">
+                        <div class="card-custom p-2">
+                            <img src="${imgSrc}" class="img-fluid rounded-3" style="width:100%;height:200px;object-fit:cover;" alt="${g.Judul}">
+                            <div class="mt-2 text-center fw-semibold">${g.Judul}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+            document.getElementById('publicGaleriContainer').innerHTML = galeriHtml || '<p class="text-muted text-center">Belum ada galeri.</p>';
+
+            // Render Jadwal
+            const jadwalData = jadwalRes.data || [];
+            if (jadwalData.length) {
+                const grouped = {};
+                jadwalData.forEach(j => {
+                    const agama = j.agama || 'Lainnya';
+                    if (!grouped[agama]) grouped[agama] = [];
+                    grouped[agama].push(`<div class="schedule-item"><span class="schedule-time">${j.mulai}</span><span class="schedule-name">${j.nama}</span><span class="schedule-duration">${j.mulai} - ${j.selesai}</span></div>`);
+                });
+                let jadwalHtml = '<div class="schedule-container">';
+                for (const [agama, items] of Object.entries(grouped)) {
+                    jadwalHtml += `<div class="schedule-group" style="border-left-color: ${items[0]?.color || '#0d6efd'};"><h6 class="fw-bold mb-2"><i class="fas fa-users me-2"></i>${agama}</h6>${items.join('')}</div>`;
+                }
+                jadwalHtml += '</div>';
+                document.getElementById('publicJadwalContainer').innerHTML = jadwalHtml;
+            } else {
+                document.getElementById('publicJadwalContainer').innerHTML = '<p class="text-muted text-center">Belum ada jadwal.</p>';
+            }
+
+            // Update navbar user area
+            updateNavbarUser();
+
+            // Aktifkan scroll navbar
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 50);
+            });
+
+        } catch (e) {
+            console.error('Gagal memuat data publik:', e);
+            document.getElementById('publicBeritaContainer').innerHTML = '<p class="text-muted text-center">Gagal memuat berita.</p>';
+            document.getElementById('publicGaleriContainer').innerHTML = '<p class="text-muted text-center">Gagal memuat galeri.</p>';
+            document.getElementById('publicJadwalContainer').innerHTML = '<p class="text-muted text-center">Gagal memuat jadwal.</p>';
+            updateNavbarUser();
+        }
     }
 
     // ============================================================
-    //  UTIL NAVIGASI
+    //  UTIL NAVIGASI & LOGOUT
     // ============================================================
-    function goToDashboard() { SafeStorage.removeItem(PUBLIC_VIEW_KEY, 'session'); window.location.href = 'index.html'; }
+    function goToDashboard() { SafeStorage.removeItem(PUBLIC_VIEW_KEY, 'session'); window.location.href = 'index.html?dashboard=1'; }
     function goToPublicSite() { SafeStorage.setItem(PUBLIC_VIEW_KEY, 'true', 'session'); window.location.href = 'index.html'; }
-    function logout() { if (confirm('Logout?')) { Auth.logout(); SafeStorage.removeItem(MENU_KEY, 'local'); SafeStorage.removeItem(PUBLIC_VIEW_KEY, 'session'); window.location.href = 'index.html'; } }
+    function logout() {
+        if (confirm('Logout?')) {
+            Auth.logout();
+            SafeStorage.removeItem(MENU_KEY, 'local');
+            SafeStorage.removeItem(PUBLIC_VIEW_KEY, 'session');
+            window.location.href = 'index.html'; // kembali ke publik
+        }
+    }
 
     // ============================================================
-    //  EXPOSE KE GLOBAL (Termasuk fungsi global untuk HTML lama)
+    //  NAVBAR USER AREA (Untuk Publik)
+    // ============================================================
+    function updateNavbarUser() {
+        const container = document.getElementById('navbarUserArea');
+        if (!container) return;
+        const user = Auth.getCurrentUser();
+        if (user && user.username) {
+            let dashboardUrl = 'index.html?dashboard=1';
+            container.innerHTML = `
+                <a href="${dashboardUrl}" class="btn btn-nav-cta"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
+            `;
+        } else {
+            container.innerHTML = `<a href="login.html" class="btn btn-nav-cta"><i class="fas fa-user-lock me-2"></i>Area Petugas</a>`;
+        }
+    }
+
+    // ============================================================
+    //  SCROLL TOP BUTTON
+    // ============================================================
+    function toggleScrollTopButton() {
+        const btn = document.getElementById('btnScrollTop');
+        if (!btn) {
+            const btn = document.createElement('button');
+            btn.id = 'btnScrollTop';
+            btn.className = 'btn-scroll-top';
+            btn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+            document.body.appendChild(btn);
+        }
+        if (window.scrollY > 400) btn.classList.add('show');
+        else btn.classList.remove('show');
+    }
+
+    // ============================================================
+    //  EXPOSE KE GLOBAL
     // ============================================================
     window.openMobileMenu = openMobileMenu;
     window.closeMobileMenu = closeMobileMenu;

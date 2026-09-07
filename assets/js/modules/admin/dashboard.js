@@ -1,7 +1,7 @@
 // ============================================================
 //  DASHBOARD.JS – Preload + Auto Refresh + Manual (VERY FAST)
 //  SRMA 19 Bantul
-//  Versi: 14.0.0 - Ultra Speed, No Stuck, No Zero
+//  Versi: 15.0.0 - Full Fix, Robust, Handle Partial Errors
 // ============================================================
 
 (function() {
@@ -29,36 +29,70 @@
         ]);
     }
 
+    // Fungsi aman: jika request gagal, kembalikan null tanpa melempar error
+    async function safeFetch(promise) {
+        try {
+            const res = await fetchWithTimeout(promise);
+            return res;
+        } catch (e) {
+            console.error('Request gagal:', e);
+            return null;
+        }
+    }
+
     async function preloadAllData(showLoadingToast = true) {
         if (isRefreshing) return;
         isRefreshing = true;
         try {
             if (showLoadingToast) toast('Memuat semua data...', 'info');
-            
-            // Gunakan fetchWithTimeout agar tidak menggantung selamanya
-            const [peserta, absensi, izin, jadwal, petugas, wali, alumni, berita, galeri] = await Promise.all([
-                fetchWithTimeout(API.listPeserta()),
-                fetchWithTimeout(API.listAbsensi('', '', 1, 1000)),
-                fetchWithTimeout(API.listIzin()),
-                fetchWithTimeout(API.getJadwal()),
-                fetchWithTimeout(API.listPetugas()),
-                fetchWithTimeout(API.listWaliAsuh()),
-                fetchWithTimeout(API.listAlumni()),
-                fetchWithTimeout(API.listBerita()),
-                fetchWithTimeout(API.listGaleri())
+
+            // Gunakan Promise.allSettled agar tidak gagal total jika salah satu error
+            const results = await Promise.allSettled([
+                safeFetch(API.listPeserta()),
+                safeFetch(API.listAbsensi('', '', 1, 1000)),
+                safeFetch(API.listIzin()),
+                safeFetch(API.getJadwal()),
+                safeFetch(API.listPetugas()),
+                safeFetch(API.listWaliAsuh()),
+                safeFetch(API.listAlumni()),
+                safeFetch(API.listBerita()),
+                safeFetch(API.listGaleri())
             ]);
 
-            setCache({
-                peserta: peserta.data || [], absensi: absensi.data || [], izin: izin.data || [],
-                jadwal: jadwal.data || [], petugas: petugas.data || [], waliAsuh: wali.data || [],
-                alumni: alumni.data || [], berita: berita.data || [], galeri: galeri.data || []
-            });
-            console.log('✅ Semua data berhasil di-preload ke cache global.');
+            // Ambil hasil yang sukses (status: 'fulfilled') dan data tidak null
+            const [pesertaRes, absensiRes, izinRes, jadwalRes, petugasRes, waliRes, alumniRes, beritaRes, galeriRes] = results.map(r => r.status === 'fulfilled' ? r.value : null);
+
+            // Simpan ke cache hanya data yang berhasil
+            const cacheData = {};
+            if (pesertaRes && pesertaRes.status === 'success') cacheData.peserta = pesertaRes.data || [];
+            if (absensiRes && absensiRes.status === 'success') cacheData.absensi = absensiRes.data || [];
+            if (izinRes && izinRes.status === 'success') cacheData.izin = izinRes.data || [];
+            if (jadwalRes && jadwalRes.status === 'success') cacheData.jadwal = jadwalRes.data || [];
+            if (petugasRes && petugasRes.status === 'success') cacheData.petugas = petugasRes.data || [];
+            if (waliRes && waliRes.status === 'success') cacheData.waliAsuh = waliRes.data || [];
+            if (alumniRes && alumniRes.status === 'success') cacheData.alumni = alumniRes.data || [];
+            if (beritaRes && beritaRes.status === 'success') cacheData.berita = beritaRes.data || [];
+            if (galeriRes && galeriRes.status === 'success') cacheData.galeri = galeriRes.data || [];
+
+            // Gabungkan dengan cache lama (jika ada) agar data yang gagal tetap ada dari cache sebelumnya
+            const existingCache = getCache() || {};
+            Object.assign(existingCache, cacheData);
+            setCache(existingCache);
+
+            console.log('✅ Data berhasil di-preload:', Object.keys(cacheData));
             if (showLoadingToast) toast('Semua data siap!', 'success');
+
+            // Jika ada request yang gagal, beri tahu pengguna (tapi tidak mengganggu)
+            const failedCount = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value === null)).length;
+            if (failedCount > 0) {
+                toast(`⚠️ ${failedCount} data gagal dimuat. Periksa koneksi.`, 'warning');
+            }
         } catch (e) {
             console.error('❌ Gagal preload data:', e);
             if (showLoadingToast) toast('Gagal memuat sebagian data. Periksa koneksi.', 'error');
-        } finally { isRefreshing = false; }
+        } finally {
+            isRefreshing = false;
+        }
     }
 
     function startAutoRefresh() {
@@ -91,13 +125,12 @@
         const user = Auth.getCurrentUser();
         if (!user) { container.innerHTML = '<div class="text-center py-5 text-muted">Silakan login.</div>'; return; }
 
-        // Tandai halaman aktif
         container.dataset.page = 'dashboard';
 
         // Cek apakah cache sudah tersedia
         const cached = getCache();
 
-        // Jika cache kosong, tampilkan loading dan TUNGGU data diambil
+        // Jika cache kosong atau tidak ada data peserta, muat data
         if (!cached || !cached.peserta) {
             container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="text-muted mt-2">Memuat data dashboard...</p></div>';
             await preloadAllData(true); // Tunggu sampai selesai
@@ -139,14 +172,18 @@
             </div>
         `;
 
-        // Ambil data dari cache (data sudah pasti ada karena sudah di-await)
         const cached = getCache();
         if (cached) {
             const today = new Date().toISOString().split('T')[0];
-            safeSetText('adminTotalPeserta', cached.peserta?.length || 0);
-            safeSetText('adminTotalAbsensi', cached.absensi?.length || 0);
-            safeSetText('adminHadirHariIni', cached.absensi?.filter(a => a.Tanggal === today && a.Status === 'Hadir').length || 0);
-            safeSetText('adminIzinHariIni', cached.izin?.filter(i => i.Tanggal === today).length || 0);
+            const totalPeserta = cached.peserta?.length || 0;
+            const totalAbsensi = cached.absensi?.length || 0;
+            const hadirHariIni = cached.absensi?.filter(a => a.Tanggal === today && a.Status === 'Hadir').length || 0;
+            const izinHariIni = cached.izin?.filter(i => i.Tanggal === today).length || 0;
+
+            safeSetText('adminTotalPeserta', totalPeserta);
+            safeSetText('adminTotalAbsensi', totalAbsensi);
+            safeSetText('adminHadirHariIni', hadirHariIni);
+            safeSetText('adminIzinHariIni', izinHariIni);
 
             const table = document.getElementById('adminRecentAbsensi');
             if (table && cached.absensi?.length) {
@@ -156,7 +193,7 @@
                 });
                 table.innerHTML = `<table class="table table-sm table-hover mb-0"><thead><tr><th>No</th><th>Tgl</th><th>Jam</th><th>Kode</th><th>Nama</th><th>Sesi</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`;
             } else if (table) {
-                table.innerHTML = '<p class="text-center py-3 text-muted">Belum ada data absensi</p>';
+                table.innerHTML = '<p class="text-center py-3 text-muted">Belum ada data absensi.</p>';
             }
         }
     }
@@ -297,5 +334,5 @@
         stopAutoRefresh
     };
 
-    console.log('✅ Dashboard module loaded (v14.0.0 - Ultra Speed, No Stuck, No Zero)');
+    console.log('✅ Dashboard module loaded (v15.0.0 - Full Fix, Robust, Handle Partial Errors)');
 })();

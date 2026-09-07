@@ -277,7 +277,6 @@
                 <label for="password" class="form-label">Password</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
-                    <!-- DIUBAH: maxlength 64, tanpa inputmode numeric, tanpa pattern -->
                     <input type="password" class="form-control" id="password" placeholder="Masukkan password" maxlength="64" required>
                     <span class="input-group-text toggle-password" id="togglePassword" title="Tampilkan password">
                         <i class="far fa-eye"></i>
@@ -356,12 +355,10 @@
     }
 
     // ============================================================
-    //  REDIRECT JIKA SUDAH LOGIN
+    //  REDIRECT JIKA SUDAH LOGIN (JANGAN PAKSA DASHBOARD)
     // ============================================================
     if (Auth.isLoggedIn()) {
-        // Jika sudah login, pastikan tidak masuk mode publik
-        SafeStorage.removeItem('srma19_public_view', 'session');
-        SafeStorage.setItem('srma19_active_menu', 'dashboard', 'local');
+        // Jika sudah login, arahkan ke halaman publik (biarkan app.js memutuskan)
         window.location.replace('index.html');
     }
 
@@ -489,7 +486,8 @@
                 }
 
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    // ARAHKAN KE DASHBOARD DENGAN PARAMETER ?dashboard=1
+                    window.location.href = 'index.html?dashboard=1';
                 }, 500);
             } else {
                 showAlert('❌ ' + (result.message || 'Username atau password salah.'), 'danger');
