@@ -55,12 +55,11 @@
     }
 
     // ============================================================
-    //  HANDLER SCROLL
+    //  HANDLER SCROLL (Diperbaiki)
     // ============================================================
     function handleGlobalScroll() {
         if (currentPage === 'public') {
-            // Gunakan updateNavbarUser (fungsi yang benar)
-            updateNavbarUser();
+            updateNavbarUser(); // alias updatePublicNavbar
             toggleScrollTopButton();
         }
     }
@@ -594,6 +593,37 @@
     }
 
     // ============================================================
+    //  NAVBAR USER AREA (Untuk Publik)
+    // ============================================================
+    function updateNavbarUser() {
+        const container = document.getElementById('navbarUserArea');
+        if (!container) return;
+        const user = Auth.getCurrentUser();
+        if (user && user.username) {
+            container.innerHTML = `<a href="index.html?dashboard=1" class="btn btn-nav-cta"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>`;
+        } else {
+            container.innerHTML = `<a href="login.html" class="btn btn-nav-cta"><i class="fas fa-user-lock me-2"></i>Area Petugas</a>`;
+        }
+    }
+
+    // ============================================================
+    //  TOMBOL SCROLL KE ATAS (Diperbaiki: Null Handling)
+    // ============================================================
+    function toggleScrollTopButton() {
+        let btn = document.getElementById('btnScrollTop');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'btnScrollTop';
+            btn.className = 'btn-scroll-top';
+            btn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+            document.body.appendChild(btn);
+        }
+        if (window.scrollY > 400) btn.classList.add('show');
+        else btn.classList.remove('show');
+    }
+
+    // ============================================================
     //  UTIL NAVIGASI & LOGOUT
     // ============================================================
     function goToDashboard() { SafeStorage.removeItem(PUBLIC_VIEW_KEY, 'session'); window.location.href = 'index.html?dashboard=1'; }
@@ -605,45 +635,6 @@
             SafeStorage.removeItem(PUBLIC_VIEW_KEY, 'session');
             window.location.href = 'index.html'; // kembali ke publik
         }
-    }
-
-    // ============================================================
-    //  NAVBAR USER AREA (Untuk Publik)
-    // ============================================================
-    function updateNavbarUser() {
-        const container = document.getElementById('navbarUserArea');
-        if (!container) return;
-        const user = Auth.getCurrentUser();
-        if (user && user.username) {
-            let dashboardUrl = 'index.html?dashboard=1';
-            container.innerHTML = `
-                <a href="${dashboardUrl}" class="btn btn-nav-cta"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
-            `;
-        } else {
-            container.innerHTML = `<a href="login.html" class="btn btn-nav-cta"><i class="fas fa-user-lock me-2"></i>Area Petugas</a>`;
-        }
-    }
-
-    // Alias untuk kompatibilitas (jika ada pemanggilan lain)
-    function updatePublicNavbar() {
-        updateNavbarUser();
-    }
-
-    // ============================================================
-    //  SCROLL TOP BUTTON
-    // ============================================================
-    function toggleScrollTopButton() {
-        const btn = document.getElementById('btnScrollTop');
-        if (!btn) {
-            const btn = document.createElement('button');
-            btn.id = 'btnScrollTop';
-            btn.className = 'btn-scroll-top';
-            btn.innerHTML = '<i class="fas fa-chevron-up"></i>';
-            btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-            document.body.appendChild(btn);
-        }
-        if (window.scrollY > 400) btn.classList.add('show');
-        else btn.classList.remove('show');
     }
 
     // ============================================================
