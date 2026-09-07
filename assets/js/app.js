@@ -1,5 +1,5 @@
 // ============================================================
-//  APP.JS – Router SPA untuk Semua Role (FINAL v43.0)
+//  APP.JS – Router SPA untuk Semua Role (FINAL v44.0)
 //  Fitur: 
 //   - Mode Publik Default (Link Utama Langsung ke Beranda)
 //   - Dashboard Khusus Role (Admin/Petugas/Humas) via ?dashboard=1
@@ -59,7 +59,8 @@
     // ============================================================
     function handleGlobalScroll() {
         if (currentPage === 'public') {
-            updatePublicNavbar();
+            // Gunakan updateNavbarUser (fungsi yang benar)
+            updateNavbarUser();
             toggleScrollTopButton();
         }
     }
@@ -621,6 +622,11 @@
         } else {
             container.innerHTML = `<a href="login.html" class="btn btn-nav-cta"><i class="fas fa-user-lock me-2"></i>Area Petugas</a>`;
         }
+    }
+
+    // Alias untuk kompatibilitas (jika ada pemanggilan lain)
+    function updatePublicNavbar() {
+        updateNavbarUser();
     }
 
     // ============================================================
