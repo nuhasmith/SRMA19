@@ -46,7 +46,7 @@
 
     // --- KONSTANTA ---
     // ⚠️ PASTIKAN URL INI ADALAH URL DEPLOY TERBARU DARI GOOGLE APPS SCRIPT
-    const BASE_URL = 'https://script.google.com/macros/s/AKfycby_UyW6_lH8C992GJJBy5yfB4tO6fgHSQeKQxWdTqwE88MA2twT8n_XsyveL8-CcXh-/exec';
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycbxBKPr4RYmJkO7TjhM5Gh5578k-vFgX1LO1MSZpBBFw_hNOzvFeRRBOC8oIgDaYHaU/exec';
     const TOKEN_KEY = 'srma19_auth_token';
     const TIMEOUT_NORMAL = 20000; // 20 detik
     const TIMEOUT_UPLOAD = 120000; // 120 detik (Upload gambar)

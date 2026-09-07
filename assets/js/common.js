@@ -1,7 +1,8 @@
 // ============================================================
 //  COMMON.JS – Fungsi Bersama untuk Semua Modul (SafeStorage Complete)
 //  SRMA 19 Bantul
-//  Versi: 3.2.0 - Final Fix, Anti Tracking Prevention, Robust
+//  Versi: 4.0.0 - Final Fix, Anti Tracking Prevention, Robust
+//  Catatan: Hanya dimuat di dashboard.html (internal SPA)
 // ============================================================
 
 (function() {
@@ -66,7 +67,6 @@
     })();
 
     // OVERRIDE GLOBAL STORAGE (Jika diblokir, langsung pakai memori)
-    // Kita gunakan SafeStorage untuk fallback
     (function() {
         // Cek localStorage
         try {
@@ -237,7 +237,7 @@
     }
 
     // ============================================================
-    //  LOGOUT (Bersihkan Semua Sesi & Cache)
+    //  LOGOUT (Bersihkan Semua Sesi & Cache, redirect ke index.html publik)
     // ============================================================
     function handleLogout() {
         if (confirm('Logout?')) {
@@ -248,7 +248,7 @@
             // Bersihkan semua cache
             clearCache();
             clearSessionCache();
-            // Redirect ke index
+            // Redirect ke halaman publik
             window.location.href = 'index.html';
         }
     }
@@ -276,5 +276,5 @@
     // Ekspos juga SafeStorage langsung ke window
     window.SafeStorage = SafeStorage;
 
-    console.log('✅ Common module loaded (v3.2.0 - Final Fix)');
+    console.log('✅ Common module loaded (v4.0.0 - Final Fix)');
 })();
