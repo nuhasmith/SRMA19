@@ -1,8 +1,7 @@
 /* ============================================================
    APP.CSS – Gaya Dashboard Internal (Admin, Petugas, Humas)
    SRMA 19 Bantul
-   Versi: 4.0.0 - Final, Layout Presisi, Tidak Tumpang Tindih
-   Fitur: Sidebar Footer Rapi, Responsive, Anti Error
+   Versi: 12.0.0 - Final, Bottom Nav 4+1, Bottom Sheet, QR Slider
    ============================================================ */
 
 :root {
@@ -23,6 +22,7 @@
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --radius: 14px;
     --radius-sm: 10px;
+    --bottom-nav-height: 64px;
 }
 
 * {
@@ -217,9 +217,6 @@ body {
     object-fit: cover;
 }
 
-/* ============================================================
-   PERBAIKAN TAMPILAN SIDEBAR FOOTER (Nama & Role Rapi)
-   ============================================================ */
 .sidebar-footer .user-details {
     display: flex;
     flex-direction: column;
@@ -246,7 +243,6 @@ body {
     color: #64748b;
 }
 
-/* Jika collapsed, sembunyikan teks */
 .sidebar.collapsed .sidebar-footer .user-details {
     opacity: 0;
     width: 0;
@@ -276,7 +272,7 @@ body {
 }
 
 /* ============================================================
-   MAIN CONTENT – Diperbaiki agar tidak tumpang tindih
+   MAIN CONTENT
    ============================================================ */
 .main-content {
     flex: 1;
@@ -286,6 +282,7 @@ body {
     transition: margin-left 0.3s;
     width: calc(100% - var(--sidebar-width));
     overflow-x: hidden;
+    padding-bottom: 80px; /* ruang untuk bottom nav */
 }
 
 .main-content.expanded {
@@ -294,7 +291,7 @@ body {
 }
 
 /* ============================================================
-   HEADER SECTION – Judul + Tombol Aksi
+   HEADER SECTION
    ============================================================ */
 .main-content .d-flex.justify-content-between.align-items-center {
     flex-wrap: wrap;
@@ -574,7 +571,6 @@ body {
     animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     transform-origin: top right;
     border: 1px solid rgba(0,0,0,0.04);
-    position: relative;
 }
 
 .toast-item.removing {
@@ -952,7 +948,7 @@ body {
 }
 
 /* ============================================================
-   MOBILE BOTTOM NAV
+   MOBILE BOTTOM NAVBAR
    ============================================================ */
 .bottom-nav {
     display: none;
@@ -975,17 +971,20 @@ body {
     flex: 1;
     padding: 4px 0;
     color: #64748b;
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     font-weight: 500;
     border: none;
     background: none;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: color 0.2s, background 0.2s;
     text-decoration: none;
+    border-radius: 8px;
+    margin: 0 2px;
 }
 
 .bottom-nav .bottom-item.active {
     color: var(--primary);
+    background: rgba(13,110,253,0.1);
 }
 
 .bottom-nav .bottom-item i {
@@ -994,7 +993,92 @@ body {
 }
 
 /* ============================================================
-   MOBILE SCAN SLIDER
+   MOBILE MENU SHEET (BOTTOM SHEET "LAINNYA")
+   ============================================================ */
+.mobile-menu-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1070;
+    background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.15);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom, 12px);
+}
+
+.mobile-menu-sheet.show {
+    transform: translateY(0);
+}
+
+.mobile-sheet-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+}
+
+.mobile-sheet-body {
+    padding: 12px 16px 24px;
+}
+
+.mobile-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 12px;
+    border-radius: 10px;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f8fafc;
+}
+
+.mobile-menu-item:hover {
+    background: #f8fafc;
+}
+
+.mobile-menu-item:last-child {
+    border-bottom: none;
+}
+
+.mobile-menu-item i {
+    width: 24px;
+    text-align: center;
+}
+
+/* ============================================================
+   MOBILE MENU OVERLAY
+   ============================================================ */
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1065;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ============================================================
+   QR SLIDER (POJOK KANAN ATAS)
    ============================================================ */
 .mobile-scan-slider {
     display: none;
@@ -1060,10 +1144,6 @@ body {
     transform: scale(1.05);
 }
 
-.mobile-scan-slider .slider-scan-btn.hidden {
-    display: none;
-}
-
 /* ============================================================
    SIMPLE JADWAL (PETUGAS)
    ============================================================ */
@@ -1123,7 +1203,7 @@ body {
 }
 
 /* ============================================================
-   RESPONSIVE (Mobile & Tablet)
+   RESPONSIVE (MOBILE & TABLET)
    ============================================================ */
 @media (max-width: 768px) {
     .sidebar {
@@ -1186,6 +1266,19 @@ body {
     }
 }
 
+/* Hidden di desktop untuk mobile components */
+@media (min-width: 769px) {
+    .mobile-scan-slider,
+    .mobile-menu-sheet,
+    .mobile-menu-overlay,
+    .mobile-header-actions {
+        display: none !important;
+    }
+    .bottom-nav {
+        display: none !important;
+    }
+}
+
 /* ============================================================
    UTILITIES
    ============================================================ */
@@ -1214,4 +1307,9 @@ body {
 @keyframes skeleton-loading {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+}
+
+/* Bottom nav scrollable jika diperlukan (opsional) */
+.bottom-nav::-webkit-scrollbar {
+    display: none;
 }

@@ -1,7 +1,7 @@
 // ============================================================
 //  JADWAL_PETUGAS.JS – Jadwal Kegiatan (Khusus Role Petugas)
 //  SRMA 19 Bantul
-//  Versi: 1.0.0 - SPA Ready
+//  Versi: 2.0.0 - Full Fix, Tanpa Konflik dengan Admin, Robust
 // ============================================================
 
 (function() {
@@ -11,23 +11,40 @@
     const { getCachedData: getCache, setCachedData: setCache, showToast: toast } = window.Common;
 
     // ============================================================
-    //  STATE
+    //  STATE (Hanya untuk Petugas)
     // ============================================================
     let jadwalData = [];
     let jadwalFiltered = [];
+    let filterAgama = '';
 
     // ============================================================
-    //  RENDER JADWAL PETUGAS (tanpa edit/hapus)
+    //  SAFE DOM HELPERS
+    // ============================================================
+    function getEl(id) { return document.getElementById(id); }
+
+    function setHTML(id, html) {
+        const el = getEl(id);
+        if (el) el.innerHTML = html;
+        else console.warn('Elemen tidak ditemukan:', id);
+    }
+
+    // ============================================================
+    //  RENDER JADWAL PETUGAS (TANPA EDIT/DELETE)
     // ============================================================
     function renderJadwalPetugas(container) {
+        if (!container) return;
+
         // Ambil data dari cache jika belum ada
         if (jadwalData.length === 0) {
             const cached = getCache();
             if (cached?.jadwal) {
                 jadwalData = cached.jadwal.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
+            } else {
+                // Jika belum ada di cache, fetch dari server
+                refresh(true);
+                return;
             }
         }
-        jadwalFiltered = [...jadwalData];
 
         const agamaList = [...new Set(jadwalData.map(j => j.agama).filter(Boolean))].sort();
 
@@ -41,35 +58,37 @@
                     <label class="fw-bold me-2">Filter Agama:</label>
                     <select class="form-select form-select-sm" id="filterAgamaJadwalPetugas" onchange="PetugasJadwal.changeFilter(this.value)" style="width:150px;">
                         <option value="">Semua Agama</option>
-                        ${agamaList.map(a => `<option value="${a}">${a}</option>`).join('')}
+                        ${agamaList.map(a => `<option value="${a}" ${filterAgama === a ? 'selected' : ''}>${a}</option>`).join('')}
                     </select>
                     <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="PetugasJadwal.resetFilter()">Reset</button>
                 </div>
             </div>
             <div id="jadwalSimpleContainer"></div>
         `;
+
+        // Render list jadwal (simple cards)
         renderJadwalSimple();
     }
 
     // ============================================================
-    //  RENDER JADWAL (gaya simple cards)
+    //  RENDER JADWAL SIMPLE (Gaya cards)
     // ============================================================
     function renderJadwalSimple() {
-        const container = document.getElementById('jadwalSimpleContainer');
+        const container = getEl('jadwalSimpleContainer');
         if (!container) return;
 
-        const filtered = jadwalFiltered;
+        const filtered = filterAgama ? jadwalData.filter(j => j.agama === filterAgama) : jadwalData;
         if (!filtered.length) {
-            container.innerHTML = '<div class="text-center py-5 text-muted">Belum ada jadwal.</div>';
+            container.innerHTML = '<div class="text-center py-5 text-muted">Tidak ada jadwal.</div>';
             return;
         }
 
-        const sorted = [...filtered].sort((a, b) => a.mulai.localeCompare(b.mulai));
-
+        // Kelompokkan berdasarkan agama
         const grouped = {};
-        sorted.forEach(j => {
-            if (!grouped[j.agama]) grouped[j.agama] = [];
-            grouped[j.agama].push(j);
+        filtered.forEach(j => {
+            const agama = j.agama || 'Lainnya';
+            if (!grouped[agama]) grouped[agama] = [];
+            grouped[agama].push(j);
         });
 
         const badgeClass = {
@@ -81,7 +100,7 @@
             'Penghayat': 'badge-penghayat'
         };
 
-        let html = `<div class="schedule-container">`;
+        let html = '<div class="schedule-container">';
         for (const [agama, items] of Object.entries(grouped)) {
             html += `
                 <div class="schedule-group" style="border-left-color: ${items[0].color || '#0d6efd'};">
@@ -100,7 +119,7 @@
                 </div>
             `;
         }
-        html += `</div>`;
+        html += '</div>';
         container.innerHTML = html;
     }
 
@@ -108,13 +127,14 @@
     //  FILTER & RESET
     // ============================================================
     function changeFilter(agama) {
-        jadwalFiltered = agama ? jadwalData.filter(j => j.agama === agama) : jadwalData;
+        filterAgama = agama;
         renderJadwalSimple();
     }
 
     function resetFilter() {
-        document.getElementById('filterAgamaJadwalPetugas').value = '';
-        jadwalFiltered = jadwalData;
+        const select = getEl('filterAgamaJadwalPetugas');
+        if (select) select.value = '';
+        filterAgama = '';
         renderJadwalSimple();
     }
 
@@ -127,8 +147,6 @@
             const res = await API.getJadwal();
             if (res.status === 'success') {
                 jadwalData = res.data.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
-                jadwalFiltered = [...jadwalData];
-                // Update cache
                 const cached = getCache() || {};
                 cached.jadwal = jadwalData;
                 setCache(cached);
@@ -142,26 +160,15 @@
         }
     }
 
-    // Fungsi dummy edit/hapus (petugas tidak punya akses)
-    function editJadwal(index) {
-        toast('Anda tidak memiliki akses untuk mengedit jadwal.', 'warning');
-    }
-
-    function deleteJadwal(index) {
-        toast('Anda tidak memiliki akses untuk menghapus jadwal.', 'warning');
-    }
-
     // ============================================================
-    //  EXPOSE KE GLOBAL
+    //  EXPOSE KE GLOBAL (Hanya PetugasJadwal, TIDAK menimpa Jadwal)
     // ============================================================
     window.PetugasJadwal = {
         renderJadwalPetugas,
         refresh,
         changeFilter,
-        resetFilter,
-        editJadwal,
-        deleteJadwal
+        resetFilter
     };
 
-    console.log('✅ Petugas Jadwal module loaded');
+    console.log('✅ Petugas Jadwal module loaded (v2.0.0 - Full Fix, No Conflict)');
 })();

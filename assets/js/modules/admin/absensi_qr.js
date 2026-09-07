@@ -1,15 +1,15 @@
 // ============================================================
-//  ABSENSI_QR.JS – QR Scanner (Admin) - ULTIMATE FIX v5.0
+//  ABSENSI_QR.JS – QR Scanner (Admin) - ULTIMATE PREMIUM FIX
 //  SRMA 19 Bantul
-//  Fitur: Low Light Auto Torch, Deteksi Super Cepat, UI Modern
-//  Semua Fungsi Tetap, Anti Error (Camera Constraints Fix)
+//  Fitur: UI Premium, Tidak Auto Start, Tombol Mulai/Hentikan
+//  Versi: 6.0.0
 // ============================================================
 
 (function() {
     'use strict';
 
-    // Ambil fungsi bersama (fallback if not loaded)
-    const { showToast: toast } = window.Common || { showToast: () => {} };
+    // Ambil fungsi bersama
+    const { showToast: toast } = window.Common;
 
     // ============================================================
     //  STATE
@@ -137,7 +137,7 @@
     }
 
     // ============================================================
-    //  RENDER UI SCANNER (MODERN)
+    //  RENDER UI SCANNER (TANPA AUTO START)
     // ============================================================
     function renderAbsensiQR(container) {
         container.innerHTML = `
@@ -208,19 +208,30 @@
                 ` : ''}
             </div>
 
-            <!-- Scanner Area Modern -->
-            <div class="card-modern p-0 overflow-hidden" style="border-radius:16px; position:relative;">
-                <div id="reader" style="width:100%; min-height:320px; background:#0f172a; position:relative; overflow:hidden;"></div>
-                <div class="scanner-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; border:3px solid rgba(255,255,255,0.3); border-radius:16px; box-shadow: inset 0 0 30px rgba(0,0,0,0.5);"></div>
-                <div class="scanner-line" style="position:absolute; top:0; left:0; width:100%; height:3px; background:linear-gradient(90deg, transparent, #0d6efd, transparent); animation: scanLine 2s infinite; opacity:0.7;"></div>
-                <div class="text-center py-2" style="background:rgba(0,0,0,0.5); color:#fff; font-size:0.8rem; position:absolute; bottom:0; left:0; right:0;">
-                    Arahkan QR Code ke area kamera
+            <!-- Scanner Area Premium -->
+            <div class="scanner-premium-container position-relative mb-3">
+                <div id="reader" class="scanner-preview">
+                    <div class="scanner-placeholder">
+                        <i class="fas fa-qrcode fa-3x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Kamera belum aktif. Klik tombol di bawah untuk mulai.</p>
+                    </div>
+                </div>
+                <div class="scanner-glow"></div>
+                <div class="scanner-guide">
+                    <span class="guide-corner tl"></span>
+                    <span class="guide-corner tr"></span>
+                    <span class="guide-corner bl"></span>
+                    <span class="guide-corner br"></span>
                 </div>
             </div>
 
             <div class="mt-3 text-center">
-                <button class="btn btn-primary btn-lg rounded-pill px-5" id="btnStartScan" onclick="AbsensiQR.startScan()"><i class="fas fa-camera me-2"></i>Mulai Scan</button>
-                <button class="btn btn-danger btn-lg rounded-pill px-5 d-none" id="btnStopScan" onclick="AbsensiQR.stopScan()"><i class="fas fa-stop me-2"></i>Hentikan</button>
+                <button class="btn btn-primary btn-lg rounded-pill px-5 shadow" id="btnStartScan" onclick="AbsensiQR.startScan()">
+                    <i class="fas fa-camera me-2"></i>Mulai Scan
+                </button>
+                <button class="btn btn-danger btn-lg rounded-pill px-5 shadow d-none" id="btnStopScan" onclick="AbsensiQR.stopScan()">
+                    <i class="fas fa-stop me-2"></i>Hentikan
+                </button>
             </div>
 
             <!-- Input Manual -->
@@ -270,24 +281,64 @@
             </div>
         `;
 
-        // Add CSS for scan line animation
+        // Tambahkan CSS Animasi Scanner
         if (!document.getElementById('qr-scanner-style')) {
             const style = document.createElement('style');
             style.id = 'qr-scanner-style';
             style.textContent = `
-                @keyframes scanLine {
-                    0% { top: 0; }
-                    50% { top: calc(100% - 3px); }
-                    100% { top: 0; }
+                .scanner-premium-container {
+                    background: #0f172a;
+                    border-radius: 16px;
+                    padding: 20px;
+                    overflow: hidden;
                 }
-                .scanner-line {
-                    box-shadow: 0 0 10px #0d6efd, 0 0 20px #0d6efd;
+                .scanner-preview {
+                    min-height: 280px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 12px;
+                    background: rgba(0,0,0,0.3);
+                }
+                .scanner-placeholder {
+                    text-align: center;
+                    padding: 40px 20px;
+                    color: #94a3b8;
+                }
+                .scanner-glow {
+                    position: absolute;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    pointer-events: none;
+                    box-shadow: inset 0 0 40px rgba(255,255,255,0.05);
+                }
+                .scanner-guide {
+                    position: absolute;
+                    top: 40%; left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 200px;
+                    height: 200px;
+                    pointer-events: none;
+                }
+                .guide-corner {
+                    position: absolute;
+                    width: 30px;
+                    height: 30px;
+                    border-color: #0d6efd !important;
+                    border-style: solid;
+                    border-width: 0;
+                }
+                .guide-corner.tl { top: 0; left: 0; border-top-width: 3px; border-left-width: 3px; }
+                .guide-corner.tr { top: 0; right: 0; border-top-width: 3px; border-right-width: 3px; }
+                .guide-corner.bl { bottom: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
+                .guide-corner.br { bottom: 0; right: 0; border-bottom-width: 3px; border-right-width: 3px; }
+                #reader video {
+                    border-radius: 12px;
                 }
             `;
             document.head.appendChild(style);
         }
 
-        // Initialize after DOM is ready
+        // Inisialisasi tanpa auto start
         setTimeout(() => {
             fetchJadwal();
             loadLocalLog();
@@ -297,7 +348,7 @@
             restoreManualState();
             switchMode('absen');
             setInterval(updateSesiDisplay, 30000);
-            if (!isScanning) startScan();
+            // HAPUS BARIS "if (!isScanning) startScan();" DI SINI
         }, 200);
     }
 
@@ -518,7 +569,7 @@
     }
 
     // ============================================================
-    //  START SCAN - LOW LIGHT & HIGH PERFORMANCE (FIXED)
+    //  SCAN QR & KONFIRMASI (Hanya Mulai Saat Diklik)
     // ============================================================
     async function startScan() {
         if (isScanning) return;
@@ -529,84 +580,31 @@
         reader.innerHTML = '';
         try {
             html5QrCode = new Html5Qrcode('reader');
-            // PENTING: html5-qrcode tidak menerima objek 'constraints' dengan lebih dari 1 key.
-            // Gunakan hanya { facingMode: 'environment' } untuk kamera belakang.
-            // Resolusi diatur otomatis oleh library.
-            const constraints = { facingMode: 'environment' };
-            
-            // qrbox 60% viewfinder untuk deteksi fleksibel
             const config = {
-                fps: 30,
+                fps: 10,
                 qrbox: (viewfinderWidth, viewfinderHeight) => {
-                    const size = Math.min(viewfinderWidth, viewfinderHeight) * 0.6;
+                    const size = Math.min(viewfinderWidth, viewfinderHeight) * 0.7;
                     return { width: size, height: size };
                 },
                 aspectRatio: 1.0,
                 disableFlip: false
             };
-            
-            await html5QrCode.start(constraints, config, onScanSuccess, () => {});
+            await html5QrCode.start({ facingMode: 'environment' }, config, onScanSuccess, () => {});
             isScanning = true;
             const btnStart = document.getElementById('btnStartScan');
             const btnStop = document.getElementById('btnStopScan');
             if (btnStart) btnStart.classList.add('d-none');
             if (btnStop) btnStop.classList.remove('d-none');
-            // Ambil track untuk kontrol senter
             const videoElem = document.getElementById('reader').querySelector('video');
-            if (videoElem && videoElem.srcObject) {
-                currentVideoTrack = videoElem.srcObject.getVideoTracks()[0];
-            }
-            // Aktifkan senter otomatis jika didukung
-            applyAutoTorch();
+            if (videoElem && videoElem.srcObject) currentVideoTrack = videoElem.srcObject.getVideoTracks()[0];
             const flashBtn = document.getElementById('flashToggleBtn');
             if (flashBtn) flashBtn.style.display = 'inline-block';
-            toast('Kamera siap. QR langsung terbaca.', 'success');
+            toast('Kamera aktif. Arahkan ke QR Code.', 'success');
         } catch (err) {
-            console.error('Start scan error:', err);
-            // Fallback: coba kamera depan jika environment gagal
-            try {
-                html5QrCode = new Html5Qrcode('reader');
-                const constraintsFallback = { facingMode: 'user' };
-                await html5QrCode.start(constraintsFallback, config, onScanSuccess, () => {});
-                isScanning = true;
-                const btnStart = document.getElementById('btnStartScan');
-                const btnStop = document.getElementById('btnStopScan');
-                if (btnStart) btnStart.classList.add('d-none');
-                if (btnStop) btnStop.classList.remove('d-none');
-                const videoElem = document.getElementById('reader').querySelector('video');
-                if (videoElem && videoElem.srcObject) currentVideoTrack = videoElem.srcObject.getVideoTracks()[0];
-                const flashBtn = document.getElementById('flashToggleBtn');
-                if (flashBtn) flashBtn.style.display = 'inline-block';
-                toast('Kamera depan digunakan.', 'info');
-            } catch (fallbackErr) {
-                console.error('Fallback error:', fallbackErr);
-                toast('Gagal mengakses kamera. Periksa izin browser.', 'error');
-            }
+            toast('Gagal mengakses kamera.', 'error');
         }
     }
 
-    // ============================================================
-    //  AUTO TORCH (Low Light)
-    // ============================================================
-    async function applyAutoTorch() {
-        if (!currentVideoTrack) return;
-        try {
-            const capabilities = currentVideoTrack.getCapabilities();
-            if (capabilities.torch) {
-                await currentVideoTrack.applyConstraints({ advanced: [{ torch: true }] });
-                isTorchOn = true;
-                const icon = document.getElementById('flashToggleBtn')?.querySelector('i');
-                if (icon) icon.className = 'fas fa-sun';
-                console.log('✅ Auto torch enabled for low light');
-            }
-        } catch (e) {
-            console.error('Auto torch failed:', e);
-        }
-    }
-
-    // ============================================================
-    //  STOP SCAN - RELEASE CAMERA
-    // ============================================================
     async function stopScan() {
         if (!isScanning || !html5QrCode) return;
         try {
@@ -615,12 +613,9 @@
                 currentVideoTrack.stop();
                 currentVideoTrack = null;
             }
-            if (isTorchOn) {
-                isTorchOn = false;
-            }
             const reader = document.getElementById('reader');
             if (reader) {
-                reader.innerHTML = '<div class="text-muted text-center py-5">Klik "Mulai Scan" untuk mengaktifkan kamera</div>';
+                reader.innerHTML = '<div class="scanner-placeholder"><i class="fas fa-qrcode fa-3x text-muted mb-2"></i><p class="text-muted mb-0">Kamera dimatikan. Klik "Mulai Scan" untuk mengaktifkan.</p></div>';
             }
         } catch (e) {
             console.error('Error stop scan:', e);
@@ -632,12 +627,10 @@
         if (btnStop) btnStop.classList.add('d-none');
         const flashBtn = document.getElementById('flashToggleBtn');
         if (flashBtn) flashBtn.style.display = 'none';
+        isTorchOn = false;
         html5QrCode = null;
     }
 
-    // ============================================================
-    //  ON SCAN SUCCESS - FAST COOLDOWN
-    // ============================================================
     function onScanSuccess(decodedText) {
         if (scanCooldown) return;
         scanCooldown = true;
@@ -669,17 +662,16 @@
                     timestamp: new Date().toISOString()
                 };
                 displayResult();
-                // Cooldown 300ms untuk scan beruntun yang cepat
-                setTimeout(() => { scanCooldown = false; }, 300);
+                setTimeout(() => { scanCooldown = false; }, 600);
             } else {
                 toast(data.message || 'Peserta tidak ditemukan.', 'error');
                 resetScan();
-                setTimeout(() => { scanCooldown = false; }, 300);
+                setTimeout(() => { scanCooldown = false; }, 600);
             }
         }).catch(() => {
             toast('Gagal menghubungi server.', 'error');
             resetScan();
-            setTimeout(() => { scanCooldown = false; }, 300);
+            setTimeout(() => { scanCooldown = false; }, 600);
         });
     }
 
@@ -836,7 +828,7 @@
     }
 
     // ============================================================
-    //  FLASH MANUAL
+    //  FLASH / SENTER
     // ============================================================
     async function toggleFlash() {
         if (!currentVideoTrack) { toast('Fitur flash tidak didukung.', 'warning'); return; }
@@ -890,5 +882,5 @@
         testConnection
     };
 
-    console.log('✅ AbsensiQR module loaded (Ultimate Fix v5.0 - Fixed Camera Constraints)');
+    console.log('✅ AbsensiQR module loaded (v6.0.0 - No Auto Start, Premium UI)');
 })();

@@ -1,8 +1,7 @@
 // ============================================================
 //  API.JS – Lapisan Komunikasi dengan Backend (Google Apps Script)
 //  SRMA 19 Bantul
-//  Versi: 3.0.0 - Lengkap, Anti Error, SPA Ready
-//  Method `getDashboardStats` SUDAH ADA + Fallback Aman
+//  Versi: 4.0.0 - FULL FIX, Auto Stringify, Robust, All Endpoints
 // ============================================================
 
 (function() {
@@ -47,10 +46,10 @@
 
     // --- KONSTANTA ---
     // ⚠️ PASTIKAN URL INI ADALAH URL DEPLOY TERBARU DARI GOOGLE APPS SCRIPT
-    const BASE_URL = 'https://script.google.com/macros/s/AKfycbzLZq8Pk0zdDPZwJf6bQvP2QgsPcVzd2i54wvrvBoXjr9GYW9VvWHxyD4pidNvw6PnS/exec';
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycbym_n6vTfe13xD-eO5D776zcrExZAhzYLvzdsLSWCPJifrzperOpWSaofg2XjfzT1yO/exec';
     const TOKEN_KEY = 'srma19_auth_token';
-    const TIMEOUT_NORMAL = 15000; // 15 detik
-    const TIMEOUT_UPLOAD = 120000; // 120 detik
+    const TIMEOUT_NORMAL = 20000; // 20 detik
+    const TIMEOUT_UPLOAD = 120000; // 120 detik (Upload gambar)
 
     // --- HELPER: Dapatkan token dari localStorage/SafeStorage ---
     function getAuthToken() {
@@ -58,7 +57,7 @@
     }
 
     // ============================================================
-    //  FUNGSI DASAR REQUEST POST (Dengan Token Otomatis)
+    //  FUNGSI DASAR REQUEST POST (Dengan Token Otomatis + Auto Stringify)
     // ============================================================
     function requestPost(action, data = {}) {
         return new Promise((resolve) => {
@@ -68,15 +67,21 @@
             xhr.timeout = TIMEOUT_NORMAL;
 
             const params = new URLSearchParams();
+
             // Tambahkan token otentikasi jika ada
             const token = getAuthToken();
             if (token) params.append('token', token);
 
-            // Tambahkan action dan data
+            // Tambahkan action dan data (dengan penanganan objek/array)
             params.append('action', action);
             for (const [key, value] of Object.entries(data)) {
                 if (value !== undefined && value !== null) {
-                    params.append(key, value);
+                    // Jika value adalah objek/array, otomatis stringify agar tidak jadi [object Object]
+                    if (typeof value === 'object') {
+                        params.append(key, JSON.stringify(value));
+                    } else {
+                        params.append(key, value);
+                    }
                 }
             }
 
@@ -172,7 +177,7 @@
         updatePeserta: (data) => requestPost('update_peserta', data),
         deletePeserta: (kode) => requestPost('delete_peserta', { kode }),
         searchPeserta: (code) => requestPost('search', { code }),
-        importPeserta: (rows) => requestPost('import_peserta', { data: JSON.stringify(rows) }),
+        importPeserta: (rows) => requestPost('import_peserta', { data: rows }), // rows sudah string JSON
         arsipLulus: () => requestPost('arsip_lulus'),
 
         // --- ABSENSI ---
@@ -190,7 +195,7 @@
 
         // --- JADWAL ---
         getJadwal: () => requestPost('get_jadwal'),
-        saveJadwal: (jadwal) => requestPost('save_jadwal', { data: JSON.stringify(jadwal) }),
+        saveJadwal: (jadwal) => requestPost('save_jadwal', { data: jadwal }), // otomatis stringify
         updatePrayerTimes: (date) => requestPost('update_prayer_times', { date }),
 
         // --- PETUGAS & PROFIL ---
@@ -272,5 +277,5 @@
     // Ekspos SafeStorage agar modul lain bisa menggunakannya
     window.SafeStorage = SafeStorage;
 
-    console.log('✅ API layer loaded (v3.0.0 - Lengkap, Anti Error, getDashboardStats ada)');
+    console.log('✅ API layer loaded (v4.0.0 - Full Fix, Auto Stringify, All Endpoints)');
 })();

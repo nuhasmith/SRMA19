@@ -23,124 +23,34 @@
 
     <!-- Animasi Elegant Tambahan (Cepat & Smooth) -->
     <style>
-        /* ===== ANIMASI ELEGAN ===== */
         body {
             overflow-x: hidden;
         }
-
-        /* Fade In Up untuk seluruh section */
         section, .hero-section, .stat-section, .card-custom {
             animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
         }
-
-        /* Variasi delay untuk tampilan berjenjang */
         section:nth-of-type(1) { animation-delay: 0.1s; }
         section:nth-of-type(2) { animation-delay: 0.15s; }
         section:nth-of-type(3) { animation-delay: 0.2s; }
         section:nth-of-type(4) { animation-delay: 0.25s; }
         section:nth-of-type(5) { animation-delay: 0.3s; }
-
-        /* Kartu dengan hover lebih halus */
         .card-custom {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-
         .card-custom:hover {
             transform: translateY(-8px);
             box-shadow: 0 20px 40px rgba(13, 110, 253, 0.15);
         }
-
-        /* Navbar slide down saat scroll */
         .navbar.scrolled {
             animation: slideDown 0.3s ease;
         }
-
-        /* Tombol dengan efek pulse halus */
-        .btn-nav-cta:hover {
-            animation: pulse 1.5s infinite;
-        }
-
-        /* Hero Title shimmer */
-        .hero-section h1 .highlight {
-            background-size: 200% auto;
-            animation: shimmer 4s linear infinite;
-        }
-
-        /* Garis timeline animasi */
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -6px;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: #0d6efd;
-            transform: scaleY(0);
-            transform-origin: top;
-            transition: transform 0.3s ease;
-        }
-
-        .timeline-item:hover::before {
-            transform: scaleY(1);
-        }
-
-        /* Skeleton Loading */
-        .skeleton {
-            background: linear-gradient(90deg, rgba(226, 232, 240, 0.5) 25%, rgba(203, 213, 225, 0.5) 50%, rgba(226, 232, 240, 0.5) 75%);
-            background-size: 200% 100%;
-            animation: skeleton-loading 1.5s infinite;
-        }
-
-        /* Lightbox fade in */
-        .gallery-lightbox {
-            animation: fadeIn 0.3s ease;
-        }
-
-        /* Keyframes */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes slideDown {
             from { top: -100px; }
             to { top: 0; }
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 107, 53, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0); }
-        }
-
-        @keyframes shimmer {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
-        }
-
-        @keyframes skeleton-loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* Scrollbar halus untuk carousel */
-        .carousel-track {
-            scrollbar-width: thin;
-            scrollbar-color: #cbd5e1 transparent;
-        }
-
-        .carousel-track::-webkit-scrollbar {
-            height: 6px;
-        }
-
-        .carousel-track::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
         }
     </style>
 </head>
@@ -148,19 +58,20 @@
     <!-- Root container untuk SPA -->
     <div id="root"></div>
 
-    <!-- Core Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <!-- ============================================================
+         CORE LIBRARIES
+         ============================================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.6/dist/quill.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 
-    <!-- Quill Editor JS -->
-    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.6/dist/quill.min.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-    <!-- SafeStorage Fallback (Mengatasi Tracking Prevention) -->
+    <!-- ============================================================
+         SAFE STORAGE FALLBACK (Mengatasi Tracking Prevention)
+         ============================================================ -->
     <script>
         (function() {
             if (window.SafeStorage) return;
@@ -200,50 +111,62 @@
         })();
     </script>
 
-    <!-- Core Modules (Wajib) -->
-    <script src="assets/js/api.js"></script>
-    <script src="assets/js/auth.js"></script>
-    <script src="assets/js/common.js"></script>
-    <script src="assets/js/main.js"></script>
+    <!-- ============================================================
+         CORE MODULES (WAJIB)
+         ============================================================ -->
+    <script src="assets/js/api.js" defer></script>
+    <script src="assets/js/auth.js" defer></script>
+    <script src="assets/js/common.js" defer></script>
+    <script src="assets/js/main.js" defer></script>
 
-    <!-- Admin Modules -->
-    <script src="assets/js/modules/admin/dashboard.js"></script>
-    <script src="assets/js/modules/admin/peserta.js"></script>
-    <script src="assets/js/modules/admin/absensi.js"></script>
-    <script src="assets/js/modules/admin/izin.js"></script>
-    <script src="assets/js/modules/admin/jadwal.js"></script>
-    <script src="assets/js/modules/admin/petugas.js"></script>
-    <script src="assets/js/modules/admin/wali_asuh.js"></script>
-    <script src="assets/js/modules/admin/alumni.js"></script>
-    <script src="assets/js/modules/admin/laporan.js"></script>
-    <script src="assets/js/modules/admin/berita.js"></script>
-    <script src="assets/js/modules/admin/absensi_qr.js"></script>
-    <script src="assets/js/modules/admin/galeri_admin.js"></script>
-    <script src="assets/js/modules/admin/pengaturan_website.js"></script>
-    <script src="assets/js/modules/admin/statistik.js"></script>
-    <script src="assets/js/modules/admin/schedule_override.js"></script>
+    <!-- ============================================================
+         ADMIN MODULES
+         ============================================================ -->
+    <script src="assets/js/modules/admin/dashboard.js" defer></script>
+    <script src="assets/js/modules/admin/peserta.js" defer></script>
+    <script src="assets/js/modules/admin/absensi.js" defer></script>
+    <script src="assets/js/modules/admin/izin.js" defer></script>
+    <script src="assets/js/modules/admin/jadwal.js" defer></script>
+    <script src="assets/js/modules/admin/petugas.js" defer></script>
+    <script src="assets/js/modules/admin/wali_asuh.js" defer></script>
+    <script src="assets/js/modules/admin/alumni.js" defer></script>
+    <script src="assets/js/modules/admin/laporan.js" defer></script>
+    <script src="assets/js/modules/admin/berita.js" defer></script>
+    <script src="assets/js/modules/admin/absensi_qr.js" defer></script>
+    <script src="assets/js/modules/admin/galeri_admin.js" defer></script>
+    <script src="assets/js/modules/admin/pengaturan_website.js" defer></script>
+    <script src="assets/js/modules/admin/statistik.js" defer></script>
+    <script src="assets/js/modules/admin/schedule_override.js" defer></script>
 
-    <!-- Petugas Modules -->
-    <script src="assets/js/modules/petugas/common_petugas.js"></script>
-    <script src="assets/js/modules/petugas/dashboard_petugas.js"></script>
-    <script src="assets/js/modules/petugas/absensi_petugas.js"></script>
-    <script src="assets/js/modules/petugas/izin_petugas.js"></script>
-    <script src="assets/js/modules/petugas/jadwal_petugas.js"></script>
-    <script src="assets/js/modules/petugas/wali_asuh_petugas.js"></script>
-    <script src="assets/js/modules/petugas/alumni_petugas.js"></script>
-    <script src="assets/js/modules/petugas/laporan_petugas.js"></script>
-    <script src="assets/js/modules/petugas/scanqr_petugas.js"></script>
+    <!-- ============================================================
+         PETUGAS MODULES
+         ============================================================ -->
+    <script src="assets/js/modules/petugas/common_petugas.js" defer></script>
+    <script src="assets/js/modules/petugas/dashboard_petugas.js" defer></script>
+    <script src="assets/js/modules/petugas/absensi_petugas.js" defer></script>
+    <script src="assets/js/modules/petugas/izin_petugas.js" defer></script>
+    <script src="assets/js/modules/petugas/jadwal_petugas.js" defer></script>
+    <script src="assets/js/modules/petugas/wali_asuh_petugas.js" defer></script>
+    <script src="assets/js/modules/petugas/alumni_petugas.js" defer></script>
+    <script src="assets/js/modules/petugas/laporan_petugas.js" defer></script>
+    <script src="assets/js/modules/petugas/scanqr_petugas.js" defer></script>
 
-    <!-- Humas Modules -->
-    <script src="assets/js/modules/humas/dashboard_humas.js"></script>
-    <script src="assets/js/modules/humas/berita_humas.js"></script>
-    <script src="assets/js/modules/humas/galeri_humas.js"></script>
+    <!-- ============================================================
+         HUMAS MODULES
+         ============================================================ -->
+    <script src="assets/js/modules/humas/dashboard_humas.js" defer></script>
+    <script src="assets/js/modules/humas/berita_humas.js" defer></script>
+    <script src="assets/js/modules/humas/galeri_humas.js" defer></script>
 
-    <!-- Profil Module (FINAL) -->
-    <script src="assets/js/modules/profil.js"></script>
+    <!-- ============================================================
+         PROFIL MODULE (FINAL)
+         ============================================================ -->
+    <script src="assets/js/modules/profil.js" defer></script>
 
-    <!-- Router SPA & Bootstrap -->
-    <script src="assets/js/app.js"></script>
-    <script src="assets/js/index.js"></script>
+    <!-- ============================================================
+         ROUTER SPA & BOOTSTRAP
+         ============================================================ -->
+    <script src="assets/js/app.js" defer></script>
+    <script src="assets/js/index.js" defer></script>
 </body>
 </html>
